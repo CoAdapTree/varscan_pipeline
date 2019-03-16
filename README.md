@@ -14,7 +14,7 @@
 # LoFreq and CRISP poolseq pipeline
 
 ---
-## Assumed requirements
+## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm
 1. install an anaconda (not miniconda) or virtual environment with python 3.7 (eg: `conda create -n py3 python=3.7` or `virtualenv --no-download ~/py3`)
     1. source env within `$HOME/.bashrc` on the last line of the file (`source /path/to/conda/bin/activate py3` or `source ~/py3/bin/activate`)
