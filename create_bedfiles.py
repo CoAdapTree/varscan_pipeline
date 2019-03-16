@@ -1,6 +1,6 @@
 ### purpose
 # create bedfiles from reference so that we can parallelize CRISP
-# 
+#
 
 ### usage
 # python create_bedfiles.py /path/to/reference.fasta
@@ -64,7 +64,7 @@ def main(thisfile,ref):
     fcount = make_bedfiles()
     
     os.system('echo created %s bedfiles for %s' % (fcount,ref))
-    
+
 if __name__ == "__main__":
     # args
     thisfile, ref = sys.argv

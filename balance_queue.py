@@ -17,7 +17,7 @@ def announceacctlens(accounts,fin):
         os.system('echo %s jobs on %s' % (str(len(accounts[account])),account))
 def checksq(rt,phase):
     exitneeded = False
-    if not type(rt) == list:
+    if not isinstance(rt,list):
         os.system('echo "type(sq) != list, exiting %(thisfile)s"' % locals())
         exitneeded = True
     if len(rt) == 0:
@@ -89,7 +89,7 @@ def redistribute4G(accounts,bal):
         return accounts
     keys = list(accounts.keys())
     os.system('echo before loop %s' % keys)
-    for account in keys: 
+    for account in keys:
         # distribute 4G jobs to RAC
         pids = list(accounts[account].keys())
         mcount = 0

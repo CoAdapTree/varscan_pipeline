@@ -2,7 +2,7 @@
 # remove multiallelic sites from VariantsToTable output
 ###
 
-### usage 
+### usage
 # python filter_VariantsToTable.py VariantsToTable_outfile.txt
 ###
 

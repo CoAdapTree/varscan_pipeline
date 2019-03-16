@@ -12,8 +12,7 @@
 # export path to lofreq in $HOME/.bashrc
 ###
 
-import sys 
-import os
+import sys, os
 from os import path as op
 import pickle
 from coadaptree import makedir

@@ -4,7 +4,7 @@
 
 ### usage
 # python 00_start-pipeline.py /path/to/folder/with/all/fastq/files/ 
-### 
+###
 
 ### imports and defs
 import os, sys, pickle, distutils.spawn, pandas as pd
