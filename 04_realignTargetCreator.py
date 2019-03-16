@@ -13,7 +13,7 @@ from coadaptree import makedir, pklload
 thisfile, pooldir, samp, dupfile = sys.argv
 
 # RealignerTargetCreator
-aligndir = op.join(pooldir,'realign')
+aligndir = op.join(pooldir,'04_realign')
 listfile = op.join(aligndir,'%s_realingment_targets.list' % samp)
 
 # get ref

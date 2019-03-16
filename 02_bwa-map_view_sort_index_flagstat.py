@@ -36,15 +36,15 @@ rgsm = rginfo[samp]['rgsm']
 
 #bwa: fastq -> sam
 sam      = op.basename(r1out).replace("R1_trimmed.fastq.gz","R1R2_trimmed.sam")
-samdir   = op.join(pooldir,'samfiles')
+samdir   = op.join(pooldir,'02a_samfiles')
 samfile  = op.join(samdir,sam)
 #samtools view: sam -> bam
 bam      = op.basename(samfile).replace('.sam','.bam')
-bamdir   = op.join(pooldir,'bamfiles')
+bamdir   = op.join(pooldir,'02b_bamfiles')
 bamfile  = op.join(bamdir,bam)
 #samtools sort: bamfile -> sortfile
 sort     = op.basename(bamfile).replace('.bam','_sorted.bam')
-sortdir  = op.join(pooldir,'sorted_bamfiles')
+sortdir  = op.join(pooldir,'02c_sorted_bamfiles')
 sortfile = op.join(sortdir,sort)
 flagfile = op.join(sortdir,sort.replace('.bam','.bam.flagstats'))
 

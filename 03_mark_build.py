@@ -15,7 +15,7 @@ thisfile, sortfile, pooldir = sys.argv
 
 
 # MarkDuplicates
-dupdir   = op.join(pooldir,'dedup_rg_filtered_indexed_sorted_bamfiles')
+dupdir   = op.join(pooldir,'03_dedup_rg_filtered_indexed_sorted_bamfiles')
 pool     = op.basename(pooldir)
 samp     = op.basename(sortfile).split("---")[1].split('_R1R2')[0].split(".")[1]
 dupfile  = op.join(dupdir,"%s_rd.bam" % samp)
@@ -25,7 +25,7 @@ dupstat  = op.join(dupdir,"%s_rd_dupstat.txt" % samp)
 # create sh file
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
-#SBATCH --mem=6000M
+#SBATCH --mem=30000M
 #SBATCH --ntasks=1
 #SBATCH --job-name=mark_%(samp)s
 #SBATCH --output=mark_%(samp)s_%%j.out 

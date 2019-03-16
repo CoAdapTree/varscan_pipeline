@@ -17,7 +17,7 @@ thisfile, pooldir, samp, dupfile, ref = sys.argv
 # IndelRealigner
 pool = op.basename(pooldir)
 parentdir = op.dirname(pooldir)
-aligndir  = op.join(pooldir,'realign')
+aligndir  = op.join(pooldir,'04_realign')
 listfile  = op.join(aligndir,'%s_realingment_targets.list' % samp)
 realbam   = op.join(aligndir,'%s_realigned_reads.bam' % samp)
 

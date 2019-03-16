@@ -27,7 +27,7 @@ def getfiles():
     global pooldir
     pooldir = op.join(parentdir,pool)
     samps   = pklload(op.join(parentdir,'poolsamps.pkl'))[pool]
-    found   = fs(op.join(pooldir,'realign'))
+    found   = fs(op.join(pooldir,'04_realign'))
     files   = dict((samp,f.replace(".bai",".bam")) for f in found for samp in samps if samp in f and f.endswith('.bai'))
     return (samps,files)
 

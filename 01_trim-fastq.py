@@ -39,7 +39,7 @@ for arg,path in [('pooldir',pooldir),('ref',ref)]:
 # make some dirs
 shdir     = op.join(pooldir,'shfiles')
 shtrimDIR = op.join(shdir,'01_trimmed_shfiles') # cmd.sh files
-trimDIR   = op.join(pooldir,'trimmed')       # outfiles
+trimDIR   = op.join(pooldir,'01_trimmed')       # outfiles
 for d in [shtrimDIR,trimDIR]:
     if not op.exists(d):
         os.makedirs(d)
