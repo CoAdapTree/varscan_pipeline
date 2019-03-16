@@ -82,7 +82,7 @@ def get_tables(files):
         os.system('echo %s' % msg)
         os.system('echo -e "\n%s" >> %s' % (msg,resfile)) # it's ok to write a msg, this will be the only time to try combine
         exit()
-    dfs = [remove_multiallelic(tablefile,thisfile,ret=True) for tablefile in tablefiles]
+    dfs = [remove_multiallelic(thisfile,tablefile,ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
     
     filename = op.join(pooldir,'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))        
