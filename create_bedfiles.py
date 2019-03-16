@@ -11,10 +11,6 @@ import sys, os, math
 from os import path as op
 ###
 
-### args
-thisfile, ref = sys.argv
-###
-
 def makedir(DIR):
     if not op.exists(DIR):
         os.makedirs(DIR)
@@ -59,7 +55,8 @@ def make_bedfiles():
             fcount += 1
     return fcount
 
-def main():    
+def main(thisfile,ref):
+    globals().update({'thisfile':thisfile,'ref':ref})
     # get sequence lengths
     make_lenfile()
     
@@ -69,4 +66,6 @@ def main():
     os.system('echo created %s bedfiles for %s' % (fcount,ref))
     
 if __name__ == "__main__":
-    main()
+    # args
+    thisfile, ref = sys.argv
+    main(thisfile,ref)

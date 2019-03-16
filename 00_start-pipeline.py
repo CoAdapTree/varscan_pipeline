@@ -1,5 +1,5 @@
 ### FIX
-# add in assertion to check for existence of ref
+# turn back on 01.py
 ###
 
 ### usage
@@ -19,7 +19,6 @@ def uni(mylist):
     return list(set(mylist))
 def luni(mylist):
     return len(uni(mylist))
-os.system('source $HOME/.bashrc')
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -78,21 +77,21 @@ if not sys.version_info[1] == 7:
         exit()
 
 ### check for assumed exports
-os.system('echo -e "\nchecking for exported variables"')
+print('\nchecking for exported variables')
 for var in ['SLURM_ACCOUNT','SBATCH_ACCOUNT','SALLOC_ACCOUNT',
             'CRISP_DIR','PYTHONPATH','SQUEUE_FORMAT']:
     try:
-        os.system('echo -e "\t%s = %s"' % (var,os.environ[var]))
+        print('\t%s = %s' % (var,os.environ[var]))
     except:
-        os.system('echo -e "\tcould not find %s in exported vars\nexiting %s"' % (var,thisfile))
+        print('\tcould not find %s in exported vars\nexiting %s' % (var,thisfile))
         exit()
 for exe in ['lofreq','activate']:
     if distutils.spawn.find_executable(exe) is None:
-        os.system('echo -e "\tcould not find %s in $PATH\nexiting %s"' % (exe,thisfile))
+        print('\tcould not find %s in $PATH\nexiting %s' % (exe,thisfile))
         if exe == 'activate':
-            os.system('echo "\t\t(the lack of activate means that the python env is not correctly installed)"')
+            print('\t\t(the lack of activate means that the python env is not correctly installed)')
         exit()
-os.system('echo -e "DONE!\n"')
+print('DONE!\n')
 
 ### read in the datatable, save rginfo for later
 if parentdir.endswith("/"):
@@ -119,7 +118,7 @@ for row in data.index:
                       'r2':data.loc[row,'adaptor_2']}
     pool    = data.loc[row,'pool_name']
     pooldir = op.join(parentdir,pool)
-    os.system('echo -e "{}\tsamp = {}\tpool = {}"'.format(row,samp,pool))
+    print('{}\tsamp = {}\tpool = {}'.format(row,samp,pool))
     if not pool in poolsamps:
         poolsamps[pool] = []
     if not samp in poolsamps[pool]:
@@ -161,11 +160,14 @@ pkldump(poolsamps,op.join(parentdir,'poolsamps.pkl'))
 pkldump(poolref,op.join(parentdir,'poolref.pkl'))
 pkldump(adaptors,op.join(parentdir,'adaptors.pkl'))
 
-### create bedfiles for crisp
-print("\ncreating CRISP bedfiles")
-for pool,ref in poolref.items():
-    os.system('python $HOME/pipeline/create_bedfiles.py %s' % ref)
-
+def create_crisp_bedfiles():
+    import create_bedfiles
+    ### create bedfiles for crisp
+    print("\ncreating CRISP bedfiles")
+    for pool,ref in poolref.items():
+        create_bedfiles.main('create_bedfiles.py',ref)
+        # os.system('python $HOME/pipeline/create_bedfiles.py %s' % ref)
+create_crisp_bedfiles()
 
 ### make pool dirs
 print ("\nmaking pool dirs")
@@ -201,11 +203,16 @@ for f in datafiles:
 print ('\nwriting sh files')
 for pooldir in pooldirs:
     pool = op.basename(pooldir)
-    os.system('echo -e "\npool = %s"' % pool)
+    print('\npool = %s' % pool)
     ref = poolref[pool]
-    os.system('python 01_trim-fastq.py %(pooldir)s %(ref)s' % locals())    
+    #os.system('python 01_trim-fastq.py %(pooldir)s %(ref)s' % locals())
 print('\n')
-### balance queue
-os.system('python $HOME/pipeline/balance_queue.py trim')
+
+def balance():
+    import balance_queue
+    ### balance queue
+    balance_queue.main('balance_queue.py','trim')
+    # os.system('python $HOME/pipeline/balance_queue.py trim')
+balance()
 
 

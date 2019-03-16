@@ -138,7 +138,8 @@ def givetotaker(giver,taker,accounts,bal):
                 break
     else:
         os.system('echo -e "\t giver sees that taker has enough, so giver is not giving"')
-def main():
+def main(thisfile,phase):
+    globals().update({'thisfile':thisfile,'phase':phase})
     # get the queue
     sq = getsq(phase)
 
@@ -166,7 +167,7 @@ if __name__ == '__main__':
     # args
     thisfile, phase = sys.argv
     
-    main()
+    main(thisfile,phase)
     
     
     
