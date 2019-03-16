@@ -4,7 +4,7 @@
 
 ### purpose
 # combine the bedfiles from parallelized crisp runs
-### 
+###
 
 ### usage
 # python combine_crisp.py /path/to/pooldir/
@@ -85,7 +85,7 @@ def get_tables(files):
     dfs = [remove_multiallelic(thisfile,tablefile,ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
     
-    filename = op.join(pooldir,'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))        
+    filename = op.join(pooldir,'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))
     df.to_csv(filename,sep='\t',index=False)
     
     os.system('echo combined crisp files to %s' % filename)
@@ -100,11 +100,10 @@ def main():
     # combine table files from output of VariantsToTable
     get_tables(files)
     
-    
+
 
 if __name__ == "__main__":
     # args
-    global thisfile, pooldir
     thisfile, pooldir = sys.argv
 
     main()
