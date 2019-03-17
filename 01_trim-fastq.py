@@ -24,9 +24,9 @@ def pklload(path):
 # args
 thisfile,pooldir,ref = sys.argv
 parentdir = op.dirname(pooldir)
-pool      = op.basename(pooldir)  
-f2samp    = pklload(op.join(parentdir,'f2samp.pkl'))
-adaptors  = pklload(op.join(parentdir,'adaptors.pkl'))
+pool = op.basename(pooldir)
+f2samp = pklload(op.join(parentdir,'f2samp.pkl'))
+adaptors = pklload(op.join(parentdir,'adaptors.pkl'))
 for arg,path in [('pooldir',pooldir),('ref',ref)]:
     try:
         assert op.exists(path)
@@ -49,8 +49,8 @@ mfile = op.join(parentdir,'msgs.txt')
 # get the fastq.gz files
 os.chdir(pooldir)
 gzfiles = [f for f in fs(pooldir) if 'R1' in f]
-lgz     = len(gzfiles)
-text    = 'found %(lgz)s R1 fastq.gz files in %(pooldir)s' % locals() 
+lgz = len(gzfiles)
+text = 'found %(lgz)s R1 fastq.gz files in %(pooldir)s' % locals()
 print (text)
 os.system('echo -e "%(text)s\n" >> %(mfile)s' % locals())
 
@@ -102,9 +102,9 @@ python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(ref)s %(r1out)s %
     shfiles.append(filE)
     with open(filE,'w') as o:
         o.write("%s" % text)
-    
+
 print ('shcount =',len(shfiles))
-print('shdir = ',shtrimDIR)        
+print('shdir = ',shtrimDIR)
 # qsub the files
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
