@@ -11,10 +11,7 @@
 #          helps speed up effective run time
 ###
 
-import os
-import sys
-import math
-import subprocess
+import os, shutil, sys, math, subprocess
 
 
 def announceacctlens(accounts, fin):
@@ -59,7 +56,7 @@ def getsq(grepping):
 
     # SQ = os.popen('''squeue -u %(user)s -t "PD" | grep %(phase)s | grep Priority''' % locals()).read().split("\n")
     # get the pending queue, without a header
-    sq = subprocess.Popen(['squeue', '-u', os.environ['USER'], '-h', '-t', 'PD'],
+    sq = subprocess.Popen([shutil.which('squeue'), '-u', os.environ['USER'], '-h', '-t', 'PD'],
                           stdout=subprocess.PIPE,
                           universal_newlines=True).communicate()[0].split("\n")
     sq = [s for s in sq if not s == '']
@@ -81,7 +78,7 @@ def getsq(grepping):
 
 
 def adjustjob(acct, jobid):
-    subprocess.Popen(['scontrol', 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
+    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
     # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
 
 

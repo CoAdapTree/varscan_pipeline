@@ -12,7 +12,7 @@
 ### 
 
 ### imports
-import sys, os, pickle, time, random, subprocess, balance_queue
+import sys, os, pickle, time, random, subprocess, balance_queue, shutil
 from os import path as op
 ###
 
@@ -132,7 +132,7 @@ rm %(logfile)s
 
 def sbatch(file):
     os.chdir(op.dirname(file))
-    subprocess.Popen(['sbatch',file],
+    subprocess.Popen([shutil.which('sbatch'),file],
                      stdout=subprocess.PIPE,
                      universal_newlines=True).communicate()[0].split("\n")
     # os.system('sbatch %s' % file)

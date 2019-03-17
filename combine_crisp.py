@@ -40,7 +40,8 @@ def checkpids(files,queue):
 def check_queue(files):
     user = os.environ['USER']
     # get jobs from the queue, except those that are closing
-    sq = os.popen('''squeue -u %(user)s | grep "crisp_bedfile" | grep -v "CG"''' % locals()).read().split("\n")
+    sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
+                                                                          os.environ['USER'])).read().split("\n")
     sq = [s for s in sq if not s == '']
     if len(sq) > 0:
         checksq(sq)
