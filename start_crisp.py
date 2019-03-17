@@ -8,7 +8,7 @@
 
 ### fix
 # uncomment sbatch!
-# assumes equal sample size across pools 
+# assumes equal sample size across pools
 ### 
 
 ### imports
@@ -175,7 +175,6 @@ def main():
 
 if __name__ == "__main__":
     ### args
-    global thisfile, parentdir, pool
     thisfile, parentdir, pool = sys.argv
     
     main()
