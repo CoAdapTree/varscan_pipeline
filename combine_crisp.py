@@ -13,7 +13,7 @@
 ### imports
 import os, sys, time, random, pandas as pd
 from os import path as op
-from coadaptree import fs, makedir
+from coadaptree import fs
 from balance_queue import checksq
 from filter_VariantsToTable import main as remove_multiallelic
 ###
@@ -43,7 +43,7 @@ def check_queue(files):
     sq = os.popen('''squeue -u %(user)s | grep "crisp_bedfile" | grep -v "CG"''' % locals()).read().split("\n")
     sq = [s for s in sq if not s == '']
     if len(sq) > 0:
-        checksq(sq, 'combine_crisp')
+        checksq(sq)
         checkpids(files, sq)
 
 def checkjobs():
@@ -86,7 +86,7 @@ def get_tables(files):
     dfs = [remove_multiallelic(thisfile,tablefile,ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
     
-    filename = op.join(pooldir,'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))        
+    filename = op.join(pooldir,'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))
     df.to_csv(filename, sep='\t', index=False)
     
     print('combined crisp files to %s' % filename)
