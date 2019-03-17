@@ -59,5 +59,8 @@ print('shdir =',shdir)
 os.system('sbatch %s' % file)
 
 # balance queue
-os.system('python $HOME/pipeline/balance_queue.py realign')
-os.system('python $HOME/pipeline/balance_queue.py mark')
+import balance_queue
+balance_queue.main('balance_queue.py','realign')
+balance_queue.main('balance_queue.py','mark')
+
+

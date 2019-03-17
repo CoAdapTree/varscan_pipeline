@@ -3,7 +3,7 @@
 ###
 
 ### usage
-# python 00_start-pipeline.py /path/to/folder/with/all/fastq/files/ 
+# python 00_start-pipeline.py /path/to/folder/with/all/fastq/files/
 ### 
 
 ### imports and defs
@@ -11,14 +11,22 @@ import os, sys, pickle, distutils.spawn, pandas as pd
 from os import path as op
 from collections import OrderedDict
 def fs(DIR):
-    return sorted([op.join(DIR,f) for f in os.listdir(DIR)])
-def pkldump(obj,f):
-    with open(f,'wb') as o:
-        pickle.dump(obj,o,protocol=pickle.HIGHEST_PROTOCOL)
+    return sorted([op.join(DIR, f) for f in os.listdir(DIR)])
+
+
+def pkldump(obj, f):
+    with open(f, 'wb') as o:
+        pickle.dump(obj, o, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def uni(mylist):
     return list(set(mylist))
+
+
 def luni(mylist):
     return len(uni(mylist))
+
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -39,9 +47,9 @@ print(bcolors.BOLD + bcolors.OKGREEN +
 ******************************************************************************************************
 
 
-               ___|                 \          |              _   __|               
+               ___|                 \          |              _   __|
               |       _ \            \     __  |   _      _      |      _|    _ \\    _ \\
-              |      (   | __|    /_  \   (    |  (   |  (  |    |     |      __/    __/ 
+              |      (   | __|    /_  \   (    |  (   |  (  |    |     |      __/    __/
                ___| \___/       _/    _\ \___/_| \__/_|   __/    |    _|    \___|  \___|
                                                          |
                                                          |
@@ -49,8 +57,8 @@ print(bcolors.BOLD + bcolors.OKGREEN +
                                       LoFreq and CRISP pipeline
 
 ******************************************************************************************************
-               
-               
+
+
 ''' + bcolors.ENDC)
 
 ### check python version
@@ -78,16 +86,16 @@ if not sys.version_info[1] == 7:
 
 ### check for assumed exports
 print('\nchecking for exported variables')
-for var in ['SLURM_ACCOUNT','SBATCH_ACCOUNT','SALLOC_ACCOUNT',
-            'CRISP_DIR','PYTHONPATH','SQUEUE_FORMAT']:
+for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
+            'CRISP_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
     try:
-        print('\t%s = %s' % (var,os.environ[var]))
-    except:
-        print('\tcould not find %s in exported vars\nexiting %s' % (var,thisfile))
+        print('\t%s = %s' % (var, os.environ[var]))
+    except KeyError:
+        print('\tcould not find %s in exported vars\nexiting %s' % (var, thisfile))
         exit()
-for exe in ['lofreq','activate']:
+for exe in ['lofreq', 'activate']:
     if distutils.spawn.find_executable(exe) is None:
-        print('\tcould not find %s in $PATH\nexiting %s' % (exe,thisfile))
+        print('\tcould not find %s in $PATH\nexiting %s' % (exe, thisfile))
         if exe == 'activate':
             print('\t\t(the lack of activate means that the python env is not correctly installed)')
         exit()
@@ -113,12 +121,12 @@ f2samp    = {} #key=f val=samp
 f2pool    = {} #key=f val=pool
 adaptors  = OrderedDict() #key=samp val={'r1','r2'} val=adaptor
 for row in data.index:
-    samp    = data.loc[row,'sample_name']
-    adaptors[samp] = {'r1':data.loc[row,'adaptor_1'],
-                      'r2':data.loc[row,'adaptor_2']}
-    pool    = data.loc[row,'pool_name']
-    pooldir = op.join(parentdir,pool)
-    print('{}\tsamp = {}\tpool = {}'.format(row,samp,pool))
+    samp = data.loc[row, 'sample_name']
+    adaptors[samp] = {'r1': data.loc[row, 'adaptor_1'],
+                      'r2': data.loc[row, 'adaptor_2']}
+    pool = data.loc[row, 'pool_name']
+    pooldir = op.join(parentdir, pool)
+    print('{}\tsamp = {}\tpool = {}'.format(row, samp, pool))
     if not pool in poolsamps:
         poolsamps[pool] = []
     if not samp in poolsamps[pool]:
@@ -186,11 +194,9 @@ files = [f for f in fs(parentdir) if 'fastq' in f and 'md5' not in f]
 datafiles = data['file_name_r1'].tolist()
 [datafiles.append(x) for x in data['file_name_r2'].tolist()]
 for f in datafiles:
-    try:
+    src = op.join(parentdir,f)
+    if not op.exists(src):
         # make sure file in datatable exists
-        src = op.join(parentdir,f)
-        assert op.exists(src)
-    except AssertionError as e:
         print ("could not find %s in %s\nmake sure file_name in datatable is its basename" % (f,parentdir))
         sys.exit(1)
     pooldir = op.join(parentdir,f2pool[f])

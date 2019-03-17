@@ -12,7 +12,7 @@
 ### 
 
 ### imports
-import sys, os, pickle, time, random
+import sys, os, pickle, time, random, subprocess, balance_queue
 from os import path as op
 ###
 
@@ -20,8 +20,10 @@ def pklload(path):
     pkl = pickle.load(open(path,'rb'))
     return pkl
 
+
 def fs(DIR):
     return sorted([op.join(DIR,f) for f in os.listdir(DIR)])
+
 
 def getfiles():
     global pooldir
@@ -29,7 +31,8 @@ def getfiles():
     samps   = pklload(op.join(parentdir,'poolsamps.pkl'))[pool]
     found   = fs(op.join(pooldir,'04_realign'))
     files   = dict((samp,f.replace(".bai",".bam")) for f in found for samp in samps if samp in f and f.endswith('.bai'))
-    return (samps,files)
+    return samps, files
+
 
 def checkfiles():
     # get the list of file names
@@ -39,15 +42,17 @@ def checkfiles():
         text = ''
         for missing in unmade:
             text = text + "\t%s\n" % missing
-        os.system('echo "still missing files from these samps:\n%s\n%s is exiting\n"' % (text,thisfile))
+        print("still missing files from these samps:\n%s\n%s is exiting\n" % (text,thisfile))
         exit()
     return list(files.values())
+
 
 def makedir(DIR):
     if not op.exists(DIR):
         os.makedirs(DIR)
     return DIR
-        
+
+
 def create_reservation(exitneeded = False):
     global crispdir
     crispdir = makedir(op.join(pooldir,'shfiles/crisp'))
@@ -63,27 +68,29 @@ def create_reservation(exitneeded = False):
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded == True:
         # just in case two jobs try at nearly the same time
-        os.system('echo another job has already created start_crisp.sh for %s' % pool)
+        print('another job has already created start_crisp.sh for %s' % pool)
         exit()
-        
+
+
 def getcmd(files,bam_file_list,bedfile):
-    locals().update({'pool':pool})
+    locals().update({'pool': pool})
     bams = ' --bam '.join(files)
-    num  = bedfile.split("_")[-1].split(".bed")[0]
-    ref  = pklload(op.join(parentdir,'poolref.pkl'))[pool]
-    outdir   = makedir(op.join(pooldir,'crisp'))
-    outfile  = op.join(outdir,'%(pool)s_crisp_bedfile_%(num)s.vcf' % locals())
+    num = bedfile.split("_")[-1].split(".bed")[0]
+    ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
+    outdir = makedir(op.join(pooldir, 'crisp'))
+    outfile = op.join(outdir,'%(pool)s_crisp_bedfile_%(num)s.vcf' % locals())
     poolsize = pklload(op.join(parentdir,'ploidy.pkl'))[pool]
-    logfile  = outfile.replace(".vcf",".log") 
+    logfile = outfile.replace(".vcf", ".log")
     return ('''$CRISP_DIR/CRISP --bam %(bams)s --ref %(ref)s --VCF %(outfile)s \
 --poolsize %(poolsize)s --mbq 20 --minc 5 --bed %(bedfile)s > %(logfile)s
 ''' % locals(),
             num,outfile,logfile)
 
+
 def make_sh(files,bedfile):
-    locals().update({'pool':pool,'pooldir':pooldir})
-    bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt' # replace with function if pools unequal
-    cmd, num, outfile, logfile = getcmd(files,bam_file_list,bedfile)
+    locals().update({'pool': pool, 'pooldir': pooldir})
+    bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
+    cmd, num, outfile, logfile = getcmd(files, bam_file_list,bedfile)
     tablefile = outfile.replace(".vcf","_table.txt")
     text = '''#!/bin/bash
 #SBATCH --ntasks=1
@@ -122,22 +129,29 @@ rm %(logfile)s
         o.write("%s" % text)
     return file
 
+
 def sbatch(file):
     os.chdir(op.dirname(file))
-    os.system('sbatch %s' % file)
-    os.system('echo "sbatched %s"' % file)
-    
+    subprocess.Popen(['sbatch',file],
+                     stdout=subprocess.PIPE,
+                     universal_newlines=True).communicate()[0].split("\n")
+    # os.system('sbatch %s' % file)
+    print("sbatched %s" % file)
+
+
 def get_bedfiles():
     ref = pklload(op.join(parentdir,'poolref.pkl'))[pool]
     beddir = op.join(op.dirname(ref),'bedfiles_%s' % op.basename(ref).replace(".fasta",""))
     return [f for f in fs(beddir) if f.endswith('.bed')]
-        
+
+
 def create_sh(files):
     bedfiles = get_bedfiles()
     for bedfile in bedfiles:
         file = make_sh(files,bedfile)
         sbatch(file)
-    os.system('echo "done sbatching, exiting %s"' % thisfile)
+    print("done sbatching, exiting %s" % thisfile)
+
 
 def main():
     """Start CRISP if it's appropriate to do so"""
@@ -152,11 +166,13 @@ def main():
     create_sh(files)
     
     # balance queue
-    os.system('python $HOME/pipeline/balance_queue.py crisp')
+    balance_queue.main('balance_queue.py', 'crisp')
+    # os.system('python $HOME/pipeline/balance_queue.py crisp')
     
     # cancel reservation
         # I don't think I need to do this unless I find that jobs are dying unexpectedly
-    
+
+
 if __name__ == "__main__":
     ### args
     global thisfile, parentdir, pool

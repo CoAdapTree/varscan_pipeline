@@ -88,14 +88,15 @@ python $HOME/pipeline/03_mark_build.py %(sortfile)s %(pooldir)s
 ''' % locals()
 
 # create shfile
-qsubfile = op.join(bwashdir,'bwa_%s.sh' % samp) 
-with open(qsubfile,'w') as o:
+qsubfile = op.join(bwashdir, 'bwa_%s.sh' % samp)
+with open(qsubfile, 'w') as o:
     o.write("%s" % text)
 
 # sbatch file
 os.chdir(bwashdir)
-print('shdir = ',shdir)
+print('shdir = ', shdir)
 os.system("sbatch %s" % qsubfile)
 
-os.system('python $HOME/pipeline/balance_queue.py bwa')
-os.system('python $HOME/pipeline/balance_queue.py trim')
+import balance_queue
+balance_queue.main('balance_queue.py', 'bwa')
+balance_queue.main('balance_queue.py', 'trim')

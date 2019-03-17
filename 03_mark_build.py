@@ -6,8 +6,7 @@
 # 03_mark_build.py /path/to/sortfile /path/to/pooldir/
 ###
 
-import sys 
-import os
+import sys, os
 from os import path as op
 from coadaptree import makedir
 

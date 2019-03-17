@@ -3,7 +3,7 @@
 ###
 
 ### execution
-# python 01a_trim-fastq.py /path/to/pooldir /path/to/ref.fa 
+# python 01a_trim-fastq.py /path/to/pooldir /path/to/ref.fa
 ###
 
 ### imports
@@ -18,7 +18,6 @@ def fs(DIR):
 def pklload(path):
     pkl = pickle.load(open(path,'rb'))
     return pkl
-os.system('source $HOME/.bashrc')
 ###
 
 
@@ -43,7 +42,7 @@ trimDIR   = op.join(pooldir,'01_trimmed')       # outfiles
 for d in [shtrimDIR,trimDIR]:
     if not op.exists(d):
         os.makedirs(d)
-mfile = op.join(parentdir,'msgs.txt')     
+mfile = op.join(parentdir,'msgs.txt')
 ###
 
       
@@ -79,7 +78,7 @@ for r1,r2 in seq_pairs:
     html = r1out.replace("R1","").replace(".fastq.gz","_R1_R2_stats")
     json = r1out.replace("R1","").replace(".fastq.gz","_R1_R2")
     logfile = r1out.replace("R1","").replace(".fastq.gz","_R1_R2_stats.log")
-    
+
     text = '''#!/bin/bash
 #SBATCH --job-name=%(pool)s-%(samp)s_trim
 #SBATCH --time=02:59:00
