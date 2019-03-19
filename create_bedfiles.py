@@ -69,7 +69,7 @@ def main(thisfile, ref):
     # spread contigs across 15 bed files
     fcount = make_bedfiles()
 
-    os.system('echo created %s bedfiles for %s' % (fcount, ref))
+    print('created %s bedfiles for %s' % (fcount, ref))
 
 
 if __name__ == "__main__":
