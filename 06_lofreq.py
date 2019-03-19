@@ -13,16 +13,17 @@
 
 import sys
 import os
+import balance_queue
 from os import path as op
 from coadaptree import makedir
 
 thisfile, pooldir, samp, ref, realbam = sys.argv
 
 
-#LoFreq
-lofdir   = op.join(pooldir,'lofreq')
-lofile   = op.join(lofdir,'%s_lofreq.vcf.gz' % samp)
-lofout   = lofile.replace(".vcf.gz","_table.txt")
+# LoFreq
+lofdir = op.join(pooldir, 'lofreq')
+lofile = op.join(lofdir, '%s_lofreq.vcf.gz' % samp)
+lofout = lofile.replace(".vcf.gz", "_table.txt")
 
 
 text = '''#!/bin/bash
@@ -56,15 +57,15 @@ python $HOME/pipeline/filter_VariantsToTable.py %(lofout)s
 ''' % locals()
 
 
-shdir = op.join(pooldir,'shfiles/06_lofreq_shfiles')
-for d in [lofdir,shdir]:
+shdir = op.join(pooldir, 'shfiles/06_lofreq_shfiles')
+for d in [lofdir, shdir]:
     makedir(d)
-file = op.join(shdir,'lofreq_%(samp)s.sh' % locals())
-with open(file,'w') as o:
+file = op.join(shdir, 'lofreq_%(samp)s.sh' % locals())
+with open(file, 'w') as o:
     o.write("%s" % text)
 
 os.chdir(shdir)
-print('shdir = ',shdir)
+print('shdir = ', shdir)
 os.system('sbatch %s' % file)
 
 balance_queue.main('balance_queue.py', 'lofreq')
