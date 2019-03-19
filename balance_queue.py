@@ -167,7 +167,7 @@ def gettaker(accounts):
         if not len(keys) == 1:
             print('assertion error')
         giver = keys[0]
-    taker = list({['def-saitken', 'def-yeaman']}.symmetric_difference(set(giver)))[0]
+    taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference(set(giver)))[0]
     return giver, taker
 
 
