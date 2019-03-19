@@ -38,10 +38,31 @@ def pklload(path):
     return pkl
 
 
-def get_email_info(parentdir):
+def get_email_info(parentdir, stage):
     from coadaptree import pklload
     pkl = op.join(parentdir, 'email_opts.pkl')
-    return pklload(pkl)
+    if op.exists(pkl):
+        #         email_info = pklload(pkl)
+        email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}
+
+        # make text
+        email_text = '''#SBATCH --mail-user=%s''' % email_info['email']
+        # first determine if it's only when the pipeline finishes
+        if email_info['opts'] == ['pipeline-finish'] and stage is not 'final':
+            # if default opt, but it's not the final stage
+            return ''
+        elif email_info['opts'] == ['pipeline-finish'] and stage is 'final':
+            email_text = email_text + '\n' + "#SBATCH --mail-type=END"
+            return email_text
+        # now for stages earlier than final
+        else:
+            options = [opt.upper() for opt in email_info['opts'] if opt is not 'pipeline-finish']
+            for opt in options:
+                email_text = email_text + '\n#SBATCH --mail-type=%s' % opt
+        return email_text
+    else:
+        # no email options
+        return ''
 
 
 def uni(mylist):
