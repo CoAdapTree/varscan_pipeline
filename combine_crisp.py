@@ -14,7 +14,7 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs
-from balance_queue import checksq, getsq
+from balance_queue import checksq
 from filter_VariantsToTable import main as remove_multiallelic
 ###
 
@@ -40,8 +40,8 @@ def checkpids(files, queue):
 def check_queue(files):
     # get jobs from the queue, except those that are closing
     # sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
-    from balance_queue import get_sq
-    sq = get_sq(grepping = ['crisp_bedfile', 'R', 'PD']) # running or pending jobs with crisp_bedfile in name
+    from balance_queue import getsq
+    sq = getsq(grepping = ['crisp_bedfile', 'R', 'PD'])  # running or pending jobs with crisp_bedfile in name
 
     if len(sq) > 0:
         checksq(sq)
@@ -109,4 +109,3 @@ if __name__ == "__main__":
     thisfile, pooldir = sys.argv
 
     main()
-    

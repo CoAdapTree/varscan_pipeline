@@ -191,7 +191,7 @@ def givetotaker(giver,taker,accounts,bal):
 def main(thisfile,phase):
     globals().update({'thisfile': thisfile, 'phase': phase})
     # get the queue
-    sq = getsq(grepping = [phase,'Priority'], status = ['PD'])
+    sq = getsq(grepping = [phase,'Priority', 'PD'])
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
