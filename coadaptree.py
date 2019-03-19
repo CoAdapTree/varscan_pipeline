@@ -43,8 +43,8 @@ def get_email_info(parentdir, stage):
     from coadaptree import pklload
     pkl = op.join(parentdir, 'email_opts.pkl')
     if op.exists(pkl):
-        #         email_info = pklload(pkl)
-        email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}
+        email_info = pklload(pkl)
+        #email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}
 
         # make text
         email_text = '''#SBATCH --mail-user=%s''' % email_info['email']
@@ -52,7 +52,7 @@ def get_email_info(parentdir, stage):
         if email_info['opts'] == ['pipeline-finish'] and stage is not 'final':
             # if default opt, but it's not the final stage
             return ''
-        elif email_info['opts'] == ['pipeline-finish'] and stage is 'final':
+        elif 'pipeline-finish' in email_info['opts'] and stage is 'final':
             email_text = email_text + '\n' + "#SBATCH --mail-type=END"
             return email_text
         # now for stages earlier than final
