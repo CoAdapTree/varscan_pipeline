@@ -10,7 +10,7 @@
 
 import os, sys, balance_queue, subprocess, shutil
 from os import path as op
-from coadaptree import makedir
+from coadaptree import makedir, get_email_info
 
 
 thisfile, pooldir, samp, dupfile, ref = sys.argv
@@ -23,15 +23,14 @@ aligndir = op.join(pooldir, '04_realign')
 listfile = op.join(aligndir, '%s_realingment_targets.list' % samp)
 realbam = op.join(aligndir, '%s_realigned_reads.bam' % samp)
 
-
+email_text = get_email_info(parentdir, '05')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=6000M
 #SBATCH --ntasks=1
 #SBATCH --job-name=indelRealign_%(samp)s
 #SBATCH --output=indelRealign_%(samp)s_%%j.out 
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
 
 module load gatk/3.8
 java -Djava.io.tmpdir=$SLURM_TMPDIR -Xmx8g -jar $EBROOTGATK/GenomeAnalysisTK.jar \

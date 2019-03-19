@@ -10,7 +10,7 @@
 
 import os, sys, balance_queue, subprocess, shutil
 from os import path as op
-from coadaptree import makedir, pklload
+from coadaptree import makedir, pklload, get_email_info
 
 thisfile, pooldir, samp, dupfile = sys.argv
 
@@ -23,6 +23,7 @@ parentdir = op.dirname(pooldir)
 pool = op.basename(pooldir)
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 
+email_text = get_email_info(parentdir, '04')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=6000M
@@ -31,8 +32,7 @@ text = '''#!/bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=realign_%(samp)s
 #SBATCH --output=realign_%(samp)s_%%j.out 
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
 
 # realign using the GATK
 module load gatk/3.8

@@ -13,7 +13,7 @@
 
 import sys, os, balance_queue, subprocess, shutil
 from os import path as op
-from coadaptree import makedir
+from coadaptree import makedir, get_email_info
 
 thisfile, pooldir, samp, ref, realbam = sys.argv
 
@@ -23,7 +23,7 @@ lofdir = op.join(pooldir, 'lofreq')
 lofile = op.join(lofdir, '%s_lofreq.vcf.gz' % samp)
 lofout = lofile.replace(".vcf.gz", "_table.txt")
 
-
+email_text = get_email_info(parentdir, '06')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=6000M
@@ -32,8 +32,7 @@ text = '''#!/bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=lofreq_%(samp)s
 #SBATCH --output=lofreq_%(samp)s_%%j.out 
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
 
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"

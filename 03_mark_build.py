@@ -10,7 +10,7 @@
 
 import sys, os, balance_queue, subprocess, shutil
 from os import path as op
-from coadaptree import makedir
+from coadaptree import makedir, get_email_info
 
 thisfile, sortfile, pooldir = sys.argv
 
@@ -24,14 +24,14 @@ dupflag = dupfile.replace(".bam", ".bam.flagstats")
 dupstat = op.join(dupdir, "%s_rd_dupstat.txt" % samp)
 
 # create sh file
+email_text = get_email_info(op.dirname(pooldir), '03')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=30000M
 #SBATCH --ntasks=1
 #SBATCH --job-name=mark_%(samp)s
 #SBATCH --output=mark_%(samp)s_%%j.out 
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
 
 # remove dups
 module load picard/2.18.9

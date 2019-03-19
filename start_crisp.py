@@ -13,7 +13,7 @@
 """
 
 import sys, os, time, random, subprocess, balance_queue, shutil
-from coadaptree import makedir, fs, pklload
+from coadaptree import makedir, fs, pklload, get_email_info
 from os import path as op
 
 
@@ -78,12 +78,14 @@ def make_sh(files, bedfile):
     bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
     cmd, num, outfile, logfile = getcmd(files, bam_file_list, bedfile)
     tablefile = outfile.replace(".vcf", "_table.txt")
+    email_text = get_email_info(parentdir, 'crisp')
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-crisp_bedfile_{num}
 #SBATCH --time=11:59:00
 #SBATCH --mem=4000M
 #SBATCH --output={pool}-crisp_bedfile_{num}_%%j.out
+{email_text}
 
 source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
