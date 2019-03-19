@@ -38,6 +38,12 @@ def pklload(path):
     return pkl
 
 
+def get_email_info(parentdir):
+    from coadaptree import pklload
+    pkl = op.join(parentdir, email_opts.pkl)
+    return pklload(pkl)
+
+
 def uni(mylist):
     return list(set(mylist))
 
