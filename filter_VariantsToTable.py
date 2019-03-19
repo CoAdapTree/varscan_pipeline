@@ -15,7 +15,7 @@ from collections import Counter
 
 
 def main(thisfile, tablefile, ret=False):
-    os.system('echo starting %s for %s' % (op.basename(thisfile), tablefile))
+    print('starting %s for %s' % (op.basename(thisfile), tablefile))
 
     # load the data, create a column with CHROM-POS for locusID
     df = pd.read_csv(tablefile, sep='\t')
