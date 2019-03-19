@@ -174,10 +174,12 @@ for p in pools:
 print('\nchecking for existance of fastq files in datatable.txt')
 files = [f for f in fs(parentdir) if 'fastq' in f and 'md5' not in f]
 datafiles = data['file_name_r1'].tolist()
-[datafiles.append(x) for x in data['file_name_r2'].tolist()]
+for x in data['file_name_r2'].tolist():
+    datafiles.append(x)
+
 for f in datafiles:
     src = op.join(parentdir, f)
-    if not op.exists(src):
+    if not op.exists(src)   :
         # make sure file in datatable exists
         print("could not find %s in %s\nmake sure file_name in datatable is its basename" % (f, parentdir))
         sys.exit(1)
