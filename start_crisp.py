@@ -53,7 +53,7 @@ def create_reservation(exitneeded=False):
     time.sleep(random.random()*15)
     with open(file, 'r') as o:
         fjobid = o.read().split()[0]
-    if not fjobid == jobid or exitneeded == True:
+    if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
         print('another job has already created start_crisp.sh for %s' % pool)
         exit()
@@ -79,38 +79,38 @@ def make_sh(files, bedfile):
     bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
     cmd, num, outfile, logfile = getcmd(files, bam_file_list, bedfile)
     tablefile = outfile.replace(".vcf", "_table.txt")
-    text = '''#!/bin/bash
+    text = f'''#!/bin/bash
 #SBATCH --ntasks=1
-#SBATCH --job-name=%(pool)s-crisp_bedfile_%(num)s
+#SBATCH --job-name={pool}-crisp_bedfile_{num}
 #SBATCH --time=11:59:00
 #SBATCH --mem=4000M
-#SBATCH --output=%(pool)s-crisp_bedfile_%(num)s_%%j.out
+#SBATCH --output={pool}-crisp_bedfile_{num}_%%j.out
 
 source $HOME/.bashrc
-export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
+export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 
 # run CRISP (commit 60966e7)
-%(cmd)s
+{cmd}
 
 # if any other crisp jobs are hanging due to priority, change the account
 python $HOME/pipeline/balance_queue.py crisp
 
 # vcf -> table (multiallelic to multiple lines, filtered in combine_crisp.py
 module load gatk/4.1.0.0
-gatk VariantsToTable --variant %(outfile)s -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
+gatk VariantsToTable --variant {outfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP -F HP -F MQS -F TYPE -F FILTER \
--O %(tablefile)s --split-multi-allelic
+-O {tablefile} --split-multi-allelic
 module unload gatk
 
 # combine crisp files
-python $HOME/pipeline/combine_crisp.py %(pooldir)s
+python $HOME/pipeline/combine_crisp.py {pooldir}
 
 # gzip outfiles to save space
-cd $(dirname %(outfile)s)
-gzip %(outfile)s
-rm %(logfile)s
+cd $(dirname {outfile})
+gzip {outfile}
+rm {logfile}
 
-''' % locals()
+'''
     file = op.join(crispdir, '%(pool)s-crisp_bedfile_%(num)s.sh' % locals())
     with open(file, 'w') as o:
         o.write("%s" % text)
