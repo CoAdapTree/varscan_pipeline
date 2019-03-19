@@ -36,9 +36,7 @@ def checksq(sq):
             if 'socket' in s.lower():
                 print("socket in sq return, exiting %(thisfile)s" % globals())
                 exitneeded = True
-            try:
-                assert int(s.split()[0]) == float(s.split()[0])
-            except AssertionError:
+            if not int(s.split()[0]) == float(s.split()[0]):
                 print("could not assert int == float, %s" % (s[0]))
                 exitneeded = True
     if exitneeded is True:
