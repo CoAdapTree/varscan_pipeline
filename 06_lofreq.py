@@ -23,7 +23,7 @@ lofdir = op.join(pooldir, 'lofreq')
 lofile = op.join(lofdir, '%s_lofreq.vcf.gz' % samp)
 lofout = lofile.replace(".vcf.gz", "_table.txt")
 
-email_text = get_email_info(parentdir, '06')
+email_text = get_email_info(op.dirname(pooldir), '06')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=6000M
