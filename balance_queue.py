@@ -71,7 +71,7 @@ def getsq(grepping):
         for grep in grepping:
             for q in sq:
                 splits = q.split()
-                if 'CG' not in splits():  # grep -v 'CG'
+                if 'CG' not in splits:  # grep -v 'CG'
                     for split in splits:
                         if grep.lower() in split.lower():
                             grepped.append(tuple(splits))
