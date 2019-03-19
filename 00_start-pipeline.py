@@ -204,6 +204,8 @@ def get_pars():
     if args.email:
         if not '@' in args.email:
             parser.error('email address does not have an "@" symbol in it, please check input')
+        if 'all' in args.email_options:
+            args.email_options = ['all']
         # save email
         epkl = {'email': args.email,
                 'opts': args.email_options}
