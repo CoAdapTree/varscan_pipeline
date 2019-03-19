@@ -36,14 +36,17 @@ mfile = op.join(parentdir, 'msgs.txt')
 ###
 
 
+def writetomfile(text):
+    with open(mfile, 'a') as m:
+        m.write("%s\n" % text)
+
 # get the fastq.gz files
 os.chdir(pooldir)
 gzfiles = [f for f in fs(pooldir) if 'R1' in f]
 lgz = len(gzfiles)
 text = 'found %(lgz)s R1 fastq.gz files in %(pooldir)s' % locals()
 print(text)
-with open(mfile, 'a') as m:
-    m.write(text)
+writetomfile(text)
 
 # match seq pairs, alert if pair not found
 seq_pairs = []
@@ -53,10 +56,11 @@ for f in gzfiles:
         seq_pairs.append((op.abspath(f), op.abspath(read2)))
     else:
         text = '\nWARNING: no pair for %s\n' % f
-        os.system('echo -e "%(text)s" >> %(mfile)s' % locals())
+        writetomfile(text)
 
 print("found %s R1/R2 seq pairs" % str(len(seq_pairs)))
-os.system('echo -e "found %s R1/R2 seq pairs\n" >> %s' % (len(seq_pairs), mfile))
+text = "found %s R1/R2 seq pairs\n"
+writetomfile(text)
 
 # write sh files
 shfiles = []
