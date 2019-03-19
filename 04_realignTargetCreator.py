@@ -1,3 +1,4 @@
+"""
 ### purpose
 # use the GATK to create target intervals for realignment around indels
 ###
@@ -5,21 +6,22 @@
 ### usage
 # python 04_realignTargetCreator.py /path/to/pooldir/ sampID
 ###
+"""
 
-import os, pickle, sys
+import os, sys, balance_queue
 from os import path as op
 from coadaptree import makedir, pklload
 
 thisfile, pooldir, samp, dupfile = sys.argv
 
 # RealignerTargetCreator
-aligndir = op.join(pooldir,'04_realign')
-listfile = op.join(aligndir,'%s_realingment_targets.list' % samp)
+aligndir = op.join(pooldir, '04_realign')
+listfile = op.join(aligndir, '%s_realingment_targets.list' % samp)
 
 # get ref
 parentdir = op.dirname(pooldir)
 pool = op.basename(pooldir)
-ref  = pklload(op.join(parentdir,'poolref.pkl'))[pool]
+ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
@@ -46,18 +48,18 @@ python $HOME/pipeline/05_indelRealign_crisp.py %(pooldir)s %(samp)s %(dupfile)s 
 ''' % locals()
 
 # create shdir and shfile
-shdir = op.join(pooldir,'shfiles/04_realignTarget_shfiles')
-for d in [aligndir,shdir]:
+shdir = op.join(pooldir, 'shfiles/04_realignTarget_shfiles')
+for d in [aligndir, shdir]:
     makedir(d)
-file = op.join(shdir,'realign_%(samp)s.sh' % locals())
-with open(file,'w') as o:
+file = op.join(shdir, 'realign_%(samp)s.sh' % locals())
+with open(file, 'w') as o:
     o.write("%s" % text)
 
 # sbatch file
 os.chdir(shdir)
-print('shdir =',shdir)
+print('shdir =', shdir)
 os.system('sbatch %s' % file)
 
 # balance queue
-os.system('python $HOME/pipeline/balance_queue.py realign')
-os.system('python $HOME/pipeline/balance_queue.py mark')
+balance_queue.main('balance_queue.py', 'realign')
+balance_queue.main('balance_queue.py', 'mark')

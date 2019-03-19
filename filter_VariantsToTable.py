@@ -1,3 +1,4 @@
+"""
 ### purpose
 # remove multiallelic sites from VariantsToTable output
 ###
@@ -5,17 +6,20 @@
 ### usage
 # python filter_VariantsToTable.py VariantsToTable_outfile.txt
 ###
+"""
 
-import os, sys, pandas as pd
+import os, sys
+import pandas as pd
 from os import path as op
 from collections import Counter
 
-def main(thisfile,tablefile,ret=False):
-    os.system('echo starting %s for %s' % (op.basename(thisfile),tablefile))
+
+def main(thisfile, tablefile, ret=False):
+    os.system('echo starting %s for %s' % (op.basename(thisfile), tablefile))
 
     # load the data, create a column with CHROM-POS for locusID
-    df = pd.read_csv(tablefile,sep='\t')
-    df['locus'] = ["%s-%s" % (contig,pos) for (contig,pos) in zip(df['CHROM'].tolist(),df['POS'].tolist())]
+    df = pd.read_csv(tablefile, sep='\t')
+    df['locus'] = ["%s-%s" % (contig, pos) for (contig, pos) in zip(df['CHROM'].tolist(), df['POS'].tolist())]
 
     # determine which loci are multiallelic
     loccount = Counter()
@@ -27,15 +31,15 @@ def main(thisfile,tablefile,ret=False):
     df = df[df['locus'].isin(goodloci)].copy()
     df = df[df['TYPE'] == 'SNP'].copy()
     
-    if ret == True:
+    if ret is True:
         return df
     else:
         # save
-        df.to_csv(tablefile.replace(".txt","_filtered.txt"),index=False,sep='\t')
-        os.system('echo finished filtering VariantsToTable file: %s' % tablefile)
+        df.to_csv(tablefile.replace(".txt", "_filtered.txt"), index=False, sep='\t')
+        print('finished filtering VariantsToTable file: %s' % tablefile)
 
 
 if __name__ == '__main__':
     thisfile, tablefile = sys.argv
-    
-    main(thisfile,tablefile)
+
+    main(thisfile, tablefile)
