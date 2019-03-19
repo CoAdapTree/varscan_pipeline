@@ -12,43 +12,43 @@
 # export path to lofreq in $HOME/.bashrc
 ###
 
-import sys, os
+import sys, os, balance_queue
 from os import path as op
-import pickle
+from coadaptree import pklload
 from coadaptree import makedir
 
 # get argument inputs
-thisfile,ref,r1out,r2out,shdir,samp = sys.argv
+thisfile, ref, r1out, r2out, shdir, samp = sys.argv
 
-### create dirs and filenames
-bwashdir  = op.join(shdir,'02_bwa_shfiles')
-pooldir   = op.dirname(shdir)
+# create dirs and filenames
+bwashdir = op.join(shdir, '02_bwa_shfiles')
+pooldir = op.dirname(shdir)
 parentdir = op.dirname(pooldir)
 
 # get rginfo
-rginfo  = pickle.load(open(op.join(parentdir,'rginfo.pkl'),'rb'))
-print('pooldir=',pooldir)
-print("RG=",rginfo[samp])
+rginfo = pklload(op.join(parentdir, 'rginfo.pkl'))
+print('pooldir = ', pooldir)
+print("RG = ", rginfo[samp])
 rglb = rginfo[samp]['rglb']
 rgpl = rginfo[samp]['rgpl']
 rgsm = rginfo[samp]['rgsm']
 
-#bwa: fastq -> sam
-sam      = op.basename(r1out).replace("R1_trimmed.fastq.gz","R1R2_trimmed.sam")
-samdir   = op.join(pooldir,'02a_samfiles')
-samfile  = op.join(samdir,sam)
-#samtools view: sam -> bam
-bam      = op.basename(samfile).replace('.sam','.bam')
-bamdir   = op.join(pooldir,'02b_bamfiles')
-bamfile  = op.join(bamdir,bam)
-#samtools sort: bamfile -> sortfile
-sort     = op.basename(bamfile).replace('.bam','_sorted.bam')
-sortdir  = op.join(pooldir,'02c_sorted_bamfiles')
-sortfile = op.join(sortdir,sort)
-flagfile = op.join(sortdir,sort.replace('.bam','.bam.flagstats'))
+# bwa: fastq -> sam
+sam = op.basename(r1out).replace("R1_trimmed.fastq.gz", "R1R2_trimmed.sam")
+samdir = op.join(pooldir, '02a_samfiles')
+samfile = op.join(samdir, sam)
+# samtools view: sam -> bam
+bam = op.basename(samfile).replace('.sam', '.bam')
+bamdir = op.join(pooldir, '02b_bamfiles')
+bamfile = op.join(bamdir, bam)
+# samtools sort: bamfile -> sortfile
+sort = op.basename(bamfile).replace('.bam', '_sorted.bam')
+sortdir = op.join(pooldir, '02c_sorted_bamfiles')
+sortfile = op.join(sortdir, sort)
+flagfile = op.join(sortdir, sort.replace('.bam', '.bam.flagstats'))
 
 
-for d in [bwashdir,samdir,bamdir,sortdir]:
+for d in [bwashdir, samdir, bamdir, sortdir]:
     makedir(d)
 
 # send it off
@@ -96,6 +96,5 @@ os.chdir(bwashdir)
 print('shdir = ', shdir)
 os.system("sbatch %s" % qsubfile)
 
-import balance_queue
 balance_queue.main('balance_queue.py', 'bwa')
 balance_queue.main('balance_queue.py', 'trim')

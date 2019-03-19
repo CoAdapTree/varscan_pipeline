@@ -9,7 +9,7 @@
 ### fix
 # uncomment sbatch!
 # assumes equal sample size across pools
-### 
+###
 
 ### imports
 import sys, os, pickle, time, random, subprocess, balance_queue, shutil
@@ -91,7 +91,7 @@ def make_sh(files,bedfile):
     locals().update({'pool': pool, 'pooldir': pooldir})
     bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
     cmd, num, outfile, logfile = getcmd(files, bam_file_list,bedfile)
-    tablefile = outfile.replace(".vcf","_table.txt")
+    tablefile = outfile.replace(".vcf", "_table.txt")
     text = '''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name=%(pool)s-crisp_bedfile_%(num)s
@@ -178,4 +178,3 @@ if __name__ == "__main__":
     thisfile, parentdir, pool = sys.argv
     
     main()
-        

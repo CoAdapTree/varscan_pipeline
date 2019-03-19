@@ -1,3 +1,4 @@
+"""
 ### purpose
 # use the GATK to realign around indels
 ###
@@ -5,8 +6,9 @@
 ### usage
 # python 05_indelRealign_crisp.py /path/to/pooldir/ sampID
 ###
+"""
 
-import os, sys
+import os, sys, balance_queue
 from os import path as op
 from coadaptree import makedir
 
@@ -17,9 +19,9 @@ thisfile, pooldir, samp, dupfile, ref = sys.argv
 # IndelRealigner
 pool = op.basename(pooldir)
 parentdir = op.dirname(pooldir)
-aligndir  = op.join(pooldir,'04_realign')
-listfile  = op.join(aligndir,'%s_realingment_targets.list' % samp)
-realbam   = op.join(aligndir,'%s_realigned_reads.bam' % samp)
+aligndir = op.join(pooldir, '04_realign')
+listfile = op.join(aligndir, '%s_realingment_targets.list' % samp)
+realbam = op.join(aligndir, '%s_realigned_reads.bam' % samp)
 
 
 text = '''#!/bin/bash
@@ -46,15 +48,16 @@ python $HOME/pipeline/06_lofreq.py %(pooldir)s %(samp)s %(ref)s %(realbam)s
 ''' % locals()
 
 # create shdir and shfile
-shdir = op.join(pooldir,'shfiles/05_indelRealign_shfiles')
+shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
 makedir(shdir)
-file = op.join(shdir,'indelRealign_%(samp)s.sh' % locals())
-with open(file,'w') as o:
+file = op.join(shdir, 'indelRealign_%(samp)s.sh' % locals())
+with open(file, 'w') as o:
     o.write("%s" % text)
 
 os.chdir(shdir)
-print('shdir = ',shdir)
+print('shdir = ', shdir)
 os.system('sbatch %s' % file)
 
-os.system('python $HOME/pipeline/balance_queue.py indelRealign')
-os.system('python $HOME/pipeline/balance_queue.py realign')
+
+balance_queue.main('balance_queue.py', 'indelRealign')
+balance_queue.main('balance_queue.py', 'realign')

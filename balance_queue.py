@@ -51,14 +51,18 @@ def getsq(grepping):
         # so I don't have to worry about remembering to import both functions
         from balance_queue import checksq
     if isinstance(grepping, str):
-        # in case I pass a single str instead of a list/tuple of strings
-        grepping = list(grepping)
+        # in case I pass a single str instead of a list of strings
+        grepping = [grepping]
 
-    # SQ = os.popen('''squeue -u %(user)s -t "PD" | grep %(phase)s | grep Priority''' % locals()).read().split("\n")
     # get the pending queue, without a header
-    sq = subprocess.Popen([shutil.which('squeue'), '-u', os.environ['USER'], '-h', '-t', 'PD'],
-                          stdout=subprocess.PIPE,
-                          universal_newlines=True).communicate()[0].split("\n")
+    # sq = os.popen('''squeue -u %(user)s -t "PD" | grep %(phase)s | grep Priority''' % locals()).read().split("\n")
+    # sq = subprocess.Popen([shutil.which('squeue'), '-u', os.environ['USER'], '-h', '-t', 'PD'],
+    #                       stdout=subprocess.PIPE,
+    #                       universal_newlines=True).communicate()[0].split("\n")
+    sq = subprocess.check_output([shutil.which('squeue'),
+                                  '-u',
+                                  os.environ['USER'],
+                                  '-h',]).decode('utf-8').split('\n')
     sq = [s for s in sq if not s == '']
 
     # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
@@ -67,11 +71,12 @@ def getsq(grepping):
         for grep in grepping:
             for q in sq:
                 splits = q.split()
-                for split in splits:
-                    if grep.lower() in split.lower():
-                        grepped.append(tuple(splits))
-    if len(grepped) > 0:
-        return checksq(sq)
+                if not 'CG' in splits(): # grep -v 'CG'
+                    for split in splits:
+                        if grep.lower() in split.lower():
+                            grepped.append(tuple(splits))
+        if len(grepped) > 0:
+            return checksq(sq)
     else:
         print('no jobs in queue to balance')
         exit()
@@ -184,13 +189,13 @@ def givetotaker(giver,taker,accounts,bal):
 
 
 def main(thisfile,phase):
-    globals().update({'thisfile':thisfile,'phase':phase})
+    globals().update({'thisfile': thisfile, 'phase': phase})
     # get the queue
-    sq = getsq(grepping=[phase,'Priority'])
+    sq = getsq(grepping = [phase,'Priority'], status = ['PD'])
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
-    accts = getaccounts(sq,'')
-    announceacctlens(accts,False)
+    accts = getaccounts(sq, '')
+    announceacctlens(accts, False)
 
 #     # figure out how many to balance remaining
 #     balance = getbalance(accts,3)
@@ -203,10 +208,12 @@ def main(thisfile,phase):
 
     # redistribute to taker
     balance = getbalance(accts,2)
-    givetotaker(giver,taker,accts,balance)
+    givetotaker(giver, taker, accts, balance)
 
     # announce final job counts
-    announceacctlens(getaccounts(getsq(grepping=[phase,'Priority']),'final'),True)
+    announceacctlens(getaccounts(getsq(grepping = [phase, 'Priority']),
+                                 'final'),
+                     True)
 
 
 if __name__ == '__main__':

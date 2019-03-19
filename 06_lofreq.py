@@ -1,3 +1,4 @@
+"""
 ### purpose
 # use lofreq to call snps on individual pool,
 # use the GATK to convert vcf to tablefile.txt,
@@ -7,6 +8,7 @@
 ### usage
 # python 06_lofreq.py /path/to/pooldir/ sampID
 ###
+"""
 
 
 import sys
@@ -65,5 +67,5 @@ os.chdir(shdir)
 print('shdir = ',shdir)
 os.system('sbatch %s' % file)
 
-os.system('python $HOME/pipeline/balance_queue.py lofreq')
-os.system('python $HOME/pipeline/balance_queue.py indelRealign')
+balance_queue.main('balance_queue.py', 'lofreq')
+balance_queue.main('balance_queue.py', 'indelRealign')

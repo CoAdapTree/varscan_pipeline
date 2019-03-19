@@ -23,13 +23,13 @@ def openlenfile(lenfile):
 
 def make_lenfile():
     if not op.exists('%(ref)s.length' % globals()):
-        os.system('echo "creating %s.length file (this will take a few minutes)"' % op.basename(ref))
+        print('"creating %s.length file (this will take a few minutes)" % op.basename(ref))
         os.system('''cat  %(ref)s | awk '$0 ~ ">" {print c; c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' | sed 1d >  %(ref)s.length''' % globals())
     else:
         text = openlenfile('%(ref)s.length' % globals())
-        os.system('echo -e "ref.length file already created for %s\n\twhich has %s contigs"' % (ref,len(text)-1))
+        print("ref.length file already created for %s\n\twhich has %s contigs" % (ref,len(text)-1))
     if not op.exists("%(ref)s.length" % globals()):
-        os.system('echo -e "something went wrong with creating the ref.length file for %s\nexiting %s"' % (ref,thisfile))
+        print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref,thisfile))
         exit()
     
 def make_bedfile(lines,fcount):
@@ -62,7 +62,7 @@ def main(thisfile,ref):
     
     # spread contigs across 15 bed files
     fcount = make_bedfiles()
-    
+
     os.system('echo created %s bedfiles for %s' % (fcount,ref))
 
 if __name__ == "__main__":

@@ -37,5 +37,5 @@ def main(thisfile,tablefile,ret=False):
 
 if __name__ == '__main__':
     thisfile, tablefile = sys.argv
-    
+
     main(thisfile,tablefile)

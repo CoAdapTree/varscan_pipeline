@@ -14,7 +14,7 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs
-from balance_queue import checksq
+from balance_queue import checksq, getsq
 from filter_VariantsToTable import main as remove_multiallelic
 ###
 
@@ -23,26 +23,26 @@ def getfiles():
     crispdir = op.join(pooldir,'shfiles/crisp')
     found = [sh for sh in fs(crispdir) if sh.endswith(".sh") and 'crisp_bedfile' in sh]
     outs  = [out for out in fs(crispdir) if out.endswith('.out') and 'crisp_bedfile' in out]
-    files = dict((f,out) for f in found for out in outs if op.basename(f).replace(".sh","") in out)
+    files = dict((f, out) for f in found for out in outs if op.basename(f).replace(".sh", "") in out)
     return (found,files)
 
-def checkpids(files,queue):
-    locals().update({'thisfile':thisfile})
-    pids  = [x.split()[0] for x in queue]
+def checkpids(files, queue):
+    locals().update({'thisfile': thisfile})
+    pids = [x.split()[0] for x in queue]
     jobid = os.environ['SLURM_JOB_ID']
-    for f,out in files.items():
-        pid = out.split("_")[-1].replace(".out","")
+    for out in files.values():
+        pid = out.split("_")[-1].replace(".out", "")
         if pid in pids and pid != jobid: # if the job is running, but it's not this job
             print('the following file is still in the queue - exiting %(thisfile)s' % locals(),
                   '\n','\t%(out)s' % locals())
-            exit()
+            exit()  # TODO: should I be exiting?
 
 def check_queue(files):
-    user = os.environ['USER']
     # get jobs from the queue, except those that are closing
-    sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
-                                                                          os.environ['USER'])).read().split("\n")
-    sq = [s for s in sq if not s == '']
+    # sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
+    from balance_queue import get_sq
+    sq = get_sq(grepping = ['crisp_bedfile', 'R', 'PD']) # running or pending jobs with crisp_bedfile in name
+
     if len(sq) > 0:
         checksq(sq)
         checkpids(files, sq)
@@ -60,17 +60,17 @@ def checkjobs():
     check_queue(files) # make sure job isn't in the queue
     return files
         
-def create_reservation(exitneeded=False):
+def create_reservation(exitneeded = False):
     global resfile, jobid
-    resfile = op.join(crispdir,'combine_reservation.sh')
+    resfile = op.join(crispdir, 'combine_reservation.sh')
     jobid = os.environ['SLURM_JOB_ID']
     if not op.exists(resfile):
-        with open(resfile,'w') as o:
+        with open(resfile, 'w') as o:
             o.write("%s" % jobid)
     else:
         exitneeded = True
     time.sleep(random.random()*15)
-    with open(resfile,'r') as o:
+    with open(resfile, 'r') as o:
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded == True:
         # just in case two jobs try at nearly the same time
@@ -101,7 +101,7 @@ def main():
     
     # combine table files from output of VariantsToTable
     get_tables(files)
-    
+
 
 
 if __name__ == "__main__":
