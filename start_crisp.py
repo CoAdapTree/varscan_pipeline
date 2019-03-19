@@ -119,9 +119,7 @@ rm {logfile}
 
 def sbatch(file):
     os.chdir(op.dirname(file))
-    subprocess.Popen([shutil.which('sbatch'), file],
-                     stdout=subprocess.PIPE,
-                     universal_newlines=True).communicate()[0].split("\n")
+    subprocess.call([shutil.which('sbatch'), file])
     # os.system('sbatch %s' % file)
     print("sbatched %s" % file)
 

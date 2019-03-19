@@ -15,7 +15,7 @@
 ###
 """
 
-import sys, os, balance_queue
+import sys, os, balance_queue, subprocess, shutil
 from os import path as op
 from coadaptree import pklload
 from coadaptree import makedir
@@ -97,7 +97,7 @@ with open(qsubfile, 'w') as o:
 # sbatch file
 os.chdir(bwashdir)
 print('shdir = ', shdir)
-subprocess.Popen([shutil.which('sbatch'), qsubfile])
+subprocess.call([shutil.which('sbatch'), qsubfile])
 
 balance_queue.main('balance_queue.py', 'bwa')
 balance_queue.main('balance_queue.py', 'trim')

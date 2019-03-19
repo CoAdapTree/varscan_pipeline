@@ -8,7 +8,7 @@
 ###
 """
 
-import os, sys, balance_queue
+import os, sys, balance_queue, subprocess, shutil
 from os import path as op
 from coadaptree import makedir
 
@@ -56,7 +56,7 @@ with open(file, 'w') as o:
 
 os.chdir(shdir)
 print('shdir = ', shdir)
-subprocess.Popen([shutil.which('sbatch'), file])
+subprocess.call([shutil.which('sbatch'), file])
 
 
 balance_queue.main('balance_queue.py', 'indelRealign')

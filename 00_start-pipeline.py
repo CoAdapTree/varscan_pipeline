@@ -1,14 +1,10 @@
 """
-### FIX
-# turn back on 01.py
-###
-
 ### usage
 # python 00_start-pipeline.py /path/to/folder/with/all/fastq/files/
 ###
 """
 
-import os, sys, distutils.spawn, pandas as pd, balance_queue
+import os, sys, distutils.spawn, pandas as pd, balance_queue, subprocess, shutil
 from os import path as op
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni
@@ -195,6 +191,7 @@ for pooldir in pooldirs:
     pool = op.basename(pooldir)
     print('\npool = %s' % pool)
     ref = poolref[pool]
+    subprocess.call([shutil.which('python'), op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'), pooldir, ref])
     # os.system('python 01_trim-fastq.py %(pooldir)s %(ref)s' % locals())
 print('\n')
 

@@ -46,7 +46,7 @@ def checksq(sq):
         return sq
 
 
-def getsq(grepping):
+def getsq(grepping, ret=False):
     # this is when I import this fn from another app
     # so I don't have to worry about remembering to import both functions
     # import balance_queue as bq
@@ -68,21 +68,28 @@ def getsq(grepping):
     # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
     grepped = []
     if len(sq) > 0:
-        for grep in grepping:
-            for q in sq:
-                splits = q.split()
-                if 'CG' not in splits:  # grep -v 'CG'
-                    for split in splits:
+        for q in sq:  # for each job in queue
+            splits = q.split()
+            if 'CG' not in splits:  # grep -v 'CG'
+                keepit = 0
+                for split in splits:
+                    for grep in grepping:  # see if all necessary greps are in the job
                         if grep.lower() in split.lower():
-                            grepped.append(tuple(splits))
+                            keepit += 1
+                if keepit == len(grepping):
+                    grepped.append(tuple(splits))
+                            
         if len(grepped) > 0:
             return checksq(sq)
-    else:
+    if ret is False:
         print('no jobs in queue to balance')
         exit()
+    else:
+        return sq
 
 
 def adjustjob(acct, jobid):
+    print(acct)
     subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
     # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
 
@@ -125,32 +132,32 @@ def checknumaccts(accts, checking, mc):
         exit()
 
 
-def redistribute4g(accounts, bal, mcount=0):
-    rac = 'rrg-yeaman'
-    if rac in accounts:   # no need to redistribute to rac if rac has low priority
-        accounts.pop(rac)  # drop rac from list to redistribute, exit if nothing to redistribute
-        checknumaccts(accounts, 'rac', '')    # if all jobs are on rac, exit
-        return accounts
-    keys = list(accounts.keys())
-    print('before loop %s' % keys)
-    for account in keys:
-        # distribute 4G jobs to rac
-        pids = list(accounts[account].keys())
-        mcount = 0
-        for pid in pids:
-            mem = int([m for m in accounts[account][pid] if m.endswith('M')][0].split("M")[0])
-            if mem <= 4000:
-                # if it can be scheduled on the rac, change the account of the jobid, and remove jobid from list
-                adjustjob(rac, pid)
-                accounts[account].pop(pid)
-                mcount += 1
-                if mcount == bal:
-                    break
-        print("distributed {} jobs from {} to rac".format(mcount, account))
-        if len(accounts[account].keys()) == 0:
-            accounts.pop(account)
-    checknumaccts(accounts, 'none', mcount)  # if all jobs were redistributed to the rac, exit
-    return accounts
+# def redistribute4g(accounts, bal, mcount=0):
+#     rac = 'rrg-yeaman'
+#     if rac in accounts:   # no need to redistribute to rac if rac has low priority
+#         accounts.pop(rac)  # drop rac from list to redistribute, exit if nothing to redistribute
+#         checknumaccts(accounts, 'rac', '')    # if all jobs are on rac, exit
+#         return accounts
+#     keys = list(accounts.keys())
+#     print('before loop %s' % keys)
+#     for account in keys:
+#         # distribute 4G jobs to rac
+#         pids = list(accounts[account].keys())
+#         mcount = 0
+#         for pid in pids:
+#             mem = int([m for m in accounts[account][pid] if m.endswith('M')][0].split("M")[0])
+#             if mem <= 4000:
+#                 # if it can be scheduled on the rac, change the account of the jobid, and remove jobid from list
+#                 adjustjob(rac, pid)
+#                 accounts[account].pop(pid)
+#                 mcount += 1
+#                 if mcount == bal:
+#                     break
+#         print("distributed {} jobs from {} to rac".format(mcount, account))
+#         if len(accounts[account].keys()) == 0:
+#             accounts.pop(account)
+#     checknumaccts(accounts, 'none', mcount)  # if all jobs were redistributed to the rac, exit
+#     return accounts
 
 
 def gettaker(accounts):
@@ -167,7 +174,7 @@ def gettaker(accounts):
         if not len(keys) == 1:
             print('assertion error')
         giver = keys[0]
-    taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference(set(giver)))[0]
+    taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
     return giver, taker
 
 
@@ -182,13 +189,13 @@ def givetotaker(giver, taker, accounts, bal):
                                                                                                          giver,
                                                                                                          numtotake,
                                                                                                          taker)
-    print("\\t %s" % printout)
+    print("\t %s" % printout)
     if numtotake > 0:
         for pid in pids[::-1]:  # re-assign the newer jobs, hopefully older jobs will eventually run
             adjustjob(taker, pid)
             taken += 1
             if taken == numtotake:
-                print("\\t redistributed %s jobs from %s to %s" % (str(taken), giver, taker))
+                print("\t redistributed %s jobs from %s to %s" % (str(taken), giver, taker))
                 break
     else:
         print("\t giver sees that taker has enough, so giver is not giving")
@@ -197,7 +204,7 @@ def givetotaker(giver, taker, accounts, bal):
 def main(thisfile, phase):
     globals().update({'thisfile': thisfile, 'phase': phase})
     # get the queue
-    sq = getsq(grepping=[phase, 'Priority', 'PD'])
+    sq = getsq(grepping=[phase, 'Priority'])
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')

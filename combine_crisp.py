@@ -44,7 +44,7 @@ def check_queue(files):
     # get jobs from the queue, except those that are closing
     # sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
     from balance_queue import getsq
-    sq = getsq(grepping=['crisp_bedfile', 'R', 'PD'])  # running or pending jobs with crisp_bedfile in name
+    sq = getsq(grepping=['crisp_bedfile', 'R', 'PD'],ret=True)  # running or pending jobs with crisp_bedfile in name
 
     if len(sq) > 0:
         checksq(sq)
@@ -103,6 +103,7 @@ def get_tables(files):
 def main():
     # make sure all of the crisp jobs have finished
     files = checkjobs()
+
     
     # create reservation so other files don't try and write files.sh, exit() if needed
     create_reservation()

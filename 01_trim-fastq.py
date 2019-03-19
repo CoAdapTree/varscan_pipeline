@@ -108,8 +108,10 @@ python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(ref)s %(r1out)s %
 print('shcount =', len(shfiles))
 print('shdir = ', shtrimDIR)
 # qsub the files
+print(shfiles)
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
-    subprocess.Popen([shutil.which('sbatch'), sh])
+    print('shfile=',sh)
+    subprocess.call([shutil.which('sbatch'), sh])
     # os.system('sbatch %s' % sh)
     time.sleep(2)
