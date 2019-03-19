@@ -192,7 +192,6 @@ for pooldir in pooldirs:
     print('\npool = %s' % pool)
     ref = poolref[pool]
     subprocess.call([shutil.which('python'), op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'), pooldir, ref])
-    # os.system('python 01_trim-fastq.py %(pooldir)s %(ref)s' % locals())
 print('\n')
 
 balance_queue.main('balance_queue.py', 'trim')

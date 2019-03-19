@@ -12,6 +12,7 @@
 [![](https://img.shields.io/badge/CRISP-commit%2060966e7-ff69b4.svg)](http://csb5.github.io/lofreq/)
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/559e9dd133a04f838a87582e79f0587b)](https://www.codacy.com/app/brandonlind/poolseq_pipline?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CoAdaptree/poolseq_pipline&amp;utm_campaign=Badge_Grade)
+[![codecov](https://codecov.io/gh/CoAdaptree/poolseq_pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/CoAdaptree/poolseq_pipeline)
 
 # LoFreq and CRISP poolseq pipeline
 

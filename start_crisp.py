@@ -8,7 +8,6 @@
 ###
 
 ### fix
-# uncomment sbatch!
 # assumes equal sample size across pools
 ###
 """
