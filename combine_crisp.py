@@ -77,7 +77,7 @@ def create_reservation(exitneeded=False):
     time.sleep(random.random()*15)
     with open(resfile, 'r') as o:
         fjobid = o.read().split()[0]
-    if not fjobid == jobid or exitneeded == True:
+    if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
         print('another job has already created reservation for %s' % op.basename(thisfile))
         exit()
@@ -106,7 +106,7 @@ def main():
     
     # create reservation so other files don't try and write files.sh, exit() if needed
     create_reservation()
-    
+
     # combine table files from output of VariantsToTable
     get_tables(files)
 

@@ -65,7 +65,7 @@ def main(thisfile, ref):
     globals().update({'thisfile': thisfile, 'ref': ref})
     # get sequence lengths
     make_lenfile()
-    
+
     # spread contigs across 15 bed files
     fcount = make_bedfiles()
 

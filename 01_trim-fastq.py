@@ -9,7 +9,11 @@
 """
 
 
-import os, sys, time
+import os
+import sys
+import time
+import shutil
+import subprocess
 from os import path as op
 from coadaptree import fs, pklload
 
@@ -23,7 +27,7 @@ for arg, path in [('pooldir', pooldir), ('ref', ref)]:
     if not op.exists(path):
         print("The argument does not exist in the specified path:\narg = %s\npath =%s" % (arg, path))
         sys.exit(1)
-        
+
 
 # make some dirs
 shdir = op.join(pooldir, 'shfiles')
@@ -39,6 +43,7 @@ mfile = op.join(parentdir, 'msgs.txt')
 def writetomfile(text):
     with open(mfile, 'a') as m:
         m.write("%s\n" % text)
+
 
 # get the fastq.gz files
 os.chdir(pooldir)
@@ -105,5 +110,6 @@ print('shdir = ', shtrimDIR)
 # qsub the files
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
-    os.system('sbatch %s' % sh)
+    subprocess.Popen([shutil.which('sbatch'), sh])
+    # os.system('sbatch %s' % sh)
     time.sleep(2)

@@ -97,7 +97,7 @@ with open(qsubfile, 'w') as o:
 # sbatch file
 os.chdir(bwashdir)
 print('shdir = ', shdir)
-os.system("sbatch %s" % qsubfile)
+subprocess.Popen([shutil.which('sbatch'), qsubfile])
 
 balance_queue.main('balance_queue.py', 'bwa')
 balance_queue.main('balance_queue.py', 'trim')

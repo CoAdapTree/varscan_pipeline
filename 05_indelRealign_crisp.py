@@ -56,7 +56,7 @@ with open(file, 'w') as o:
 
 os.chdir(shdir)
 print('shdir = ', shdir)
-os.system('sbatch %s' % file)
+subprocess.Popen([shutil.which('sbatch'), file])
 
 
 balance_queue.main('balance_queue.py', 'indelRealign')

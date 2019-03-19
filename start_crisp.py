@@ -5,7 +5,7 @@
 
 ### usage
 # python start_crisp.py parentdir pool
-### 
+###
 
 ### fix
 # uncomment sbatch!
@@ -163,5 +163,5 @@ def main():
 if __name__ == "__main__":
     # args
     thisfile, parentdir, pool = sys.argv
-    
+
     main()
