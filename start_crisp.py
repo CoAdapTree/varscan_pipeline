@@ -84,7 +84,7 @@ def make_sh(files, bedfile):
 #SBATCH --job-name={pool}-crisp_bedfile_{num}
 #SBATCH --time=11:59:00
 #SBATCH --mem=4000M
-#SBATCH --output={pool}-crisp_bedfile_{num}_%%j.out
+#SBATCH --output={pool}-crisp_bedfile_{num}_%j.out
 {email_text}
 
 source $HOME/.bashrc
