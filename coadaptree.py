@@ -56,7 +56,6 @@ def get_email_info(parentdir, stage):
             # if default opt, but it's not the final stage
             return ''
         elif 'pipeline-finish' in email_info['opts'] and stage is 'final':
-            # TODO: but what about other options (fail + pipeline-finish)
             email_text = email_text + '\n' + "#SBATCH --mail-type=END"
             if 'END' in options:
                 options.remove('END')
