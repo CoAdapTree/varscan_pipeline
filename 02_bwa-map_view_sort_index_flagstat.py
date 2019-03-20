@@ -54,7 +54,7 @@ for d in [bwashdir, samdir, bamdir, sortdir]:
     makedir(d)
 
 # send it off
-email_text = get_email_info(parentdir,'02')
+email_text = get_email_info(parentdir, '02')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=30000M

@@ -45,7 +45,7 @@ def writetomfile(text):
         m.write("%s\n" % text)
 
 # get email info
-email_info = get_email_info(parentdir)
+email_info = get_email_info(parentdir, '01')
 email_text = f"#SBATCH --mail-user={email_info['email']}"
 notification_text = ''
 for notification in email_info['opts']:

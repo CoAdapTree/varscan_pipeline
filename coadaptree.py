@@ -49,12 +49,12 @@ def get_email_info(parentdir, stage):
 
         # make text
         email_text = '''#SBATCH --mail-user=%s''' % email_info['email']
-        options = [opt.upper() for opt in email_info['opts'] if opt is not 'pipeline-finish']
+        options = [opt.upper() for opt in email_info['opts'] if opt != 'pipeline-finish']
         # first determine if it's only when the pipeline finishes
-        if email_info['opts'] == ['pipeline-finish'] and stage is not 'final':
+        if email_info['opts'] == ['pipeline-finish'] and stage != 'final':
             # if default opt, but it's not the final stage
             return ''
-        elif 'pipeline-finish' in email_info['opts'] and stage is 'final':
+        elif 'pipeline-finish' in email_info['opts'] and stage == 'final':
             email_text = email_text + '\n' + "#SBATCH --mail-type=END"
             if 'END' in options:
                 options.remove('END')
