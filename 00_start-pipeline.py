@@ -1,7 +1,7 @@
 """
 ### fix
-# uncomment create_sh.subprocess.call
-# add in account argparse
+# TODO: uncomment create_sh.subprocess.call
+# TODO: add in account argparse
 ###
 
 ### usage
@@ -9,7 +9,7 @@
 ###
 """
 
-import os, sys, distutils.spawn, balance_queue, subprocess, shutil, argparse, create_bedfiles, pandas as pd
+import os, sys, distutils.spawn, subprocess, shutil, argparse, create_bedfiles, pandas as pd
 from os import path as op
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni, makedir
@@ -23,7 +23,10 @@ def create_sh(pooldirs, poolref):
         print('\npool = %s' % pool)
         ref = poolref[pool]
         print('sending pooldir and ref to 01_trim-fastq.py')
-        #subprocess.call([shutil.which('python'), op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'), pooldir, ref])
+        # subprocess.call([shutil.which('python'),
+        #                  op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
+        #                  pooldir,
+        #                  ref])
     print('\n')
 
 
@@ -34,10 +37,18 @@ def get_datafiles(parentdir, f2pool, data):
     datafiles = data['file_name_r1'].tolist()
     for x in data['file_name_r2'].tolist():
         datafiles.append(x)
+    if len(files) > len(datafiles):
+        desc = 'more'
+    if len(files) < len(datafiles):
+        desc = 'less'
+    try:
+        print(Bcolors.WARNING + 'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir))
+    except NameError:
+        pass
 
     for f in datafiles:
         src = op.join(parentdir, f)
-        if not op.exists(src)   :
+        if not op.exists(src):
             # make sure file in datatable exists
             print("could not find %s in %s\nmake sure file_name in datatable is its basename" % (f, parentdir))
             print("(symlinks in parentdir to fastq files in other dirs works fine, and is the intentional use)")
@@ -109,7 +120,7 @@ def read_datatable(parentdir):
             ref = data.loc[row, 'ref']
             if not op.exists(ref):
                 print('ref for %s does not exist in path: %s' % (samp, ref))
-                print('exiting %s' % thisfile)
+                print('exiting %s' % '00_start-pipeline.py')
                 exit()
             poolref[pool] = ref
         rginfo[samp] = {}
@@ -135,7 +146,8 @@ def check_reqs():
         try:
             print('\t%s = %s' % (var, os.environ[var]))
         except KeyError:
-            print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used later in pipeline\n\texiting 00_start-pipeline.py' % var)
+            print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
+later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
     for exe in ['lofreq', 'activate']:
         if distutils.spawn.find_executable(exe) is None:
@@ -187,29 +199,36 @@ def get_pars():
     parser.add_argument("-n", "--notification-types",
                         default=['pipeline-finish'],
                         nargs='+',
-                        choices=['all','none','fail','begin','end','pipeline-finish'],
+                        choices=['all',
+                                 'none',
+                                 'fail',
+                                 'begin',
+                                 'end',
+                                 'pipeline-finish'],
                         required=False,
                         dest="email_options",
                         help="the type(s) of email notifications you would like to receive from the pipeline.\
                         Requires --email-address.")
-    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+    parser.add_argument('-h', '--help',
+                        action='help',
+                        default=argparse.SUPPRESS,
                         help='Show this help message and exit.\n')
     args = parser.parse_args()
     if args.parentdir.endswith('/'):
         args.parentdir = args.parentdir[:-1]
     if args.email and args.email_options is None:
-        parser.error('--email-address requires --notification-types')
+        print(Bcolors.WARNING + 'INFO using default notification: pipeline-finish' + Bcolors.ENDC)
     if args.email_options and args.email is None:
         parser.error('specifying --notification-types requires specifying --email-address')
     if args.email:
-        if not '@' in args.email:
+        if '@' not in args.email:
             parser.error('email address does not have an "@" symbol in it, please check input')
         if 'all' in args.email_options:
             args.email_options = ['all']
         # save email
         epkl = {'email': args.email,
                 'opts': args.email_options}
-        pkldump(epkl,op.join(args.parentdir,'email_opts.pkl'))
+        pkldump(epkl, op.join(args.parentdir, 'email_opts.pkl'))
     print(vars(args))
     print(args.parentdir)
 
