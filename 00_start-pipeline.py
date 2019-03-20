@@ -21,8 +21,8 @@ def create_sh(pooldirs, poolref):
     for pooldir in pooldirs:
         pool = op.basename(pooldir)
         print('\npool = %s' % pool)
-        ref = poolref[pool]
-        print('sending pooldir and ref to 01_trim-fastq.py')
+        # ref = poolref[pool]
+        # print('sending pooldir and ref to 01_trim-fastq.py')
         # subprocess.call([shutil.which('python'),
         #                  op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
         #                  pooldir,
@@ -42,7 +42,21 @@ def get_datafiles(parentdir, f2pool, data):
     if len(files) < len(datafiles):
         desc = 'less'
     try:
-        print(Bcolors.WARNING + 'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir))
+        print(Bcolors.WARNING + 'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir) + Bcolors.ENDC)
+        print(Bcolors.BOLD + 'Here are the files in %s' % parentdir + Bcolors.ENDC)
+        [print(op.basename(x)) for x in files]
+        print(Bcolors.BOLD + 'Here are the files in datatable.txt' + Bcolors.ENDC)
+        [print(x) for x in datafiles]
+        while True:
+            inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
+            if inp in ['yes', 'no']:
+                break
+            else:
+                print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
+                if inp == 'no':
+                    print('exiting 00_start-pipeline.py')
+                    exit()
+
     except NameError:
         pass
 
@@ -160,27 +174,14 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
 
 def check_pyversion():
     # check python version
-    pyversion = str(sys.version_info[0]) + '.' + str(sys.version_info[1]) + '.' + str(sys.version_info[2])
-    if not sys.version_info[0] == 3:
+    pyversion = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
+    if not pyversion >= 3.6:
         text = '''FAIL: You are using python %s. This pipeline was built with python 3.7+.
-    FAIL: Please use a more recent version of python.
+    FAIL: You will need at least python v3.6+.
     FAIL: exiting 00_start-pipeline.py
     ''' % pyversion
         print(Bcolors.BOLD + Bcolors.FAIL + text + Bcolors.ENDC)
         exit()
-    if not sys.version_info[1] == 7:
-        text = "WARN: You are using python v%s. This pipeline was built with python v3.7+.\n" \
-               "WARN: You may want to consider updating to a more recent version of python.\n" % pyversion
-        print(Bcolors.BOLD + Bcolors.WARNING + text + Bcolors.ENDC)
-        while True:
-            inp = input("INPUT NEEDED: Do you want to proceed? (yes | no): ").lower()
-            if inp in ['yes', 'no']:
-                break
-            else:
-                print("Please respond with 'yes' or 'no'")
-        if inp == 'no':
-            print('exiting 00_start-pipeline.py')
-            exit()
 
 
 def get_pars():
