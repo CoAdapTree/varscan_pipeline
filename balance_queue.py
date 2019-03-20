@@ -221,6 +221,7 @@ def get_availaccounts():
         rac = rac[0]
     elif len(rac) == 0:
         rac = ''
+    print('accts = ', accts)
     return defs, rac
 
 
