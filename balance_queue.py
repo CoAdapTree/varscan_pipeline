@@ -47,7 +47,7 @@ def checksq(sq):
 
 
 def getsq(grepping, states=[], balance=False):
-    def getsq_exit(balance=balance, sq = sq):
+    def getsq_exit(balance, sq):
         print('no jobs in queue matching query')
         if balance is True:
             print('exiting balance_queue.py')
@@ -95,9 +95,9 @@ def getsq(grepping, states=[], balance=False):
             # print('grepped ',grepped)
             return grepped
         else:
-            getsq_exit(balance=balance)
+            getsq_exit(balance, sq)
     else:
-        getsq_exit(balance=balance)
+        getsq_exit(balance, sq)
 
 
 def adjustjob(acct, jobid):
