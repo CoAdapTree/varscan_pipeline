@@ -217,7 +217,7 @@ def get_availaccounts():
     rac = [acct for acct in accts if 'rrg' in acct]
     if len(defs) == 1:
         # no need to try and balance
-        print(f'there is only one account ({defs[0]}), no more accounts to balance queue.\nexiting balance_queue.py')
+        print('there is only one account (%s), no more accounts to balance queue.\nexiting balance_queue.py' % defs[0])
         exit()
     if len(rac) == 1:
         rac = rac[0]
