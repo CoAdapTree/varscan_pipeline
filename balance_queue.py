@@ -163,6 +163,7 @@ def getbalance(accounts, num):
 
 
 def gettaker(accounts, defs):
+    print('gettaker defs =', defs)
     giver = ''
     keys = list(accounts.keys())
     if len(keys) == 2:
