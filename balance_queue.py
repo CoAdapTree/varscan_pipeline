@@ -231,7 +231,7 @@ def main(thisfile, phase):
     defs, rac = get_availaccounts()
 
     # get the queue
-    sq = getsq(grepping=[phase, 'Priority'])
+    sq = getsq(grepping=[phase, 'Priority'], balance=True)
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
