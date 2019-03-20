@@ -40,7 +40,6 @@ def pklload(path):
 
 def get_email_info(parentdir, stage):
     # TODO: but how will I know it's actually the final stage? - lofreq and crisp combine have reservation files!
-    def get_options(email_info):
 
     from coadaptree import pklload
     pkl = op.join(parentdir, 'email_opts.pkl')
