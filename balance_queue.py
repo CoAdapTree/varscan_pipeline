@@ -14,13 +14,15 @@
 ###
 """
 
-import os, shutil, sys, math, subprocess
+import os, shutil, sys, math, subprocess, time
 
 
 def announceacctlens(accounts, fin):
     print('%s job announcement' % ('final' if fin is True else 'first'))
+    if fin is True:
+        time.sleep(1)
     for account in accounts:
-        print('%s jobs on %s' % (str(len(accounts[account])), account))
+        print('%s jobs with Priority status on %s' % (str(len(accounts[account])), account))
 
 
 def checksq(sq):
@@ -28,9 +30,6 @@ def checksq(sq):
     if not isinstance(sq, list):
         print("type(sq) != list, exiting %(thisfile)s" % globals())
         exitneeded = True
-#     if len(sq) == 0:  # i don't think I need this with the new -h in subproc in getsq()
-#         print("len(sq) == 0, exiting %(thisfile)s" % globals())
-#         exitneeded = True
     for s in sq:
         if not s == '':
             if 'socket' in s.lower():
@@ -45,25 +44,25 @@ def checksq(sq):
     else:
         return sq
 
+def getsq_exit(balancing):
+    print('no jobs in queue matching query')
+    if balancing is True:
+        print('exiting balance_queue.py')
+        exit()
+    else:
+        return []
 
-def getsq(grepping, states=[], balance=False):
-    def getsq_exit(balance, sq):
-        print('no jobs in queue matching query')
-        if balance is True:
-            print('exiting balance_queue.py')
-            exit()
-        else:
-            return sq
+def getsq(grepping, states=[], balancing=False):
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
         grepping = [grepping]
 
     # get the queue, without a header
-    sq = subprocess.check_output([shutil.which('squeue'),
+    sqout = subprocess.check_output([shutil.which('squeue'),
                                   '-u',
                                   os.environ['USER'],
                                   '-h']).decode('utf-8').split('\n')
-    sq = [s for s in sq if not s == '']
+    sq = [s for s in sqout if not s == '']
     checksq(sq)  # make sure slurm gave me something useful
 
     # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
@@ -77,11 +76,9 @@ def getsq(grepping, states=[], balance=False):
                     for grep in grepping:  # see if all necessary greps are in the job
                         if grep.lower() in split.lower():
                             keepit += 1
-                # print('keepit = ', keepit, len(grepping))
                 if keepit == len(grepping):
                     # see if any of the state conditions are met (does not need all states, obviously)
                     if len(states) > 0:
-                        print(states, splits[4])
                         keepit2 = False
                         for state in states:
                             if state.lower() == splits[4].lower():
@@ -92,26 +89,23 @@ def getsq(grepping, states=[], balance=False):
                         grepped.append(tuple(splits))
 
         if len(grepped) > 0:
-            # print('grepped ',grepped)
             return grepped
         else:
-            getsq_exit(balance, sq)
+            getsq_exit(balancing)
     else:
-        getsq_exit(balance, sq)
+        getsq_exit(balancing)
 
 
 def adjustjob(acct, jobid):
-    # print(acct)
-    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s' % acct, 'JobId=%s' % str(jobid)])
+    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
     # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
 
 
 def getaccounts(sq, stage):
     accounts = {}
-    # print('getaccounts sq = ',sq)
     for q in sq:
         pid = q[0]
-        account = q[2]
+        account = q[2].split("_")[0]
         account = account.split("_")[0]
         if account not in accounts:
             accounts[account] = {}
@@ -171,24 +165,20 @@ def getbalance(accounts, num):
 
 
 def gettaker(accounts, defs):
-    # print('gettaker defs =', defs)
-    # print('gettaker accounts =', accounts)
     giver = ''
     keys = list(accounts.keys())
-    if len(keys) == 2:
-        print('keys > 2')
-        # if there are two accounts, figure out which account has more
+    if len(keys) > 1:
+        # if there are at least two accounts, figure out which account has more (assign to final giver if tie)
         maxx = 0
         for acct in keys:
             if len(accounts[acct]) > maxx:
                 giver = acct
-                # print('new giver = ', giver)
                 maxx = len(accounts[acct])
     else:
         if not len(keys) == 1:
             print('assertion error')
         giver = keys[0]
-    # taker = list('def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
+    # taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
     taker = list(set(defs).symmetric_difference({giver}))[0]
     return giver, taker
 
@@ -217,23 +207,22 @@ def givetotaker(giver, taker, accounts, bal):
 
 
 def get_availaccounts():
-    accts = subprocess.check_output([shutil.which('sshare'),
+    acctout = subprocess.check_output([shutil.which('sshare'),
                                      '-U',
                                      '--user',
                                      os.environ['USER'],
                                      '--format=Account']).decode('utf-8').split('\n')
-    accts = [acct.split()[0] for acct in accts if 'def' and 'cpu' in acct]
+    accts = [acct.split()[0].split("_")[0] for acct in acctout if 'def' and 'cpu' in acct]
     defs = [acct for acct in accts if 'def' in acct]
     rac = [acct for acct in accts if 'rrg' in acct]
     if len(defs) == 1:
         # no need to try and balance
-        print(f'there is only one account ({defs[0]}), no need to balance queue.\nexiting balance_queue.py')
+        print(f'there is only one account ({defs[0]}), no more accounts to balance queue.\nexiting balance_queue.py')
         exit()
     if len(rac) == 1:
         rac = rac[0]
     elif len(rac) == 0:
         rac = ''
-    # print('accts = ', accts)
     return defs, rac
 
 
@@ -244,8 +233,7 @@ def main(thisfile, phase):
     defs, rac = get_availaccounts()
 
     # get the queue
-    sq = getsq(grepping=[phase, 'Priority'], balance=True)
-    # print('sq =', sq)
+    sq = getsq(grepping=[phase, 'Priority'], balancing=True)
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
