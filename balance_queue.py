@@ -164,14 +164,17 @@ def getbalance(accounts, num):
 
 def gettaker(accounts, defs):
     print('gettaker defs =', defs)
+    print('gettaker accounts =', accounts)
     giver = ''
     keys = list(accounts.keys())
     if len(keys) == 2:
+        print('keys > 2')
         # if there are two accounts, figure out which account has more
         maxx = 0
         for acct in keys:
             if len(accounts[acct]) > maxx:
                 giver = acct
+                print('new giver = ', giver)
                 maxx = len(accounts[acct])
     else:
         if not len(keys) == 1:
