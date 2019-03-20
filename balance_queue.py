@@ -47,12 +47,13 @@ def checksq(sq):
 
 
 def getsq(grepping, states=[], balance=False):
-    def getsq_exit(balance=balance):
+    def getsq_exit(balance=balance, sq = sq):
         print('no jobs in queue matching query')
         if balance is True:
+            print('exiting balance_queue.py')
             exit()
         else:
-            print(sq)
+            return sq
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
         grepping = [grepping]
@@ -76,7 +77,7 @@ def getsq(grepping, states=[], balance=False):
                     for grep in grepping:  # see if all necessary greps are in the job
                         if grep.lower() in split.lower():
                             keepit += 1
-                print('keepit = ', keepit, len(grepping))
+                # print('keepit = ', keepit, len(grepping))
                 if keepit == len(grepping):
                     # see if any of the state conditions are met (does not need all states, obviously)
                     if len(states) > 0:
@@ -91,8 +92,8 @@ def getsq(grepping, states=[], balance=False):
                         grepped.append(tuple(splits))
 
         if len(grepped) > 0:
-            print(grepped)
-    #         return grepped
+            # print('grepped ',grepped)
+            return grepped
         else:
             getsq_exit(balance=balance)
     else:
@@ -100,14 +101,14 @@ def getsq(grepping, states=[], balance=False):
 
 
 def adjustjob(acct, jobid):
-    print(acct)
+    # print(acct)
     subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s' % acct, 'JobId=%s' % str(jobid)])
     # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
 
 
 def getaccounts(sq, stage):
     accounts = {}
-    print('getaccounts sq = ',sq)
+    # print('getaccounts sq = ',sq)
     for q in sq:
         pid = q[0]
         account = q[2]
@@ -148,7 +149,7 @@ def getbalance(accounts, num):
 #         checknumaccts(accounts, 'rac', '')    # if all jobs are on rac, exit
 #         return accounts
 #     keys = list(accounts.keys())
-#     print('before loop %s' % keys)
+#     # print('before loop %s' % keys)
 #     for account in keys:
 #         # distribute 4G jobs to rac
 #         pids = list(accounts[account].keys())
@@ -170,8 +171,8 @@ def getbalance(accounts, num):
 
 
 def gettaker(accounts, defs):
-    print('gettaker defs =', defs)
-    print('gettaker accounts =', accounts)
+    # print('gettaker defs =', defs)
+    # print('gettaker accounts =', accounts)
     giver = ''
     keys = list(accounts.keys())
     if len(keys) == 2:
@@ -181,7 +182,7 @@ def gettaker(accounts, defs):
         for acct in keys:
             if len(accounts[acct]) > maxx:
                 giver = acct
-                print('new giver = ', giver)
+                # print('new giver = ', giver)
                 maxx = len(accounts[acct])
     else:
         if not len(keys) == 1:
@@ -232,7 +233,7 @@ def get_availaccounts():
         rac = rac[0]
     elif len(rac) == 0:
         rac = ''
-    print('accts = ', accts)
+    # print('accts = ', accts)
     return defs, rac
 
 
@@ -244,7 +245,7 @@ def main(thisfile, phase):
 
     # get the queue
     sq = getsq(grepping=[phase, 'Priority'], balance=True)
-    print('sq =', sq)
+    # print('sq =', sq)
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
