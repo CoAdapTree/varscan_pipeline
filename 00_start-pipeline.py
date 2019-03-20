@@ -1,7 +1,6 @@
 """
 ### fix
 # TODO: uncomment create_sh.subprocess.call
-# TODO: add in account argparse
 ###
 
 ### usage
@@ -21,13 +20,26 @@ def create_sh(pooldirs, poolref):
     for pooldir in pooldirs:
         pool = op.basename(pooldir)
         print('\npool = %s' % pool)
-        # ref = poolref[pool]
-        # print('sending pooldir and ref to 01_trim-fastq.py')
-        # subprocess.call([shutil.which('python'),
-        #                  op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
-        #                  pooldir,
-        #                  ref])
+        ref = poolref[pool]
+        print('sending pooldir and ref to 01_trim-fastq.py')
+        subprocess.call([shutil.which('python'),
+                         op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
+                         pooldir,
+                         ref])
     print('\n')
+
+
+def askforinput():
+    print('\n')
+    while True:
+        inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
+        if inp in ['yes', 'no']:
+            break
+        else:
+            print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
+            if inp == 'no':
+                print('exiting 00_start-pipeline.py')
+                exit()
 
 
 def get_datafiles(parentdir, f2pool, data):
@@ -47,15 +59,7 @@ def get_datafiles(parentdir, f2pool, data):
         [print(op.basename(x)) for x in files]
         print(Bcolors.BOLD + 'Here are the files in datatable.txt' + Bcolors.ENDC)
         [print(x) for x in datafiles]
-        while True:
-            inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
-            if inp in ['yes', 'no']:
-                break
-            else:
-                print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
-                if inp == 'no':
-                    print('exiting 00_start-pipeline.py')
-                    exit()
+        askforinput()
 
     except NameError:
         pass
@@ -219,11 +223,14 @@ def get_pars():
         args.parentdir = args.parentdir[:-1]
     if args.email and args.email_options is None:
         print(Bcolors.WARNING + 'INFO using default notification: pipeline-finish' + Bcolors.ENDC)
+        askforinput()
     if args.email_options and args.email is None:
-        parser.error('specifying --notification-types requires specifying --email-address')
+        parser.error(Bcolors.FAIL + 'specifying --notification-types requires specifying \
+--email-address' + Bcolors.ENDC)
     if args.email:
         if '@' not in args.email:
-            parser.error('email address does not have an "@" symbol in it, please check input')
+            parser.error(Bcolors.FAIL + 'email address does not have an "@" symbol in it, \
+please check input' + Bcolors.ENDC)
         if 'all' in args.email_options:
             args.email_options = ['all']
         # save email
@@ -240,7 +247,7 @@ def main():
     # parse arguments
     args = get_pars()
 
-    # make sure version >= 3, WARN if < 3.7
+    # WARN if version = 3.6, FAIL if < 3.6
     check_pyversion()
 
     # look for exported vars (should be in .bashrc)
