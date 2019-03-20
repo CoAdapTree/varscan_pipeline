@@ -1,6 +1,6 @@
 """
-### fix
-# uncomment exit() in checksq()
+### note
+# right now this isn't using the RAC, and will exit if there are not more than one def-X accounts
 ###
 
 ###
@@ -47,18 +47,11 @@ def checksq(sq):
 
 
 def getsq(grepping, ret=False):
-    # this is when I import this fn from another app
-    # so I don't have to worry about remembering to import both functions
-    # import balance_queue as bq
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
         grepping = [grepping]
 
     # get the pending queue, without a header
-    # sq = os.popen('''squeue -u %(user)s -t "PD" | grep %(phase)s | grep Priority''' % locals()).read().split("\n")
-    # sq = subprocess.Popen([shutil.which('squeue'), '-u', os.environ['USER'], '-h', '-t', 'PD'],
-    #                       stdout=subprocess.PIPE,
-    #                       universal_newlines=True).communicate()[0].split("\n")
     sq = subprocess.check_output([shutil.which('squeue'),
                                   '-u',
                                   os.environ['USER'],
@@ -122,19 +115,18 @@ def getbalance(accounts, num):
     return bal
 
 
-def checknumaccts(accts, checking, mc):
-    # len(accounts) will never == 2 after pop, since I checked for len(accounts) == 3
-    if len(accts.keys()) == 0:
-        if checking == 'RAC':
-            print('RAC has low priority status, skipping RAC as taker')
-        else:
-            print('moved %s jobs to RAC' % str(mc))
-        exit()
-
-
-# def redistribute4g(accounts, bal, mcount=0):
-#     rac = 'rrg-yeaman'
-#     if rac in accounts:   # no need to redistribute to rac if rac has low priority
+# def checknumaccts(accts, checking, mc):
+#     # len(accounts) will never == 2 after pop, since I checked for len(accounts) == 3
+#     if len(accts.keys()) == 0:
+#         if checking == 'RAC':
+#             print('RAC has low priority status, skipping RAC as taker')
+#         else:
+#             print('moved %s jobs to RAC' % str(mc))
+#         exit()
+#
+#
+# def redistribute4g(accounts, bal, rac, mcount=0):
+#     if rac in accounts:    # no need to redistribute to rac if rac has low priority
 #         accounts.pop(rac)  # drop rac from list to redistribute, exit if nothing to redistribute
 #         checknumaccts(accounts, 'rac', '')    # if all jobs are on rac, exit
 #         return accounts
@@ -160,7 +152,7 @@ def checknumaccts(accts, checking, mc):
 #     return accounts
 
 
-def gettaker(accounts):
+def gettaker(accounts, defs):
     giver = ''
     keys = list(accounts.keys())
     if len(keys) == 2:
@@ -174,7 +166,8 @@ def gettaker(accounts):
         if not len(keys) == 1:
             print('assertion error')
         giver = keys[0]
-    taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
+    # taker = list('def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
+    taker = list(set(defs).symmetric_difference({giver}))[0]
     return giver, taker
 
 
@@ -201,8 +194,32 @@ def givetotaker(giver, taker, accounts, bal):
         print("\t giver sees that taker has enough, so giver is not giving")
 
 
+def get_availaccounts():
+    accts = subprocess.check_output([shutil.which('sshare'),
+                                     '-U',
+                                     '--user',
+                                     os.environ['USER'],
+                                     '--format=Account']).decode('utf-8').split('\n')
+    accts = [acct.split()[0] for acct in accts if 'def' and 'cpu' in acct]
+    defs = [acct for acct in accts if 'def' in acct]
+    rac = [acct for acct in accts if 'rrg' in acct]
+    if len(defs) == 1:
+        # no need to try and balance
+        print(f'there is only one account ({defs[0]}), no need to balance queue.\nexiting balance_queue.py')
+        exit()
+    if len(rac) == 1:
+        rac = rac[0]
+    elif len(rac) == 0:
+        rac = ''
+    return defs, rac
+
+
 def main(thisfile, phase):
     globals().update({'thisfile': thisfile, 'phase': phase})
+
+    # get accounts available for billing
+    defs, rac = get_availaccounts()
+
     # get the queue
     sq = getsq(grepping=[phase, 'Priority'])
 
@@ -211,13 +228,13 @@ def main(thisfile, phase):
     announceacctlens(accts, False)
 
     # figure out how many to balance remaining
-    # balance = getbalance(accts,3)
+    # balance = getbalance(accts, 3)
 
     # redistribute 4G jobs to RAC unless RAC has low priority, exit if all jobs redistributed or no jobs to redistribute
-    # accts = redistribute4g(accts,balance)
+    # accts = redistribute4g(accts, balance, rac)
 
     # figure out which account to add to
-    giver, taker = gettaker(accts)
+    giver, taker = gettaker(accts, defs)
 
     # redistribute to taker
     balance = getbalance(accts, 2)
