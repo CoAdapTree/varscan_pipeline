@@ -15,7 +15,7 @@ import time
 import shutil
 import subprocess
 from os import path as op
-from coadaptree import fs, pklload
+from coadaptree import fs, pklload, get_email_info
 
 # args
 thisfile, pooldir, ref = sys.argv
@@ -43,6 +43,13 @@ mfile = op.join(parentdir, 'msgs.txt')
 def writetomfile(text):
     with open(mfile, 'a') as m:
         m.write("%s\n" % text)
+
+# get email info
+email_info = get_email_info(parentdir, '01')
+email_text = f"#SBATCH --mail-user={email_info['email']}"
+notification_text = ''
+for notification in email_info['opts']:
+    notification_text = notification_text + f'''\n#SBATCH --mail-type={email_info[notification].upper()}'''
 
 
 # get the fastq.gz files
@@ -77,6 +84,7 @@ for r1, r2 in seq_pairs:
     html = r1out.replace("R1", "").replace(".fastq.gz", "_R1_R2_stats")
     json = r1out.replace("R1", "").replace(".fastq.gz", "_R1_R2")
     logfile = r1out.replace("R1", "").replace(".fastq.gz", "_R1_R2_stats.log")
+    email_text = get_email_info(parentdir,'01')
 
     text = '''#!/bin/bash
 #SBATCH --job-name=%(pool)s-%(samp)s_trim
@@ -84,8 +92,8 @@ for r1, r2 in seq_pairs:
 #SBATCH --mem=5000M
 #SBATCH --cpus-per-task=16
 #SBATCH --output=%(pool)s-%(samp)s_trim_%%j.out
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
+
 
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"

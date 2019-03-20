@@ -17,8 +17,7 @@
 
 import sys, os, balance_queue, subprocess, shutil
 from os import path as op
-from coadaptree import pklload
-from coadaptree import makedir
+from coadaptree import pklload, get_email_info, makedir
 
 # get argument inputs
 thisfile, ref, r1out, r2out, shdir, samp = sys.argv
@@ -55,6 +54,7 @@ for d in [bwashdir, samdir, bamdir, sortdir]:
     makedir(d)
 
 # send it off
+email_text = get_email_info(parentdir, '02')
 text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=30000M
@@ -63,8 +63,8 @@ text = '''#!/bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=bwa_%(samp)s
 #SBATCH --output=bwa_%(samp)s_%%j.out 
-#SBATCH --mail-user=lindb@vcu.edu
-#SBATCH --mail-type=FAIL
+%(email_text)s
+
 
 # get RGID and RGPU
 RGID=$(zcat %(r1out)s | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)

@@ -15,7 +15,7 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs
-from balance_queue import checksq
+from balance_queue import checksq, getsq
 from filter_VariantsToTable import main as remove_multiallelic
 
 
@@ -29,8 +29,9 @@ def getfiles():
 
 
 def checkpids(files, queue):
+    # if any of the other crisp jobs are pending or running, exit
     locals().update({'thisfile': thisfile})
-    pids = [x.split()[0] for x in queue]
+    pids = [q[0] for q in queue]
     jobid = os.environ['SLURM_JOB_ID']
     for out in files.values():
         pid = out.split("_")[-1].replace(".out", "")
@@ -41,14 +42,13 @@ def checkpids(files, queue):
 
 
 def check_queue(files):
-    # get jobs from the queue, except those that are closing
-    # sq = os.popen('''%s -u %s | grep "crisp_bedfile" | grep -v "CG"''' % (shutil.which('squeue'),
-    from balance_queue import getsq
-    sq = getsq(grepping=['crisp_bedfile', 'R', 'PD'],ret=True)  # running or pending jobs with crisp_bedfile in name
+    # get jobs from the queue, except those that are closing (assumes jobs haven't failed)
+    sq = getsq(grepping=['crisp_bedfile'], states=['R', 'PD'])  # running or pending jobs with crisp_bedfile in name
 
     if len(sq) > 0:
         checksq(sq)
         checkpids(files, sq)
+    # no need for an else statement here, if len(sq) == 0: no need to check the pids
 
 
 def checkjobs():

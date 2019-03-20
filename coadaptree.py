@@ -38,6 +38,35 @@ def pklload(path):
     return pkl
 
 
+def get_email_info(parentdir, stage):
+    # TODO: but how will I know it's actually the final stage? - lofreq and crisp combine have reservation files!
+
+    from coadaptree import pklload
+    pkl = op.join(parentdir, 'email_opts.pkl')
+    if op.exists(pkl):
+        email_info = pklload(pkl)
+        #email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}  # for testing
+
+        # make text
+        email_text = '''#SBATCH --mail-user=%s''' % email_info['email']
+        options = [opt.upper() for opt in email_info['opts'] if opt != 'pipeline-finish']
+        # first determine if it's only when the pipeline finishes
+        if email_info['opts'] == ['pipeline-finish'] and stage != 'final':
+            # if default opt, but it's not the final stage
+            return ''
+        elif 'pipeline-finish' in email_info['opts'] and stage == 'final':
+            email_text = email_text + '\n' + "#SBATCH --mail-type=END"
+            if 'END' in options:
+                options.remove('END')
+        # now for stages earlier than final
+        for opt in options:
+            email_text = email_text + '\n#SBATCH --mail-type=%s' % opt
+        return email_text
+    else:
+        # no email options
+        return ''
+
+
 def uni(mylist):
     return list(set(mylist))
 
