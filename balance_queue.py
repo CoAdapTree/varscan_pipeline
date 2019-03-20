@@ -95,7 +95,7 @@ def getsq(grepping, states=[], balance=False):
 
 def adjustjob(acct, jobid):
     print(acct)
-    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
+    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s' % acct, 'JobId=%s' % str(jobid)])
     # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
 
 
