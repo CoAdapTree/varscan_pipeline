@@ -28,9 +28,9 @@ def checksq(sq):
     if not isinstance(sq, list):
         print("type(sq) != list, exiting %(thisfile)s" % globals())
         exitneeded = True
-    if len(sq) == 0:
-        print("len(sq) == 0, exiting %(thisfile)s" % globals())
-        exitneeded = True
+#     if len(sq) == 0:  # i don't think I need this with the new -h in subproc in getsq()
+#         print("len(sq) == 0, exiting %(thisfile)s" % globals())
+#         exitneeded = True
     for s in sq:
         if not s == '':
             if 'socket' in s.lower():
@@ -40,23 +40,24 @@ def checksq(sq):
                 print("could not assert int == float, %s" % (s[0]))
                 exitneeded = True
     if exitneeded is True:
-        print('slurm screwed something up for %(thisfile)s %(phase)s, lame' % globals())
+        print('slurm screwed something up for %(thisfile)s, lame' % globals())
         exit()
     else:
         return sq
 
 
-def getsq(grepping, ret=False):
+def getsq(grepping, states=[], balance=False):
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
         grepping = [grepping]
 
-    # get the pending queue, without a header
+    # get the queue, without a header
     sq = subprocess.check_output([shutil.which('squeue'),
                                   '-u',
                                   os.environ['USER'],
                                   '-h']).decode('utf-8').split('\n')
     sq = [s for s in sq if not s == '']
+    checksq(sq)  # make sure slurm gave me something useful
 
     # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
     grepped = []
@@ -70,15 +71,26 @@ def getsq(grepping, ret=False):
                         if grep.lower() in split.lower():
                             keepit += 1
                 if keepit == len(grepping):
-                    grepped.append(tuple(splits))
-                            
+                    # see if any of the state conditions are met (does not need all states, obviously)
+                    if len(states) > 0:
+                        print(states, splits[4])
+                        keepit2 = False
+                        for state in states:
+                            if state.lower() == splits[4].lower():
+                                keepit2 = True
+                        if keepit2 is True:
+                            grepped.append(tuple(splits))
+                    else:
+                        grepped.append(tuple(splits))
+
         if len(grepped) > 0:
-            return checksq(sq)
-    if ret is False:
-        print('no jobs in queue to balance')
-        exit()
+            return grepped
     else:
-        return sq
+        print('no jobs in queue')
+        if balance is True:
+            exit()
+        else:
+            return sq
 
 
 def adjustjob(acct, jobid):
@@ -90,14 +102,12 @@ def adjustjob(acct, jobid):
 def getaccounts(sq, stage):
     accounts = {}
     for q in sq:
-        if not q == '':
-            splits = q.split()
-            pid = splits[0]
-            account = splits[2]
-            account = account.split("_")[0]
-            if account not in accounts:
-                accounts[account] = {}
-            accounts[account][pid] = splits
+        pid = q[0]
+        account = q[2]
+        account = account.split("_")[0]
+        if account not in accounts:
+            accounts[account] = {}
+        accounts[account][pid] = q
 #     if len(accounts.keys()) == 3 and stage != 'final': # all accounts have low priority ### use 3 when using RAC
     if len(accounts.keys()) == 2 and stage != 'final':  # all accounts have low priority   ### use 2 when not using RAC
         print('all accounts have low priority, leaving queue as-is')
