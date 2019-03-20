@@ -12,6 +12,7 @@ import os, sys, distutils.spawn, subprocess, shutil, argparse, create_bedfiles, 
 from os import path as op
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni, makedir
+import balance_queue as bq
 
 
 def create_sh(pooldirs, poolref):
@@ -26,6 +27,7 @@ def create_sh(pooldirs, poolref):
                          op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
                          pooldir,
                          ref])
+    balance_queue.main('balance_queue.py', 'trim')
     print('\n')
 
 

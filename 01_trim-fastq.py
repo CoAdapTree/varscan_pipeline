@@ -44,12 +44,12 @@ def writetomfile(text):
     with open(mfile, 'a') as m:
         m.write("%s\n" % text)
 
-# get email info
-email_info = get_email_info(parentdir, '01')
-email_text = f"#SBATCH --mail-user={email_info['email']}"
-notification_text = ''
-for notification in email_info['opts']:
-    notification_text = notification_text + f'''\n#SBATCH --mail-type={email_info[notification].upper()}'''
+# # get email info
+# email_text = get_email_info(parentdir, '01')
+# # email_text = f"#SBATCH --mail-user={email_info['email']}"
+# notification_text = ''
+# for notification in email_info['opts']:
+#     notification_text = notification_text + f'''\n#SBATCH --mail-type={email_info[notification].upper()}'''
 
 
 # get the fastq.gz files
