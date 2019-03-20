@@ -47,6 +47,12 @@ def checksq(sq):
 
 
 def getsq(grepping, states=[], balance=False):
+    def getsq_exit(balance=balance):
+        print('no jobs in queue matching query')
+        if balance is True:
+            exit()
+        else:
+            print(sq)
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
         grepping = [grepping]
@@ -70,6 +76,7 @@ def getsq(grepping, states=[], balance=False):
                     for grep in grepping:  # see if all necessary greps are in the job
                         if grep.lower() in split.lower():
                             keepit += 1
+                print('keepit = ', keepit, len(grepping))
                 if keepit == len(grepping):
                     # see if any of the state conditions are met (does not need all states, obviously)
                     if len(states) > 0:
@@ -84,13 +91,12 @@ def getsq(grepping, states=[], balance=False):
                         grepped.append(tuple(splits))
 
         if len(grepped) > 0:
-            return grepped
-    else:
-        print('no jobs in queue')
-        if balance is True:
-            exit()
+            print(grepped)
+    #         return grepped
         else:
-            return sq
+            getsq_exit(balance=balance)
+    else:
+        getsq_exit(balance=balance)
 
 
 def adjustjob(acct, jobid):
@@ -101,6 +107,7 @@ def adjustjob(acct, jobid):
 
 def getaccounts(sq, stage):
     accounts = {}
+    print('getaccounts sq = ',sq)
     for q in sq:
         pid = q[0]
         account = q[2]
