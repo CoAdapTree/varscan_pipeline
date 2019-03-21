@@ -214,8 +214,8 @@ def get_pars():
                         required=False,
                         dest="email_options",
                         help='''the type(s) of email notifications you would like to receive from the pipeline.\
-                        Requires --email-address.
-must be one of %s''' % [x for x in choices])
+                        Requires --email-address. These options are used to fill out the #SBATCH flags.
+must be one (or multiple) of %s''' % [x for x in choices])
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,

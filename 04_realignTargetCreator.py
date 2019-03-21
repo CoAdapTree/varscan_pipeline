@@ -43,6 +43,7 @@ module unload gatk
 # next step
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
+export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
 python $HOME/pipeline/05_indelRealign_crisp.py %(pooldir)s %(samp)s %(dupfile)s %(ref)s
 
 ''' % locals()
