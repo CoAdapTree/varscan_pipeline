@@ -46,7 +46,7 @@ gatk VariantsToTable --variant %(lofile)s -F CHROM -F POS -F REF -F ALT -F AF -F
 module unload gatk
 
 source $HOME/.bashrc  # unloading gatk should revert to virtualenv activated in .bashrc, but just to be safe
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 python $HOME/pipeline/filter_VariantsToTable.py %(lofout)s
 
 # next step
