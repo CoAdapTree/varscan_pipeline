@@ -31,13 +31,12 @@ def checksq(sq):
         print("type(sq) != list, exiting %(thisfile)s" % globals())
         exitneeded = True
     for s in sq:
-        if not s == '':
-            if 'socket' in s.lower():
-                print("socket in sq return, exiting %(thisfile)s" % globals())
-                exitneeded = True
-            if not int(s.split()[0]) == float(s.split()[0]):
-                print("could not assert int == float, %s" % (s[0]))
-                exitneeded = True
+        if 'socket' in s.lower():
+            print("socket in sq return, exiting %(thisfile)s" % globals())
+            exitneeded = True
+        if not int(s.split()[0]) == float(s.split()[0]):
+            print("could not assert int == float, %s" % (s[0]))
+            exitneeded = True
     if exitneeded is True:
         print('slurm screwed something up for %(thisfile)s, lame' % globals())
         exit()
@@ -65,28 +64,25 @@ def getsq(grepping, states=[], balancing=False):
     sq = [s for s in sqout if not s == '']
     checksq(sq)  # make sure slurm gave me something useful
 
-    # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
+    # look for the things I want to grep
     grepped = []
     if len(sq) > 0:
         for q in sq:  # for each job in queue
             splits = q.split()
             if 'CG' not in splits:  # grep -v 'CG'
-                keepit = 0
                 for split in splits:
-                    for grep in grepping:  # see if all necessary greps are in the job
-                        if grep.lower() in split.lower():
-                            keepit += 1
-                if keepit == len(grepping):
-                    # see if any of the state conditions are met (does not need all states, obviously)
+                    keepit = 0
+                    if len(grepping) > 0:
+                        for grep in grepping:  # see if all necessary greps are in the job
+                            if grep.lower() in split.lower():
+                                keepit += 1
+                    keepit2 = False
                     if len(states) > 0:
-                        keepit2 = False
                         for state in states:
                             if state.lower() == splits[4].lower():
                                 keepit2 = True
-                        if keepit2 is True:
-                            grepped.append(tuple(splits))
-                    else:
-                        grepped.append(tuple(splits))
+                if keepit == len(grepping) or keepit2 is True:
+                    grepped.append(tuple(splits))
 
         if len(grepped) > 0:
             return grepped
