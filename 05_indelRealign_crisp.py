@@ -25,7 +25,7 @@ realbam = op.join(aligndir, '%s_realigned_reads.bam' % samp)
 
 email_text = get_email_info(parentdir, '05')
 text = '''#!/bin/bash
-#SBATCH --time=11:59:00
+#SBATCH --time=23:59:00
 #SBATCH --mem=6000M
 #SBATCH --ntasks=1
 #SBATCH --job-name=indelRealign_%(samp)s
