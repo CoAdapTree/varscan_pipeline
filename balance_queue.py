@@ -43,6 +43,7 @@ def checksq(sq):
     else:
         return sq
 
+
 def getsq_exit(balancing):
     print('no jobs in queue matching query')
     if balancing is True:
@@ -58,30 +59,31 @@ def getsq(grepping, states=[], balancing=False):
 
     # get the queue, without a header
     sqout = subprocess.check_output([shutil.which('squeue'),
-                                  '-u',
-                                  os.environ['USER'],
-                                  '-h']).decode('utf-8').split('\n')
+                                     '-u',
+                                     os.environ['USER'],
+                                     '-h']).decode('utf-8').split('\n')
     sq = [s for s in sqout if not s == '']
     checksq(sq)  # make sure slurm gave me something useful
 
-    # look for the things I want to grep
+    # look for the things I want to grep (all of this to avoid os.system() ... ugh codacy)
     grepped = []
     if len(sq) > 0:
         for q in sq:  # for each job in queue
             splits = q.split()
             if 'CG' not in splits:  # grep -v 'CG'
-                for split in splits:
-                    keepit = 0
-                    if len(grepping) > 0:
-                        for grep in grepping:  # see if all necessary greps are in the job
+                keepit = 0
+                if len(grepping) > 0:  # see if all necessary greps are in the job
+                    for grep in grepping:
+                        for split in splits:
                             if grep.lower() in split.lower():
                                 keepit += 1
-                    keepit2 = False
-                    if len(states) > 0:
-                        for state in states:
-                            if state.lower() == splits[4].lower():
-                                keepit2 = True
-                if keepit == len(grepping) or keepit2 is True:
+                                break
+                keepit2 = False
+                if len(states) > 0:
+                    for state in states:
+                        if state.lower() == splits[4].lower():
+                            keepit2 = True
+                if (keepit == len(grepping) and len(grepping) != 0) or keepit2 is True:
                     grepped.append(tuple(splits))
 
         if len(grepped) > 0:
@@ -93,8 +95,10 @@ def getsq(grepping, states=[], balancing=False):
 
 
 def adjustjob(acct, jobid):
-    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
-    # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
+    subprocess.Popen([shutil.which('scontrol'),
+                      'update',
+                      'Account=%s_cpu' % acct,
+                      'JobId=%s' % str(jobid)])
 
 
 def getaccounts(sq, stage):
@@ -204,10 +208,10 @@ def givetotaker(giver, taker, accounts, bal):
 
 def get_availaccounts():
     acctout = subprocess.check_output([shutil.which('sshare'),
-                                     '-U',
-                                     '--user',
-                                     os.environ['USER'],
-                                     '--format=Account']).decode('utf-8').split('\n')
+                                       '-U',
+                                       '--user',
+                                       os.environ['USER'],
+                                       '--format=Account']).decode('utf-8').split('\n')
     accts = [acct.split()[0].split("_")[0] for acct in acctout if 'def' and 'cpu' in acct]
     defs = [acct for acct in accts if 'def' in acct]
     rac = [acct for acct in accts if 'rrg' in acct]
