@@ -27,7 +27,7 @@ def get_bamfiles(samps, pooldir):
 def checkfiles(pooldir):
     # get the list of file names
     pool = op.basename(pooldir)
-    samps = pklload(op.join(op.dirname(pooldir),'poolsamps.pkl'))[pool]
+    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
     files = getfiles(samps, shdir, 'indelRealign')
     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
@@ -149,20 +149,20 @@ def create_sh(bamfiles, crispdir, pool, pooldir):
 
 def main(parentdir, pool):
     """Start CRISP if it's appropriate to do so"""
-   
+
     # check to see if all bam files have been created; if not: exit()
     bamfiles = checkfiles(op.join(parentdir, pool))
-    
+
     # create reservation so other files don't try and write files.sh, exit() if needed
     crispdir = create_reservation(op.join(parentdir, pool))
-    
+
     # create .sh file and submit to scheduler
     create_sh(bamfiles, crispdir, pool, op.join(parentdir, pool))
-    
+
     # balance queue
     balance_queue.main('balance_queue.py', 'crisp')
     # os.system('python $HOME/pipeline/balance_queue.py crisp')
-    
+
     # cancel reservation
     # I don't think I need to do this unless I find that jobs are dying unexpectedly
 

@@ -8,7 +8,7 @@
 ###
 """
 
-import os, sys, time, random, pandas as pd
+import os, sys, time, random, subprocess, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from balance_queue import getsq
@@ -20,18 +20,18 @@ def gettimestamp(f):
     return time.ctime(op.getmtime(f))
 
 
-def getmostrecent(files,remove=False):
+def getmostrecent(files, remove=False):
     if not isinstance(files, list):
         files = [files]
     if len(files) > 1:
         whichout = files[0]
-        dt1 = dt.strptime(gettimestamp(whichout)[4:],"%b %d %H:%M:%S %Y")
+        dt1 = dt.strptime(gettimestamp(whichout)[4:], "%b %d %H:%M:%S %Y")
         for o in files[1:]:
-            dt2 = dt.strptime(gettimestamp(o)[4:],"%b %d %H:%M:%S %Y")
+            dt2 = dt.strptime(gettimestamp(o)[4:], "%b %d %H:%M:%S %Y")
             if dt2 > dt1:
                 whichout = o
                 dt1 = dt2
-        if remove == True:
+        if remove is True:
             [os.remove(f) for f in files if not f == whichout]
         return whichout
     elif len(files) == 1:
@@ -68,7 +68,7 @@ def getfiles(samps, shdir, grep):
     if len(found) != len(samps):
         print('not all shfiles have been created, exiting combine_crisp.py')
         exit()
-    files = dict((f, getmostrecent([out for out in outs if op.basename(f).replace(".sh","") in out])) 
+    files = dict((f, getmostrecent([out for out in outs if op.basename(f).replace(".sh", "") in out]))
                  for f in found)
     if None in files.values():
         print('not all shfiles have been sbatched, exiting combine_crisp.py')
@@ -80,7 +80,7 @@ def check_seff(outs):
     for f in outs:
         pid = f.split("_")[-1].replace(".out", "")
         seff, seffcount = '', 0
-        while isinstance(seff, list) == False:
+        while isinstance(seff, list) is False:
             # sometimes slurm sucks
             seff = subprocess.check_output(['seff', pid]).decode('utf-8').split('\n')
             if seffcount == 10:
@@ -89,7 +89,7 @@ def check_seff(outs):
             time.sleep(1)
             seffcount += 1
         state = [x.lower() for x in seff if 'State' in x][0]
-        if not 'exit code 0' in state:
+        if 'exit code 0' not in state:
             print('job died (%s) for %s' % (state, f)) 
             print('exiting')
             exit()
@@ -97,7 +97,7 @@ def check_seff(outs):
 
 def checkjobs(pooldir):
     pool = op.basename(pooldir)
-    samps = pklload(op.join(op.dirname(pooldir),'poolsamps.pkl'))[pool]
+    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     shdir = op.join(pooldir, 'shfiles/crisp')
     files = getfiles(samps, shdir, 'crisp_bedfile')
 #     if not len(files) == len(found):
@@ -113,7 +113,7 @@ def checkjobs(pooldir):
 
 
 def create_reservation(crispdir, exitneeded=False):
-    global resfile, jobid
+    global resfile
     resfile = op.join(crispdir, 'combine_reservation.sh')
     jobid = os.environ['SLURM_JOB_ID']
     if not op.exists(resfile):
@@ -128,9 +128,10 @@ def create_reservation(crispdir, exitneeded=False):
         # just in case two jobs try at nearly the same time
         print('another job has already created reservation for %s' % op.basename(thisfile))
         exit()
+    return jobid
 
 
-def get_tables(files):
+def get_tables(files, jobid, pooldir):
     tablefiles = [f for f in fs(op.join(pooldir, 'crisp')) if f.endswith('.txt') and 'all_bedfiles' not in f]
     if not len(tablefiles) == len(files):
         msg = 'for some reason tablefiles != files. jobid=%s' % jobid
@@ -152,10 +153,10 @@ def main(pooldir):
     files, crispdir = checkjobs(pooldir)
     
     # create reservation so other files don't try and write files.sh, exit() if needed
-    create_reservation(crispdir)
+    jobid = create_reservation(crispdir)
 
     # combine table files from output of VariantsToTable
-    get_tables(files)
+    get_tables(files, jobid, pooldir)
 
 
 if __name__ == "__main__":
