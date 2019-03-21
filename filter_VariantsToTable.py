@@ -30,7 +30,7 @@ def main(thisfile, tablefile, ret=False):
     # filter df for multiallelic (multiple lines), and for SNP
     df = df[df['locus'].isin(goodloci)].copy()
     df = df[df['TYPE'] == 'SNP'].copy()
-    
+
     if ret is True:
         return df
     else:
