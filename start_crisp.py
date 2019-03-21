@@ -13,34 +13,38 @@
 """
 
 import sys, os, time, random, subprocess, balance_queue, shutil
-from coadaptree import makedir, fs, pklload, get_email_info
 from os import path as op
+from coadaptree import makedir, fs, pklload, get_email_info
+from combine_crisp import getfiles, check_queue, check_seff
 
 
-def getfiles():
-    global pooldir
-    pooldir = op.join(parentdir, pool)
-    samps = pklload(op.join(parentdir, 'poolsamps.pkl'))[pool]
+def get_bamfiles(samps, pooldir):
     found = fs(op.join(pooldir, '04_realign'))
     files = dict((samp, f.replace(".bai", ".bam")) for f in found for samp in samps if samp in f and f.endswith('.bai'))
-    return samps, files
+    return files
 
 
-def checkfiles():
+def checkfiles(pooldir):
     # get the list of file names
-    samps, files = getfiles()
-    if not len(samps) == len(files):
-        unmade = [samp for samp in samps if samp not in files]
-        text = ''
-        for missing in unmade:
-            text = text + "\t%s\n" % missing
-        print("still missing files from these samps:\n%s\n%s is exiting\n" % (text, thisfile))
-        exit()
-    return list(files.values())
+    pool = op.basename(pooldir)
+    samps = pklload(op.join(op.dirname(pooldir),'poolsamps.pkl'))[pool]
+    shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
+    files = getfiles(samps, shdir, 'indelRealign')
+    check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
+    check_seff(files.values())  # make sure the jobs didn't die
+    return get_bamfiles(samps, pooldir)
+#     samps, files = getfiles()
+#     if not len(samps) == len(files):
+#         unmade = [samp for samp in samps if samp not in files]
+#         text = ''
+#         for missing in unmade:
+#             text = text + "\t%s\n" % missing
+#         print("still missing files from these samps:\n%s\n%s is exiting\n" % (text, thisfile))
+#         exit()
+#     return list(files.values())
 
 
-def create_reservation(exitneeded=False):
-    global crispdir
+def create_reservation(pooldir, exitneeded=False):
     crispdir = makedir(op.join(pooldir, 'shfiles/crisp'))
     file = op.join(crispdir, '%s_crisp_reservation.sh' % pool)
     jobid = os.environ['SLURM_JOB_ID']
@@ -56,11 +60,11 @@ def create_reservation(exitneeded=False):
         # just in case two jobs try at nearly the same time
         print('another job has already created start_crisp.sh for %s' % pool)
         exit()
+    return crispdir
 
 
-def getcmd(files, bam_file_list, bedfile):
-    locals().update({'pool': pool})
-    bams = ' --bam '.join(files)
+def getcmd(bamfiles, bam_file_list, bedfile, pool, pooldir, parentdir):
+    bams = ' --bam '.join(bamfiles)
     num = bedfile.split("_")[-1].split(".bed")[0]
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     outdir = makedir(op.join(pooldir, 'crisp'))
@@ -73,10 +77,14 @@ def getcmd(files, bam_file_list, bedfile):
             num, outfile, logfile)
 
 
-def make_sh(files, bedfile):
-    locals().update({'pool': pool, 'pooldir': pooldir})
+def make_sh(bamfiles, bedfile, crispdir, pool, pooldir):
     bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
-    cmd, num, outfile, logfile = getcmd(files, bam_file_list, bedfile)
+    cmd, num, outfile, logfile = getcmd(bamfiles,
+                                        bam_file_list,
+                                        bedfile,
+                                        pool,
+                                        pooldir,
+                                        op.dirname(pooldir))
     tablefile = outfile.replace(".vcf", "_table.txt")
     email_text = get_email_info(parentdir, 'crisp')
     text = f'''#!/bin/bash
@@ -131,25 +139,25 @@ def get_bedfiles():
     return [f for f in fs(beddir) if f.endswith('.bed')]
 
 
-def create_sh(files):
+def create_sh(bamfiles, crispdir, pool, pooldir):
     bedfiles = get_bedfiles()
     for bedfile in bedfiles:
-        file = make_sh(files, bedfile)
+        file = make_sh(bamfiles, bedfile, crispdir, pool, pooldir)
         sbatch(file)
     print("done sbatching, exiting %s" % thisfile)
 
 
-def main():
+def main(parentdir, pool):
     """Start CRISP if it's appropriate to do so"""
    
     # check to see if all bam files have been created; if not: exit()
-    files = checkfiles()
+    bamfiles = checkfiles(op.join(parentdir, pool))
     
     # create reservation so other files don't try and write files.sh, exit() if needed
-    create_reservation()
+    crispdir = create_reservation(op.join(parentdir, pool))
     
     # create .sh file and submit to scheduler
-    create_sh(files)
+    create_sh(bamfiles, crispdir, pool, op.join(parentdir, pool))
     
     # balance queue
     balance_queue.main('balance_queue.py', 'crisp')
@@ -163,4 +171,4 @@ if __name__ == "__main__":
     # args
     thisfile, parentdir, pool = sys.argv
 
-    main()
+    main(parentdir, pool)
