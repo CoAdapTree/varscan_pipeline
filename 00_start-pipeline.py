@@ -1,18 +1,14 @@
 """
-### fix
-# TODO: uncomment create_sh.subprocess.call
-###
-
 ### usage
-# python 00_start-pipeline.py /path/to/folder/with/all/fastq/files/
+# usage: 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
 ###
 """
 
 import os, sys, distutils.spawn, subprocess, shutil, argparse, create_bedfiles, pandas as pd
+import balance_queue
 from os import path as op
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni, makedir
-import balance_queue as bq
 
 
 def create_sh(pooldirs, poolref):
@@ -102,7 +98,8 @@ def read_datatable(parentdir):
     # read in the datatable, save rginfo for later
     datatable = op.join(parentdir, 'datatable.txt')
     if not op.exists(datatable):
-        print('the datatable is not in the necessary path: %s\nexiting 00_start-pipeline.py' % datatable)
+        print(Bcolors.FAIL + '''FAIL: the datatable is not in the necessary path: %s
+FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
         sys.exit(3)
     print('reading datatable, getting fastq info')
     data = pd.read_csv(datatable, sep='\t')
@@ -169,12 +166,17 @@ def check_reqs():
             print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
 later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
+    # look for lofreq, make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
     for exe in ['lofreq', 'activate']:
         if distutils.spawn.find_executable(exe) is None:
             print('\tcould not find %s in $PATH\nexiting 00_start-pipeline.py' % exe)
             if exe == 'activate':
                 print('\t\t(the lack of activate means that the python env is not correctly installed)')
             exit()
+    # make sure pipeline can be accessed via $HOME/pipeline
+    if not op.exists(op.join(os.environ['HOME'],'pipeline')):
+        print('\tcould not find pipeline via $HOME/pipeline')
+        eixt()
     print('DONE!\n')
 
 
@@ -183,39 +185,37 @@ def check_pyversion():
     pyversion = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
     if not pyversion >= 3.6:
         text = '''FAIL: You are using python %s. This pipeline was built with python 3.7+.
-    FAIL: You will need at least python v3.6+.
-    FAIL: exiting 00_start-pipeline.py
+FAIL: You will need at least python v3.6+.
+FAIL: exiting 00_start-pipeline.py
     ''' % pyversion
         print(Bcolors.BOLD + Bcolors.FAIL + text + Bcolors.ENDC)
         exit()
 
 
 def get_pars():
+    choices = ['all', 'none', 'fail', 'begin', 'end', 'pipeline-finish']
     parser = argparse.ArgumentParser(description=print(mytext),
                                      add_help=False,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-p", "--parent-dir",
+    requiredNAMED = parser.add_argument_group('required arguments')
+    requiredNAMED.add_argument("-p",
                         required=True,
+                        default=argparse.SUPPRESS,
                         dest="parentdir",
                         type=str,
-                        help="/path/to/directory/with/fastq.gz-and-datatabe.txt/files/")
-    parser.add_argument("-e", "--email-address",
+                        help="/path/to/directory/with/fastq.gz-files/")
+    parser.add_argument("-e",
                         required=False,
                         dest="email",
                         help="the email address you would like to have notifications sent to")
-    parser.add_argument("-n", "--notification-types",
-                        default=['pipeline-finish'],
+    parser.add_argument("-n",
+                        default=argparse.SUPPRESS,
                         nargs='+',
-                        choices=['all',
-                                 'none',
-                                 'fail',
-                                 'begin',
-                                 'end',
-                                 'pipeline-finish'],
                         required=False,
                         dest="email_options",
-                        help="the type(s) of email notifications you would like to receive from the pipeline.\
-                        Requires --email-address.")
+                        help='''the type(s) of email notifications you would like to receive from the pipeline.\
+                        Requires --email-address.
+must be one of %s''' % [x for x in choices])
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,
@@ -224,23 +224,30 @@ def get_pars():
     if args.parentdir.endswith('/'):
         args.parentdir = args.parentdir[:-1]
     if args.email and args.email_options is None:
-        print(Bcolors.WARNING + 'INFO using default notification: pipeline-finish' + Bcolors.ENDC)
-        askforinput()
+        print(Bcolors.FAIL + 'FAIL: --notification-types are required when specifying email' + Bcolors.ENDC)
+        print(Bcolors.FAIL + 'FAIL: choices = {%s}\n' % [x for x in choices] + Bcolors.ENDC)
+        exit()
     if args.email_options and args.email is None:
-        parser.error(Bcolors.FAIL + 'specifying --notification-types requires specifying \
---email-address' + Bcolors.ENDC)
+        print(Bcolors.FAIL + 'FAIL: specifying --notification-types requires specifying \
+--email-address\n' + Bcolors.ENDC)
+        exit()
+    if args.email_options:
+        for choice in args.email_options:
+            if not choice.lower() in choices:
+                print(Bcolors.FAIL + '''FAIL: There can be multiple options, but they must be from the set:''' + Bcolors.ENDC)
+                print(Bcolors.FAIL + '''\t%s\n''' % choices + Bcolors.ENDC)
+                exit()
     if args.email:
         if '@' not in args.email:
-            parser.error(Bcolors.FAIL + 'email address does not have an "@" symbol in it, \
-please check input' + Bcolors.ENDC)
+            print(Bcolors.FAIL + 'FAIL: email address does not have an "@" symbol in it, \
+please check input\n' + Bcolors.ENDC)
+            exit()
         if 'all' in args.email_options:
             args.email_options = ['all']
         # save email
         epkl = {'email': args.email,
                 'opts': args.email_options}
         pkldump(epkl, op.join(args.parentdir, 'email_opts.pkl'))
-    print(vars(args))
-    print(args.parentdir)
 
     return args
 
@@ -255,14 +262,19 @@ def main():
     # look for exported vars (should be in .bashrc)
     check_reqs()
 
+    # read in the datatable
     data, f2pool, poolref = read_datatable(args.parentdir)
 
+    # create bedfiles to parallelize crisp later on
     create_crisp_bedfiles(poolref)
 
+    # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
 
+    # assign fq files to pooldirs for visualization (good to double check)
     get_datafiles(args.parentdir, f2pool, data)
 
+    # create and sbatch sh files
     create_sh(pooldirs, poolref)
 
 
