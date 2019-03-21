@@ -61,8 +61,8 @@ text = '''#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=bwa_%(samp)s
-#SBATCH --output=bwa_%(samp)s_%%j.out 
+#SBATCH --job-name=%(pools)-%(samp)s-bwa
+#SBATCH --output=%(pools)-%(samp)s-bwa_%%j.out 
 %(email_text)s
 
 
@@ -86,12 +86,12 @@ module unload samtools
 # mark and build
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 python $HOME/pipeline/03_mark_build.py %(sortfile)s %(pooldir)s 
 ''' % locals()
 
 # create shfile
-qsubfile = op.join(bwashdir, 'bwa_%s.sh' % samp)
+qsubfile = op.join(bwashdir, '%(pools)-%(samp)s-bwa.sh' % locals())
 with open(qsubfile, 'w') as o:
     o.write("%s" % text)
 

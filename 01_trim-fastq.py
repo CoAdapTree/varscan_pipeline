@@ -87,17 +87,17 @@ for r1, r2 in seq_pairs:
     email_text = get_email_info(parentdir,'01')
 
     text = '''#!/bin/bash
-#SBATCH --job-name=%(pool)s-%(samp)s_trim
+#SBATCH --job-name=%(pool)s-%(samp)s-trim
 #SBATCH --time=02:59:00
 #SBATCH --mem=5000M
 #SBATCH --cpus-per-task=16
-#SBATCH --output=%(pool)s-%(samp)s_trim_%%j.out
+#SBATCH --output=%(pool)s-%(samp)s-trim_%%j.out
 %(email_text)s
 
 
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 
 module load fastp/0.19.5
 
@@ -110,7 +110,7 @@ fastp -i %(r1)s -o %(r1out)s -I %(r2)s -O %(r2out)s --disable_quality_filtering 
 python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(ref)s %(r1out)s %(r2out)s %(shdir)s %(samp)s
 
 ''' % locals()
-    filE = op.join(shtrimDIR, '%(pool)s-%(samp)s_trim.sh' % locals())
+    filE = op.join(shtrimDIR, '%(pool)s-%(samp)s-trim.sh' % locals())
     shfiles.append(filE)
     with open(filE, 'w') as o:
         o.write("%s" % text)

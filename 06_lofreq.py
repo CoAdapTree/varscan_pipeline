@@ -30,8 +30,8 @@ text = '''#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=lofreq_%(samp)s
-#SBATCH --output=lofreq_%(samp)s_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-lofreq
+#SBATCH --output=%(pool)s-%(samp)s-lofreq_%%j.out 
 %(email_text)s
 
 source $HOME/.bashrc
@@ -46,7 +46,7 @@ gatk VariantsToTable --variant %(lofile)s -F CHROM -F POS -F REF -F ALT -F AF -F
 module unload gatk
 
 source $HOME/.bashrc  # unloading gatk should revert to virtualenv activated in .bashrc, but just to be safe
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 python $HOME/pipeline/filter_VariantsToTable.py %(lofout)s
 
 # next step
@@ -57,7 +57,7 @@ python $HOME/pipeline/filter_VariantsToTable.py %(lofout)s
 shdir = op.join(pooldir, 'shfiles/06_lofreq_shfiles')
 for d in [lofdir, shdir]:
     makedir(d)
-file = op.join(shdir, 'lofreq_%(samp)s.sh' % locals())
+file = op.join(shdir, '%(pool)s-%(samp)s-lofreq.sh' % locals())
 with open(file, 'w') as o:
     o.write("%s" % text)
 

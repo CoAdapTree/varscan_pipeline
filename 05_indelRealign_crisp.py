@@ -28,8 +28,8 @@ text = '''#!/bin/bash
 #SBATCH --time=23:59:00
 #SBATCH --mem=6000M
 #SBATCH --ntasks=1
-#SBATCH --job-name=indelRealign_%(samp)s
-#SBATCH --output=indelRealign_%(samp)s_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-indelRealign
+#SBATCH --output=%(pool)s-%(samp)s-indelRealign_%%j.out 
 %(email_text)s
 
 module load gatk/3.8
@@ -40,7 +40,7 @@ module unload gatk
 # sbatch CRISP job if all pooled bamfiles have been created
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 python $HOME/pipeline/start_crisp.py %(parentdir)s %(pool)s
 
 # next step
@@ -50,7 +50,7 @@ python $HOME/pipeline/06_lofreq.py %(pooldir)s %(samp)s %(ref)s %(realbam)s
 # create shdir and shfile
 shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
 makedir(shdir)
-file = op.join(shdir, 'indelRealign_%(samp)s.sh' % locals())
+file = op.join(shdir, '%(pool)s-%(samp)s-indelRealign.sh' % locals())
 with open(file, 'w') as o:
     o.write("%s" % text)
 
