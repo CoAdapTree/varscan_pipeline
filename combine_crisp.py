@@ -15,7 +15,7 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs
-from balance_queue import checksq, getsq
+from balance_queue import getsq
 from filter_VariantsToTable import main as remove_multiallelic
 
 
@@ -46,7 +46,7 @@ def check_queue(files):
     sq = getsq(grepping=['crisp_bedfile'], states=['R', 'PD'])  # running or pending jobs with crisp_bedfile in name
 
     if len(sq) > 0:
-        checksq(sq)
+#         checksq(sq)  # no need for this, checksq() is called in getsq()
         checkpids(files, sq)
     # no need for an else statement here, if len(sq) == 0: no need to check the pids
 
