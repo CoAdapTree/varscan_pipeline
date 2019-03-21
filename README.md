@@ -19,13 +19,14 @@
 ---
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm
-1. install an anaconda (not miniconda) or virtual environment with python 3.7 (eg: `conda create -n py3 python=3.7` or `virtualenv --no-download ~/py3`)
-    1. source env within `$HOME/.bashrc` on the last line of the file (`source /path/to/conda/bin/activate py3` or `source ~/py3/bin/activate`)
-1. install bwa and export path in `$HOME/.bashrc` or load  module (eg `module load bwa/0.7.17`)
-1. install samtools with anaconda (after activating environment: `conda install -c bioconda samtools`) or load module (eg `module load samtools/1.9`)
-1. install picardtools with anaconda (after activating env: `conda install -c bioconda picard`) or load module (eg `module load picard/2.18.9`)
-1. install gatk or load module (eg `module load gatk/3.8`) - this pipeline uses `gatk/3.8` and `gatk/4.1.0.0`
-1. install bcftools or load module (eg `module load bcftools/1.9`)
+1. Ability to install an anaconda (not miniconda) or virtual environment with python 3.7 (eg: `conda create -n py3 python=3.7` or `virtualenv --no-download ~/py3`)
+    1. source env within `$HOME/.bashrc` on the last line of the file (eg `source ~/anaconda3/bin/activate py3` for conda, or `source ~/py3/bin/activate` for virutalenv)
+1. Ability to load the following modules via:
+    1. `module load bwa/0.7.17`
+    1. `module load samtools/1.9`
+    1. `module load picard/2.18.9`
+    1. `module load gatk/3.8` and `module load gatk/4.1.0.0`
+    1. `module load bcftools/1.9`
 1. Download and install CRISP (commit `60966e7`): https://sites.google.com/site/vibansal/software/crisp
     1. In `$HOME/.bashrc` export the path to the CRISP folder.
         ```export CRISP_DIR=/path/to/crisp/folder```
@@ -37,18 +38,38 @@
     export SBATCH_ACCOUNT=$SLURM_ACCOUNT
     export SALLOC_ACCOUNT=$SLURM_ACCOUNT
     ```
-1. Add the following to `$HOME/.bashrc`: 
-    1. `export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"`
-    1. `export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"`
-1. clone the pipeline repo to the server and create a symlink in `$HOME` so that it can be accessed via `$HOME/pipeline`
+1. clone the pipeline repo's master branch to the server and create a symlink in `$HOME` so that it can be accessed via `$HOME/pipeline`
 
 
 ## Using the pipeline
-- First install python modules from `coadaptree.py` with `pip install <module>`. 
-- See example datatable.txt file needed for `00_start-pipeline.py`. 
+- First create a python3 environment (see above).
+    - then use the `requirements.txt` file in the repo to install the appropriate python dependencies.
+        - `pip install -r $HOME/pipeline/requirements.txt`
+- See example datatable.txt file needed for `00_start-pipeline.py`.
+    - file names in `file_name_r1` and `file_name_r2` should be basenames not full paths
+    - the entries in the `ref` column should be full paths
+- For the pipeline to properly parse file names, use the following file naming convention:
+    - `<sometext>---<sometext>.<sample_name_using_only_underscores>_R1.fastq.gz`
+        - eg `HI.4779.008.D701---D507.DF_p52_cap1_kit2_R1.fastq.gz`
+- Once the environment is set up, put `datatable.txt` and the fastq files (symlinks work too) into a folder. This is the folder I call `PARENTDIR`.
 
-- To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, `cd ~/pipeline`, and run `00_start-pipeline.py` from the home node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `3_get_snps.py`).
+- To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, `cd $HOME/pipeline`, and run `00_start-pipeline.py` from the home node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_lofreq.py`).
 
-`(py3) [user@host pipeline]$ python 00_start-pipeline.py /path/to/folder/with/files.fastq.gz`
+`(py3) [user@host pipeline]$ python 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS] [-h]`
+```
+optional arguments:
+  -e EMAIL              the email address you would like to have notifications
+                        sent to (default: None)
+  -n EMAIL_OPTIONS [EMAIL_OPTIONS ...]
+                        the type(s) of email notifications you would like to
+                        receive from the pipeline. Requires --email-address.
+                        These options are used to fill out the #SBATCH flags.
+                        must be one (or multiple) of ['all', 'none', 'fail',
+                        'begin', 'end', 'pipeline-finish']
+  -h, --help            Show this help message and exit.
+
+required arguments:
+  -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
+```
 
 
