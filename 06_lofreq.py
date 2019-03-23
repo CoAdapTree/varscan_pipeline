@@ -22,6 +22,7 @@ thisfile, pooldir, samp, ref, realbam = sys.argv
 lofdir = op.join(pooldir, 'lofreq')
 lofile = op.join(lofdir, '%s_lofreq.vcf.gz' % samp)
 lofout = lofile.replace(".vcf.gz", "_table.txt")
+pool = op.basename(pooldir)
 
 email_text = get_email_info(op.dirname(pooldir), '06')
 text = '''#!/bin/bash
