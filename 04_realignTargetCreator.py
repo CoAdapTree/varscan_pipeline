@@ -30,8 +30,8 @@ text = '''#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=%(pool)-%(samp)s-realign
-#SBATCH --output=%(pool)-%(samp)s-realign_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-realign
+#SBATCH --output=%(pool)s-%(samp)s-realign_%%j.out 
 %(email_text)s
 
 # realign using the GATK
@@ -52,7 +52,7 @@ python $HOME/pipeline/05_indelRealign_crisp.py %(pooldir)s %(samp)s %(dupfile)s 
 shdir = op.join(pooldir, 'shfiles/04_realignTarget_shfiles')
 for d in [aligndir, shdir]:
     makedir(d)
-file = op.join(shdir, '%(pool)-%(samp)s-realign.sh' % locals())
+file = op.join(shdir, '%(pool)s-%(samp)s-realign.sh' % locals())
 with open(file, 'w') as o:
     o.write("%s" % text)
 
