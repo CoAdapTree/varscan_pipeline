@@ -71,7 +71,7 @@ for f in gzfiles:
         writetomfile(text)
 
 print("found %s R1/R2 seq pairs" % str(len(seq_pairs)))
-text = "found %s R1/R2 seq pairs\n"
+text = "found %s R1/R2 seq pairs\n" % str(len(seq_pairs))
 writetomfile(text)
 
 # write sh files
