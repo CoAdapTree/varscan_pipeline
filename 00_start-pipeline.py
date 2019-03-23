@@ -1,4 +1,8 @@
 """
+###
+# do i check for duplicated samps in datatable?
+###
+
 ### usage
 # usage: 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
 ###
@@ -193,7 +197,7 @@ FAIL: exiting 00_start-pipeline.py
 
 
 def get_pars():
-    choices = ['all', 'none', 'fail', 'begin', 'end', 'pipeline-finish']
+    choices = ['all', 'fail', 'begin', 'end', 'pipeline-finish']
     parser = argparse.ArgumentParser(description=print(mytext),
                                      add_help=False,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
