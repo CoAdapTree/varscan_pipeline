@@ -43,13 +43,12 @@ def getmostrecent(files, remove=False):
 
 def checkpids(outs, queue):
     # if any of the other crisp jobs are pending or running, exit
-    locals().update({'thisfile': thisfile})
     pids = [q[0] for q in queue]
     jobid = os.environ['SLURM_JOB_ID']
     for out in outs:
         pid = out.split("_")[-1].replace(".out", "")
         if pid in pids and pid != jobid:  # if the job is running, but it's not this job
-            print('the following file is still in the queue - exiting %(thisfile)s' % locals(),
+            print('the following file is still in the queue - exiting %s' % sys.argv[0],
                   '\n', '\t%(out)s' % locals())
             exit()  # TODO: should I be exiting?
 
@@ -63,36 +62,48 @@ def check_queue(outs, pooldir):
 
     
 def getfiles(samps, shdir, grep):
+    if grep == 'crisp_bedfile':
+        # numbedfiles = numshfiles = found; so set samps to numbedfiles to bypass len(found) == len(samps)
+        pooldir = op.dirname(op.dirname(shdir))
+        parentdir = op.dirname(pooldir)
+        pool = op.basename(pooldir)
+        ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
+        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta","")))
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
-        print('not all shfiles have been created, exiting combine_crisp.py')
+        # this only works for start crisp, not combine crisp since crisp has 15 bedfiles.
+        print('not all shfiles have been created, exiting %s' % sys.argv[0])
         exit()
     files = dict((f, getmostrecent([out for out in outs if op.basename(f).replace(".sh", "") in out]))
                  for f in found)
     if None in files.values():
-        print('not all shfiles have been sbatched, exiting combine_crisp.py')
+        print('not all shfiles have been sbatched, exiting %s' % sys.argv[0])
         exit()
     return files
 
 
 def check_seff(outs):
+    jobid = os.environ['SLURM_JOB_ID']
     for f in outs:
         pid = f.split("_")[-1].replace(".out", "")
-        seff, seffcount = '', 0
-        while isinstance(seff, list) is False:
-            # sometimes slurm sucks
-            seff = subprocess.check_output(['seff', pid]).decode('utf-8').split('\n')
-            if seffcount == 10:
-                print('slurm is screwing something up with seff, exiting')
+        if not pid == jobid:
+            seff, seffcount = '', 0
+            while isinstance(seff, list) is False:
+                # sometimes slurm sucks
+                seff = subprocess.check_output(['seff', pid]).decode('utf-8').split('\n')
+                if seffcount == 10:
+                    print('slurm is screwing something up with seff, exiting %s' % sys.argv[0])
+                    exit()
+                time.sleep(1)
+                seffcount += 1
+            state = [x.lower() for x in seff if 'State' in x][0]
+            if 'exit code 0' not in state:
+                text = 'died' if not 'running' in state else 'running'
+                print('cannot proceed with %s' % sys.argv[0])
+                print('job died (%s) for %s' % (state, f)) 
+                print('exiting %s' % sys.argv[0])
                 exit()
-            time.sleep(1)
-            seffcount += 1
-        state = [x.lower() for x in seff if 'State' in x][0]
-        if 'exit code 0' not in state:
-            print('job died (%s) for %s' % (state, f)) 
-            print('exiting')
-            exit()
 
 
 def checkjobs(pooldir):
@@ -126,7 +137,7 @@ def create_reservation(crispdir, exitneeded=False):
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
-        print('another job has already created reservation for %s' % op.basename(thisfile))
+        print('another job has already created reservation for %s' % op.basename(sys.argv[0]))
         exit()
     return jobid
 
