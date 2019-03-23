@@ -26,6 +26,7 @@ thisfile, ref, r1out, r2out, shdir, samp = sys.argv
 bwashdir = op.join(shdir, '02_bwa_shfiles')
 pooldir = op.dirname(shdir)
 parentdir = op.dirname(pooldir)
+pool = op.basename(pooldir)
 
 # get rginfo
 rginfo = pklload(op.join(parentdir, 'rginfo.pkl'))
@@ -61,8 +62,8 @@ text = '''#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=%(pools)-%(samp)s-bwa
-#SBATCH --output=%(pools)-%(samp)s-bwa_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-bwa
+#SBATCH --output=%(pool)s-%(samp)s-bwa_%%j.out 
 %(email_text)s
 
 
@@ -91,7 +92,7 @@ python $HOME/pipeline/03_mark_build.py %(sortfile)s %(pooldir)s
 ''' % locals()
 
 # create shfile
-qsubfile = op.join(bwashdir, '%(pools)-%(samp)s-bwa.sh' % locals())
+qsubfile = op.join(bwashdir, '%(pool)s-%(samp)s-bwa.sh' % locals())
 with open(qsubfile, 'w') as o:
     o.write("%s" % text)
 
