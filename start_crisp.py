@@ -20,7 +20,12 @@ from combine_crisp import getfiles, check_queue, check_seff
 
 def get_bamfiles(samps, pooldir):
     found = fs(op.join(pooldir, '04_realign'))
-    files = dict((samp, f.replace(".bai", ".bam")) for f in found for samp in samps if samp in f and f.endswith('.bai'))
+    files = dict((samp, f.replace(".bai", ".bam")) for samp in samps for f in found if samp in f and f.endswith('.bai'))
+    if not len(files) == len(samps):
+        print('len(files) != len(samps)')
+        print('files = ', files)
+        print('samps = ', samps)
+        exit()
     return files
 
 
@@ -144,7 +149,7 @@ def create_sh(bamfiles, crispdir, pool, pooldir):
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, crispdir, pool, pooldir)
         sbatch(file)
-    print("done sbatching, exiting %s" % thisfile)
+    print("done sbatching, exiting %s" % sys.argv[0])
 
 
 def main(parentdir, pool):
