@@ -1,4 +1,8 @@
 """
+### fix
+# cannot use symmetric difference if len(defs) > 2
+###
+
 ### note
 # right now this isn't using the RAC, and will exit if there are not more than one def-X accounts
 ###
@@ -51,6 +55,7 @@ def getsq_exit(balancing):
         exit()
     else:
         return []
+
 
 def getsq(grepping, states=[], balancing=False):
     if isinstance(grepping, str):
