@@ -55,7 +55,7 @@
 
 - To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, `cd $HOME/pipeline`, and run `00_start-pipeline.py` from the home node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_lofreq.py`).
 
-`(py3) [user@host pipeline]$ python 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS] [-h]`
+`(py3) [user@host pipeline]$ python 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]] [-h]`
 ```
 optional arguments:
   -e EMAIL              the email address you would like to have notifications
