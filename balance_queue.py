@@ -239,7 +239,7 @@ def main(thisfile, phase):
     defs, rac = get_availaccounts()
 
     # get the queue
-    sq = getsq(grepping=[phase, 'Priority'], states=['PD'], balancing=True)  # TODO: PD state is redundant to Priority
+    sq = getsq(grepping=[phase, 'Priority'], balancing=True)
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
@@ -259,7 +259,7 @@ def main(thisfile, phase):
     givetotaker(giver, taker, accts, balance)
 
     # announce final job counts
-    announceacctlens(getaccounts(getsq(grepping=[phase, 'Priority'], states=['PD'], balancing=True),
+    announceacctlens(getaccounts(getsq(grepping=[phase, 'Priority'], balancing=True),
                                  'final'),
                      True)
 
