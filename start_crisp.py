@@ -195,8 +195,10 @@ def make_sh(bamfiles, bedfile, crispdir, pool, pooldir):
 #SBATCH --output={pool}-crisp_bedfile_{num}_%j.out
 {email_text}
 
+module load python/2.7.14
 # run CRISP (commit 60966e7)
 {cmd}
+module unload python
 
 # vcf -> table (multiallelic to multiple lines, filtered in combine_crisp.py
 module load gatk/4.1.0.0
