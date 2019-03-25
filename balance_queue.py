@@ -93,10 +93,11 @@ def getsq(grepping, states=[], balancing=False):
 
         if len(grepped) > 0:
             return grepped
-        else:  # I'm pretry sure I can just have one getsq_exit() statement at the end of the function
-            getsq_exit(balancing)
-    else:
-        getsq_exit(balancing)
+    return getsq_exit(balancing)
+#         else:  # I'm pretry sure I can just have one getsq_exit() statement at the end of the function
+#             getsq_exit(balancing)
+#     else:
+#         getsq_exit(balancing)
 
 
 def adjustjob(acct, jobid):
