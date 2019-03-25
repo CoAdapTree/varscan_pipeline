@@ -1,12 +1,4 @@
 """
-### fix
-# cannot use symmetric difference if len(defs) > 2
-###
-
-### note
-# right now this isn't using the RAC, and will exit if there are not more than one def-X accounts
-###
-
 ###
 # usage: balance_queue.py phaseOFpipeline
 ###
@@ -185,7 +177,7 @@ def gettaker(accounts, defs):
             print('assertion error')
         giver = keys[0]
     # taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
-    taker = list(set(defs).symmetric_difference({giver}))[0]
+    taker = list(set(defs).symmetric_difference({giver}))[0]  # TODO: will 'work' if defs > 2, but won't evenly dist.
     return giver, taker
 
 
