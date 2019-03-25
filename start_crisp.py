@@ -284,7 +284,7 @@ def main(parentdir, pool):
     crispdir = create_reservation(op.join(parentdir, pool))
 
     # create .sh file and submit to scheduler
-    pids = create_sh(bamfiles, crispdir, pool, op.join(parentdir, pool))
+    pids = create_sh(bamfiles.values(), crispdir, pool, op.join(parentdir, pool))
     
     # create .sh file to combine crisp parallels using jobIDs as dependencies
     create_combine(pids, parentdir, pool)
