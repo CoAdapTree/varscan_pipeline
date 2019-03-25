@@ -159,7 +159,7 @@ def create_reservation(pooldir, exitneeded=False):
     return crispdir
 
 
-def getcmd(bamfiles, bam_file_list, bedfile, pool, pooldir, parentdir):
+def getcmd(bamfiles, bedfile, pool, pooldir, parentdir):
     bams = ' --bam '.join(bamfiles)
     num = bedfile.split("_")[-1].split(".bed")[0]
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
@@ -167,21 +167,25 @@ def getcmd(bamfiles, bam_file_list, bedfile, pool, pooldir, parentdir):
     outfile = op.join(outdir, '%(pool)s_crisp_bedfile_%(num)s.vcf' % locals())
     poolsize = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     logfile = outfile.replace(".vcf", ".log")
+    convertfile = outfile.replace(".vcf", "_converted.vcf")
     return ('''$CRISP_DIR/CRISP --bam %(bams)s --ref %(ref)s --VCF %(outfile)s \
 --poolsize %(poolsize)s --mbq 20 --minc 5 --bed %(bedfile)s > %(logfile)s
+
+touch $SLURM_TMPDIR/bam_file_list.txt # assumes equal pool sizes
+
+$CRISP_DIR/scripts/convert_pooled_vcf.py %(outfile)s $SLURM_TMPDIR/bam_file_list \
+%(poolsize)s > %(convertfile)s
 ''' % locals(),
-            num, outfile, logfile)
+            num, outfile, convertfile, logfile)
 
 
 def make_sh(bamfiles, bedfile, crispdir, pool, pooldir):
-    bam_file_list = '$SLURM_TMPDIR/bam_file_list.txt'  # replace with function if pools unequal
-    cmd, num, outfile, logfile = getcmd(bamfiles,
-                                        bam_file_list,
-                                        bedfile,
-                                        pool,
-                                        pooldir,
-                                        op.dirname(pooldir))
-    tablefile = outfile.replace(".vcf", "_table.txt")
+    cmd, num, outfile, convertfile, logfile = getcmd(bamfiles,
+                                                     bedfile,
+                                                     pool,
+                                                     pooldir,
+                                                     op.dirname(pooldir))
+    tablefile = convertfile.replace(".vcf", "_table.txt")
     email_text = get_email_info(parentdir, 'crisp')
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
@@ -191,18 +195,12 @@ def make_sh(bamfiles, bedfile, crispdir, pool, pooldir):
 #SBATCH --output={pool}-crisp_bedfile_{num}_%j.out
 {email_text}
 
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-
 # run CRISP (commit 60966e7)
 {cmd}
 
-# if any other crisp jobs are hanging due to priority, change the account
-python $HOME/pipeline/balance_queue.py crisp
-
 # vcf -> table (multiallelic to multiple lines, filtered in combine_crisp.py
 module load gatk/4.1.0.0
-gatk VariantsToTable --variant {outfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
+gatk VariantsToTable --variant {convertfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP -F HP -F MQS -F TYPE -F FILTER \
 -O {tablefile} --split-multi-allelic
 module unload gatk
@@ -210,7 +208,13 @@ module unload gatk
 # gzip outfiles to save space
 cd $(dirname {outfile})
 gzip {outfile}
+gzip {convertfile}
 rm {logfile}
+
+# if any other crisp jobs are hanging due to priority, change the account
+source $HOME/.bashrc
+export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
+python $HOME/pipeline/balance_queue.py crisp
 
 '''
     file = op.join(crispdir, '%(pool)s-crisp_bedfile_%(num)s.sh' % locals())
