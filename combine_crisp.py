@@ -68,7 +68,7 @@ def main(pooldir):
     files, crispdir = checkjobs(pooldir)
     
     # combine table files from output of VariantsToTable
-    get_tables(files, jobid, pooldir)
+    get_tables(files, pooldir)
 
 
 if __name__ == "__main__":
