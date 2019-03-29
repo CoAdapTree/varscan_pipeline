@@ -173,7 +173,7 @@ def getcmd(bamfiles, bedfile, pool, pooldir, parentdir):
 
 touch $SLURM_TMPDIR/bam_file_list.txt # assumes equal pool sizes
 
-$CRISP_DIR/scripts/convert_pooled_vcf.py %(outfile)s $SLURM_TMPDIR/bam_file_list \
+$CRISP_DIR/scripts/convert_pooled_vcf.py %(outfile)s $SLURM_TMPDIR/bam_file_list.txt \
 %(poolsize)s > %(convertfile)s
 ''' % locals(),
             num, outfile, convertfile, logfile)
