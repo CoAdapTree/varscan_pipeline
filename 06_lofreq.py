@@ -22,6 +22,7 @@ thisfile, pooldir, samp, ref, realbam = sys.argv
 lofdir = op.join(pooldir, 'lofreq')
 lofile = op.join(lofdir, '%s_lofreq.vcf.gz' % samp)
 lofout = lofile.replace(".vcf.gz", "_table.txt")
+pool = op.basename(pooldir)
 
 email_text = get_email_info(op.dirname(pooldir), '06')
 text = '''#!/bin/bash
@@ -30,8 +31,8 @@ text = '''#!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=lofreq_%(samp)s
-#SBATCH --output=lofreq_%(samp)s_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-lofreq
+#SBATCH --output=%(pool)s-%(samp)s-lofreq_%%j.out 
 %(email_text)s
 
 source $HOME/.bashrc
@@ -57,7 +58,7 @@ python $HOME/pipeline/filter_VariantsToTable.py %(lofout)s
 shdir = op.join(pooldir, 'shfiles/06_lofreq_shfiles')
 for d in [lofdir, shdir]:
     makedir(d)
-file = op.join(shdir, 'lofreq_%(samp)s.sh' % locals())
+file = op.join(shdir, '%(pool)s-%(samp)s-lofreq.sh' % locals())
 with open(file, 'w') as o:
     o.write("%s" % text)
 

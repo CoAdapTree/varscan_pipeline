@@ -29,8 +29,8 @@ text = '''#!/bin/bash
 #SBATCH --time=11:59:00
 #SBATCH --mem=30000M
 #SBATCH --ntasks=1
-#SBATCH --job-name=mark_%(samp)s
-#SBATCH --output=mark_%(samp)s_%%j.out 
+#SBATCH --job-name=%(pool)s-%(samp)s-mark
+#SBATCH --output=%(pool)s-%(samp)s-mark_%%j.out 
 %(email_text)s
 
 # remove dups
@@ -63,7 +63,7 @@ python $HOME/pipeline/04_realignTargetCreator.py %(pooldir)s %(samp)s %(dupfile)
 shdir = op.join(pooldir, 'shfiles/03_mark_build_shfiles')
 for d in [shdir, dupdir]:
     makedir(d)
-file = op.join(shdir, 'mark_%(samp)s.sh' % locals())
+file = op.join(shdir, '%(pool)s-%(samp)s-mark.sh' % locals())
 with open(file, 'w') as o:
     o.write("%s" % text)
 

@@ -1,8 +1,4 @@
 """
-### fix
-# getfiles() will run into problems if a job is rescheduled and its old .out file remains in crispdir
-###
-
 ### purpose
 # combine the bedfiles from parallelized crisp runs
 ###
@@ -14,59 +10,24 @@
 
 import os, sys, time, random, pandas as pd
 from os import path as op
-from coadaptree import fs
+from coadaptree import fs, pklload
 from balance_queue import getsq
 from filter_VariantsToTable import main as remove_multiallelic
+from start_crisp import getfiles
 
 
-def getfiles():
-    global crispdir
-    crispdir = op.join(pooldir, 'shfiles/crisp')
-    found = [sh for sh in fs(crispdir) if sh.endswith(".sh") and 'crisp_bedfile' in sh]
-    outs = [out for out in fs(crispdir) if out.endswith('.out') and 'crisp_bedfile' in out]
-    files = dict((f, out) for f in found for out in outs if op.basename(f).replace(".sh", "") in out)
-    return found, files
-
-
-def checkpids(files, queue):
-    # if any of the other crisp jobs are pending or running, exit
-    locals().update({'thisfile': thisfile})
-    pids = [q[0] for q in queue]
-    jobid = os.environ['SLURM_JOB_ID']
-    for out in files.values():
-        pid = out.split("_")[-1].replace(".out", "")
-        if pid in pids and pid != jobid:  # if the job is running, but it's not this job
-            print('the following file is still in the queue - exiting %(thisfile)s' % locals(),
-                  '\n', '\t%(out)s' % locals())
-            exit()  # TODO: should I be exiting?
-
-
-def check_queue(files):
-    # get jobs from the queue, except those that are closing (assumes jobs haven't failed)
-    sq = getsq(grepping=['crisp_bedfile'], states=['R', 'PD'])  # running or pending jobs with crisp_bedfile in name
-
-    if len(sq) > 0:
-#         checksq(sq)  # no need for this, checksq() is called in getsq()
-        checkpids(files, sq)
-    # no need for an else statement here, if len(sq) == 0: no need to check the pids
-
-
-def checkjobs():
-    locals().update({'thisfile': thisfile})
-    found, files = getfiles()
-    if not len(files) == len(found):
-        unmade = [f for f in found if f not in files]
-        text = ''
-        for missing in unmade:
-            text = text + "\t%s\n" % missing
-        print('still missing files from these files:\n%(text)s\n%(thisfile)s is exiting\n' % locals())
-        exit()
-    check_queue(files)  # make sure job isn't in the queue
+def checkjobs(pooldir):
+    pool = op.basename(pooldir)
+    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
+    shdir = op.join(pooldir, 'shfiles/crisp')
+    files = getfiles(samps, shdir, 'crisp_bedfile')
+#     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
+#     check_seff(files.values())  # make sure the jobs didn't die
     return files
 
 
-def create_reservation(exitneeded=False):
-    global resfile, jobid
+def create_reservation(crispdir, exitneeded=False):
+    global resfile
     resfile = op.join(crispdir, 'combine_reservation.sh')
     jobid = os.environ['SLURM_JOB_ID']
     if not op.exists(resfile):
@@ -79,14 +40,15 @@ def create_reservation(exitneeded=False):
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
-        print('another job has already created reservation for %s' % op.basename(thisfile))
+        print('another job has already created reservation for %s' % op.basename(sys.argv[0]))
         exit()
+    return jobid
 
 
-def get_tables(files):
+def get_tables(files, pooldir):
     tablefiles = [f for f in fs(op.join(pooldir, 'crisp')) if f.endswith('.txt') and 'all_bedfiles' not in f]
     if not len(tablefiles) == len(files):
-        msg = 'for some reason tablefiles != files. jobid=%s' % jobid
+        msg = 'for some reason tablefiles != files. jobid=%s' % os.environ['SLURM_JOB_ID']
         print(msg)
         with open(resfile, 'a') as resFile:
             resFile.write("\n%s\n" % msg)
@@ -94,26 +56,22 @@ def get_tables(files):
     dfs = [remove_multiallelic(thisfile, tablefile, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
     
-    filename = op.join(pooldir, 'crisp/%s_all_bedfiles.txt' % op.basename(pooldir))
+    filename = op.join(pooldir, 'crisp/%s_all_bedfiles_biallelic_snps.txt' % op.basename(pooldir))
     df.to_csv(filename, sep='\t', index=False)
     
     print('combined crisp files to %s' % filename)
 
 
-def main():
+def main(pooldir):
     # make sure all of the crisp jobs have finished
-    files = checkjobs()
-
+    files = checkjobs(pooldir)
     
-    # create reservation so other files don't try and write files.sh, exit() if needed
-    create_reservation()
-
     # combine table files from output of VariantsToTable
-    get_tables(files)
+    get_tables(files, pooldir)
 
 
 if __name__ == "__main__":
     # args
     thisfile, pooldir = sys.argv
 
-    main()
+    main(pooldir)

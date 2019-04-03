@@ -1,8 +1,4 @@
 """
-### note
-# right now this isn't using the RAC, and will exit if there are not more than one def-X accounts
-###
-
 ###
 # usage: balance_queue.py phaseOFpipeline
 ###
@@ -31,18 +27,18 @@ def checksq(sq):
         print("type(sq) != list, exiting %(thisfile)s" % globals())
         exitneeded = True
     for s in sq:
-        if not s == '':
-            if 'socket' in s.lower():
-                print("socket in sq return, exiting %(thisfile)s" % globals())
-                exitneeded = True
-            if not int(s.split()[0]) == float(s.split()[0]):
-                print("could not assert int == float, %s" % (s[0]))
-                exitneeded = True
+        if 'socket' in s.lower():
+            print("socket in sq return, exiting %(thisfile)s" % globals())
+            exitneeded = True
+        if not int(s.split()[0]) == float(s.split()[0]):
+            print("could not assert int == float, %s" % (s[0]))
+            exitneeded = True
     if exitneeded is True:
         print('slurm screwed something up for %(thisfile)s, lame' % globals())
         exit()
     else:
         return sq
+
 
 def getsq_exit(balancing):
     print('no jobs in queue matching query')
@@ -52,6 +48,7 @@ def getsq_exit(balancing):
     else:
         return []
 
+
 def getsq(grepping, states=[], balancing=False):
     if isinstance(grepping, str):
         # in case I pass a single str instead of a list of strings
@@ -59,46 +56,47 @@ def getsq(grepping, states=[], balancing=False):
 
     # get the queue, without a header
     sqout = subprocess.check_output([shutil.which('squeue'),
-                                  '-u',
-                                  os.environ['USER'],
-                                  '-h']).decode('utf-8').split('\n')
+                                     '-u',
+                                     os.environ['USER'],
+                                     '-h']).decode('utf-8').split('\n')
     sq = [s for s in sqout if not s == '']
     checksq(sq)  # make sure slurm gave me something useful
 
-    # look for the things I want to grep (serial subprocess.Popen() are a pain with grep)
+    # look for the things I want to grep (all of this to avoid os.system() ... ugh codacy)
     grepped = []
     if len(sq) > 0:
         for q in sq:  # for each job in queue
             splits = q.split()
             if 'CG' not in splits:  # grep -v 'CG'
                 keepit = 0
-                for split in splits:
-                    for grep in grepping:  # see if all necessary greps are in the job
-                        if grep.lower() in split.lower():
-                            keepit += 1
-                if keepit == len(grepping):
-                    # see if any of the state conditions are met (does not need all states, obviously)
-                    if len(states) > 0:
-                        keepit2 = False
-                        for state in states:
-                            if state.lower() == splits[4].lower():
-                                keepit2 = True
-                        if keepit2 is True:
-                            grepped.append(tuple(splits))
-                    else:
-                        grepped.append(tuple(splits))
+                if len(grepping) > 0:  # see if all necessary greps are in the job
+                    for grep in grepping:
+                        for split in splits:
+                            if grep.lower() in split.lower():
+                                keepit += 1
+                                break
+                keepit2 = False
+                if len(states) > 0:
+                    for state in states:
+                        if state.lower() == splits[4].lower():
+                            keepit2 = True
+                if (keepit == len(grepping) and len(grepping) != 0) or keepit2 is True:
+                    grepped.append(tuple(splits))
 
         if len(grepped) > 0:
             return grepped
-        else:
-            getsq_exit(balancing)
-    else:
-        getsq_exit(balancing)
+    return getsq_exit(balancing)
+#         else:  # I'm pretry sure I can just have one getsq_exit() statement at the end of the function
+#             getsq_exit(balancing)
+#     else:
+#         getsq_exit(balancing)
 
 
 def adjustjob(acct, jobid):
-    subprocess.Popen([shutil.which('scontrol'), 'update', 'Account=%s_cpu' % acct, 'JobId=%s' % str(jobid)])
-    # os.system('scontrol update Account=%s_cpu JobId=%s' % (acct, str(jobid)) )
+    subprocess.Popen([shutil.which('scontrol'),
+                      'update',
+                      'Account=%s_cpu' % acct,
+                      'JobId=%s' % str(jobid)])
 
 
 def getaccounts(sq, stage):
@@ -179,7 +177,7 @@ def gettaker(accounts, defs):
             print('assertion error')
         giver = keys[0]
     # taker = list({'def-saitken', 'def-yeaman'}.symmetric_difference({giver}))[0]
-    taker = list(set(defs).symmetric_difference({giver}))[0]
+    taker = list(set(defs).symmetric_difference({giver}))[0]  # TODO: will 'work' if defs > 2, but won't evenly dist.
     return giver, taker
 
 
@@ -208,10 +206,10 @@ def givetotaker(giver, taker, accounts, bal):
 
 def get_availaccounts():
     acctout = subprocess.check_output([shutil.which('sshare'),
-                                     '-U',
-                                     '--user',
-                                     os.environ['USER'],
-                                     '--format=Account']).decode('utf-8').split('\n')
+                                       '-U',
+                                       '--user',
+                                       os.environ['USER'],
+                                       '--format=Account']).decode('utf-8').split('\n')
     accts = [acct.split()[0].split("_")[0] for acct in acctout if 'def' and 'cpu' in acct]
     defs = [acct for acct in accts if 'def' in acct]
     rac = [acct for acct in accts if 'rrg' in acct]
@@ -233,7 +231,7 @@ def main(thisfile, phase):
     defs, rac = get_availaccounts()
 
     # get the queue
-    sq = getsq(grepping=[phase, 'Priority'], states=['PD'], balancing=True)  # TODO: PD state is redundant to Priority
+    sq = getsq(grepping=[phase, 'Priority'], balancing=True)
 
     # get per-account counts of jobs in Priority pending status, exit if all accounts have low priority
     accts = getaccounts(sq, '')
@@ -253,7 +251,7 @@ def main(thisfile, phase):
     givetotaker(giver, taker, accts, balance)
 
     # announce final job counts
-    announceacctlens(getaccounts(getsq(grepping=[phase, 'Priority'], states=['PD'], balancing=True),
+    announceacctlens(getaccounts(getsq(grepping=[phase, 'Priority'], balancing=True),
                                  'final'),
                      True)
 

@@ -30,12 +30,12 @@ def main(thisfile, tablefile, ret=False):
     # filter df for multiallelic (multiple lines), and for SNP
     df = df[df['locus'].isin(goodloci)].copy()
     df = df[df['TYPE'] == 'SNP'].copy()
-    
+
     if ret is True:
         return df
     else:
         # save
-        df.to_csv(tablefile.replace(".txt", "_filtered.txt"), index=False, sep='\t')
+        df.to_csv(tablefile.replace(".txt", "_biallelic_snps.txt"), index=False, sep='\t')
         print('finished filtering VariantsToTable file: %s' % tablefile)
 
 
