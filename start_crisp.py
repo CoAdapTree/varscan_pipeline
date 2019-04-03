@@ -35,7 +35,7 @@ def getmostrecent(files, remove=False):
                 whichout = o
                 dt1 = dt2
         if remove is True:
-            [os.remove(f) for f in files if not f == whichout]
+            rems = [os.remove(f) for f in files if not f == whichout]
         return whichout
     elif len(files) == 1:
         return files[0]
@@ -74,7 +74,7 @@ def check_seff(outs):
             seff, seffcount = '', 0
             while isinstance(seff, list) is False:
                 # sometimes slurm sucks
-                seff = subprocess.check_output(['seff', pid]).decode('utf-8').split('\n')
+                seff = subprocess.check_output([shutil.which('seff'), pid]).decode('utf-8').split('\n')
                 if seffcount == 10:
                     print('slurm is screwing something up with seff, exiting %s' % sys.argv[0])
                     exit()
@@ -82,9 +82,9 @@ def check_seff(outs):
                 seffcount += 1
             state = [x.lower() for x in seff if 'State' in x][0]
             if 'exit code 0' not in state:
-                text = 'died' if not 'running' in state else 'running'
+                status = 'died' if not 'running' in state else 'is running'
                 print('cannot proceed with %s' % sys.argv[0])
-                print('job died (%s) for %s' % (state, f)) 
+                print('job %s (%s) for %s' % (status, state, f))
                 print('exiting %s' % sys.argv[0])
                 exit()
 
