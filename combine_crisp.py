@@ -8,12 +8,11 @@
 ###
 """
 
-import os, sys, time, random, subprocess, pandas as pd
+import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from balance_queue import getsq
 from filter_VariantsToTable import main as remove_multiallelic
-from datetime import datetime as dt
 from start_crisp import getfiles
 
 
@@ -24,7 +23,7 @@ def checkjobs(pooldir):
     files = getfiles(samps, shdir, 'crisp_bedfile')
 #     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
 #     check_seff(files.values())  # make sure the jobs didn't die
-    return files, shdir
+    return files
 
 
 def create_reservation(crispdir, exitneeded=False):
@@ -65,7 +64,7 @@ def get_tables(files, pooldir):
 
 def main(pooldir):
     # make sure all of the crisp jobs have finished
-    files, crispdir = checkjobs(pooldir)
+    files = checkjobs(pooldir)
     
     # combine table files from output of VariantsToTable
     get_tables(files, pooldir)
