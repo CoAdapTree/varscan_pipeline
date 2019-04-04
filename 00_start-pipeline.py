@@ -1,6 +1,11 @@
 """
+### FIX
+# change adaptors dict keys from samps to files
+###
+
 ###
 # do i check for duplicated samps in datatable?
+# look for/replace dunders
 ###
 
 ### usage
@@ -126,6 +131,12 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
             poolsamps[pool] = []
         if samp not in poolsamps[pool]:
             poolsamps[pool].append(samp)
+        if samp in samp2pool:
+            if samp2pool[samp] != pool:
+                print(Bcolors.FAIL + 'FAIL: there are duplicate sample names with \
+different pool assignments: %s' % samp + Bcolors.ENDC)
+                print('exiting')
+                exit()
         samp2pool[samp] = pool
         df = data[data['pool_name'] == pool].copy()
         if not luni(df['ploidy']) == 1:
