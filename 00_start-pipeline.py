@@ -1,10 +1,6 @@
 """
 ### FIX
-# change adaptors dict keys from samps to files
-###
-
-###
-# do i check for duplicated samps in datatable?
+# check for exisiting pooldirs to ask if user wants to continue
 # look for/replace dunders
 ###
 
@@ -167,6 +163,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
     pkldump(poolsamps, op.join(parentdir, 'poolsamps.pkl'))
     pkldump(poolref, op.join(parentdir, 'poolref.pkl'))
     pkldump(adaptors, op.join(parentdir, 'adaptors.pkl'))
+    pkldump(samp2pool, op.join(parentdir, 'samp2pool.pkl'))
     return data, f2pool, poolref
 
 

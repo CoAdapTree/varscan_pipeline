@@ -61,8 +61,8 @@ for f in gzfiles:
     else:
         text = '\nWARNING: no pair for %s\n' % f
         writetomfile(text)
-print("found %s R1/R2 seq pairs" % str(len(seq_pairs)))
-text = "found %s R1/R2 seq pairs\n" % str(len(seq_pairs))
+text = "found %s R1/R2 seq pairs\n" % str(len([f for samp, files in seq_pairs.items() for f in files]))
+print(text)
 writetomfile(text)
 
 # write sh files
