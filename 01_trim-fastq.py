@@ -67,7 +67,7 @@ writetomfile(text)
 
 # write sh files
 shfiles = []
-email_text = get_email_info(parentdir,'01')
+email_text = get_email_info(parentdir, '01')
 samp2_r1r2out = {}
 for samp, pairs in seq_pairs.items():
     samp2_r1r2out[samp] = []
