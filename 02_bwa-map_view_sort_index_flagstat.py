@@ -23,6 +23,7 @@ from coadaptree import pklload, pkldump, get_email_info, makedir
 thisfile, parentdir, samp = sys.argv
 pool = pklload(op.join(parentdir, 'samp2pool.pkl'))[samp]
 pooldir = op.join(parentdir, pool)
+shdir = op.join(pooldir, 'shfiles')
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 r1r2outs = pklload(op.join(pooldir, 'samp2_r1r2out.pkl'))[samp]
 
@@ -81,7 +82,7 @@ for r1, r2 in r1r2outs:
     sortfile, text = getbwatext(r1, r2)
     bwatext = bwatext + text
     sortfiles.append(sortfile)
-pkldump(op.join(pooldir, '%s_sortfiles.pkl' % samp))
+pkldump(sortfiles, op.join(pooldir, '%s_sortfiles.pkl' % samp))
 
 # send it off
 email_text = get_email_info(parentdir, '02')
