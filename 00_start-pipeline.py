@@ -1,8 +1,4 @@
 """
-### FIX
-# check for exisiting pooldirs to ask if user wants to continue
-###
-
 ### usage
 # usage: 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
 ###
@@ -87,6 +83,10 @@ def make_pooldirs(data, parentdir):
     pooldirs = []
     for p in pools:
         DIR = op.join(parentdir, p)
+        if op.exists(DIR):
+            print("The pooldir already exists, this could overwrite previous data: %s" % DIR)
+            print("Do you want to exit?")
+            askforinput()
         pooldirs.append(makedir(DIR))
     return pooldirs
 
