@@ -119,14 +119,13 @@ python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(parentdir)s %(sam
 pkldump(samp2_r1r2out, op.join(pooldir, 'samp2_r1r2out.pkl'))
 
 
-
 print('shcount =', len(shfiles))
 print('shdir = ', shtrimDIR)
 # qsub the files
 print(shfiles)
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
-    print('shfile=',sh)
+    print('shfile=', sh)
     subprocess.call([shutil.which('sbatch'), sh])
     # os.system('sbatch %s' % sh)
     time.sleep(2)

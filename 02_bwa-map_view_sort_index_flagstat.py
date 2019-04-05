@@ -75,6 +75,7 @@ module unload samtools
 
 ''')
 
+
 # get bwatext
 bwatext = ''''''
 sortfiles = []

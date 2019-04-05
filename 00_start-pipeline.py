@@ -52,7 +52,9 @@ def get_datafiles(parentdir, f2pool, data):
     if len(files) < len(datafiles):
         desc = 'less'
     try:
-        print(Bcolors.WARNING + 'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir) + Bcolors.ENDC)
+        print(Bcolors.WARNING +
+              'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir) +
+              Bcolors.ENDC)
         print(Bcolors.BOLD + 'Here are the files in %s' % parentdir + Bcolors.ENDC)
         [print(op.basename(x)) for x in files]
         print(Bcolors.BOLD + 'Here are the files in datatable.txt' + Bcolors.ENDC)
@@ -191,9 +193,9 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
                 print('\t\t(the lack of activate means that the python env is not correctly installed)')
             exit()
     # make sure pipeline can be accessed via $HOME/pipeline
-    if not op.exists(op.join(os.environ['HOME'],'pipeline')):
+    if not op.exists(op.join(os.environ['HOME'], 'pipeline')):
         print('\tcould not find pipeline via $HOME/pipeline')
-        eixt()
+        exit()
     print('DONE!\n')
 
 
@@ -216,11 +218,11 @@ def get_pars():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     requiredNAMED = parser.add_argument_group('required arguments')
     requiredNAMED.add_argument("-p",
-                        required=True,
-                        default=argparse.SUPPRESS,
-                        dest="parentdir",
-                        type=str,
-                        help="/path/to/directory/with/fastq.gz-files/")
+                               required=True,
+                               default=argparse.SUPPRESS,
+                               dest="parentdir",
+                               type=str,
+                               help="/path/to/directory/with/fastq.gz-files/")
     parser.add_argument("-e",
                         required=False,
                         dest="email",
@@ -251,8 +253,12 @@ must be one (or multiple) of %s''' % [x for x in choices])
     if args.email_options:
         for choice in args.email_options:
             if not choice.lower() in choices:
-                print(Bcolors.FAIL + '''FAIL: There can be multiple options, but they must be from the set:''' + Bcolors.ENDC)
-                print(Bcolors.FAIL + '''\t%s\n''' % choices + Bcolors.ENDC)
+                print(Bcolors.FAIL +
+                      '''FAIL: There can be multiple options, but they must be from the set:''' +
+                      Bcolors.ENDC)
+                print(Bcolors.FAIL +
+                      '''\t%s\n''' % choices +
+                      Bcolors.ENDC)
                 exit()
     if args.email:
         if '@' not in args.email:

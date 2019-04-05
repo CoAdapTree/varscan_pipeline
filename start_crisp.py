@@ -51,7 +51,7 @@ def getfiles(samps, shdir, grep):
         parentdir = op.dirname(pooldir)
         pool = op.basename(pooldir)
         ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta","")))
+        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta", "")))
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
@@ -82,7 +82,7 @@ def check_seff(outs):
                 seffcount += 1
             state = [x.lower() for x in seff if 'State' in x][0]
             if 'exit code 0' not in state:
-                status = 'died' if not 'running' in state else 'is running'
+                status = 'died' if 'running' not in state else 'is running'
                 print('cannot proceed with %s' % sys.argv[0])
                 print('job %s (%s) for %s' % (status, state, f))
                 print('exiting %s' % sys.argv[0])
@@ -98,7 +98,7 @@ def checkpids(outs, queue):
         if pid in pids and pid != jobid:  # if the job is running, but it's not this job
             print('the following file is still in the queue - exiting %s' % sys.argv[0],
                   '\n', '\t%(out)s' % locals())
-            exit()  # TODO: should I be exiting?
+            exit()
 
 
 def check_queue(outs, pooldir):
@@ -249,7 +249,7 @@ def create_sh(bamfiles, crispdir, pool, pooldir):
 
 def create_combine(pids, parentdir, pool):
     pooldir = op.join(parentdir, pool)
-    email_text = get_email_info(parentdir,'crisp')
+    email_text = get_email_info(parentdir, 'crisp')
     if isinstance(pids, list) is not True:
         print('pids is not a list')
         pids = [pids]
