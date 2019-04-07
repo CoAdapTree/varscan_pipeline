@@ -11,7 +11,6 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
-from balance_queue import getsq
 from filter_VariantsToTable import main as remove_multiallelic
 from start_crisp import getfiles
 

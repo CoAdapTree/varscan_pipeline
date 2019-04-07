@@ -45,7 +45,7 @@ def get_email_info(parentdir, stage):
     pkl = op.join(parentdir, 'email_opts.pkl')
     if op.exists(pkl):
         email_info = pklload(pkl)
-        #email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}  # for testing
+        # email_info = {'email': 'lindb@vcu.edu', 'opts': ['pipeline-finish']}  # for testing
 
         # make text
         email_text = '''#SBATCH --mail-user=%s''' % email_info['email']
