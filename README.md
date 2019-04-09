@@ -48,9 +48,8 @@
 - See example datatable.txt file needed for `00_start-pipeline.py`.
     - file names in `file_name_r1` and `file_name_r2` should be basenames not full paths
     - the entries in the `ref` column should be full paths
-- For the pipeline to properly parse file names, use the following file naming convention:
-    - `<sometext>---<sometext>.<sample_name_using_only_underscores>_R1.fastq.gz`
-        - eg `HI.4779.008.D701---D507.DF_p52_cap1_kit2_R1.fastq.gz`
+    - sample names in 'sample_name' column can be duplicates for samps sequenced multiple times
+	- RG info, file paths, etc should of course be different between sequenced files of single samps
 - Once the environment is set up, put `datatable.txt` and the fastq files (symlinks work too) into a folder. This is the folder I call `PARENTDIR`.
 
 - To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, `cd $HOME/pipeline`, and run `00_start-pipeline.py` from the home node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_lofreq.py`).
