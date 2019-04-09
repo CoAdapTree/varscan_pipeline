@@ -67,7 +67,7 @@ bwa mem -t 32 -M -R "@RG\\tID:$RGID\\tSM:{rgsm}\\tPL:{rgpl}\\tLB:{rglb}\\tPU:$RG
 module unload bwa
 
 module load samtools/1.9
-samtools view -@ 32 -q 20 -F 0x0004 -Sb {samfile} > {bamfile}
+samtools view -@ 32 -q 20 -F 0x0004 -f 0x0002 -Sb {samfile} > {bamfile}
 samtools sort -@ 32 {bamfile} > {sortfile}
 samtools index {sortfile}
 samtools flagstat {sortfile} > {flagfile}
@@ -88,7 +88,7 @@ pkldump(sortfiles, op.join(pooldir, '%s_sortfiles.pkl' % samp))
 # send it off
 email_text = get_email_info(parentdir, '02')
 text = f'''#!/bin/bash
-#SBATCH --time=11:59:00
+#SBATCH --time=23:59:00
 #SBATCH --mem=30000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
