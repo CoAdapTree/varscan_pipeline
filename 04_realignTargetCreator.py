@@ -25,8 +25,8 @@ ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 
 email_text = get_email_info(parentdir, '04')
 text = '''#!/bin/bash
-#SBATCH --time=11:59:00
-#SBATCH --mem=6000M
+#SBATCH --time=23:59:00
+#SBATCH --mem=8000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
