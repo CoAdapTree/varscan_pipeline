@@ -46,7 +46,7 @@ os.chdir(pooldir)
 gzfiles = [f for f in fs(pooldir) if 'R1' in f]
 lgz = len(gzfiles)
 text = 'found %(lgz)s R1 fastq.gz files in %(pooldir)s' % locals()
-print(text)
+print('\t%s' % text)
 writetomfile(text)
 
 # match seq pairs to samp, alert if pair not found
@@ -62,7 +62,7 @@ for f in gzfiles:
         text = '\nWARNING: no pair for %s\n' % f
         writetomfile(text)
 text = "found %s R1/R2 seq pairs\n" % str(len([f for samp, files in seq_pairs.items() for f in files]))
-print(text)
+print('\t%s' % text)
 writetomfile(text)
 
 # write sh files
@@ -119,13 +119,13 @@ python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(parentdir)s %(sam
 pkldump(samp2_r1r2out, op.join(pooldir, 'samp2_r1r2out.pkl'))
 
 
-print('shcount =', len(shfiles))
-print('shdir = ', shtrimDIR)
+print('\tshcount =', len(shfiles))
+print('\tshdir = ', shtrimDIR)
 # qsub the files
-print(shfiles)
+print('\t', shfiles)
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
-    print('shfile=', sh)
+    print('\tshfile=', sh)
     subprocess.call([shutil.which('sbatch'), sh])
     # os.system('sbatch %s' % sh)
     time.sleep(2)
