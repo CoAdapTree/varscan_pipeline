@@ -13,18 +13,18 @@ from coadaptree import fs, pkldump, uni, luni, makedir
 
 def create_sh(pooldirs, poolref):
     # create sh files
-    print('\nwriting sh files')
+    print(Bcolors.BOLD + '\nwriting sh files' + Bcolors.ENDC)
     for pooldir in pooldirs:
         pool = op.basename(pooldir)
-        print('\npool = %s' % pool)
+        print(Bcolors.BOLD + '\npool = %s' % pool + Bcolors.ENDC)
         ref = poolref[pool]
-        print('sending pooldir and ref to 01_trim-fastq.py')
+        print('\tsending pooldir and ref to 01_trim-fastq.py')
         subprocess.call([shutil.which('python'),
                          op.join(os.environ['HOME'], 'pipeline/01_trim-fastq.py'),
                          pooldir,
                          ref])
+    print("\n")
     balance_queue.main('balance_queue.py', 'trim')
-    print('\n')
 
 
 def askforinput():
@@ -80,7 +80,7 @@ def get_datafiles(parentdir, f2pool, data):
 
 def make_pooldirs(data, parentdir):
     # make pool dirs
-    print("\nmaking pool dirs")
+    print(Bcolors.BOLD + "\nmaking pool dirs" + Bcolors.ENDC)
     pools = uni(data['pool_name'].tolist())
     pooldirs = []
     for p in pools:
@@ -95,7 +95,7 @@ def make_pooldirs(data, parentdir):
 
 def create_crisp_bedfiles(poolref):
     # create bedfiles for crisp
-    print("\ncreating CRISP bedfiles")
+    print(Bcolors.BOLD + "\ncreating CRISP bedfiles" + Bcolors.ENDC)
     for ref in poolref.values():
         create_bedfiles.main('create_bedfiles.py', ref)
 
@@ -107,7 +107,7 @@ def read_datatable(parentdir):
         print(Bcolors.FAIL + '''FAIL: the datatable is not in the necessary path: %s
 FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
         sys.exit(3)
-    print('reading datatable, getting fastq info')
+    print(Bcolors.BOLD + 'reading datatable, getting fastq info' + Bcolors.ENDC)
     data = pd.read_csv(datatable, sep='\t')
     rginfo = {}     # key=sampname vals=rginfo
     samp2pool = {}  # key=samp val=pool
@@ -123,7 +123,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
                           'r2': data.loc[row, 'adaptor_2']}
         pool = data.loc[row, 'pool_name']
         pooldir = op.join(parentdir, pool)
-        print('{}\tsamp = {}\tpool = {}'.format(row, samp, pool))
+        print('\t{}\tsamp = {}\tpool = {}'.format(row, samp, pool))
         if pool not in poolsamps:
             poolsamps[pool] = []
         if samp not in poolsamps[pool]:
@@ -151,6 +151,20 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 print('ref for %s does not exist in path: %s' % (samp, ref))
                 print('exiting %s' % '00_start-pipeline.py')
                 exit()
+            needed = []
+            for suffix in ['.dict', '.amb', '.ann', '.bwt', '.fai', '.pac', '.sa']:
+                refext = ref + suffix if suffix != '.dict' else ref.split('.fa')[0] + suffix
+                if not op.exists(refext):
+                    needed.append(refext)
+            if len(needed) > 0:
+                print(Bcolors.FAIL + 
+                      'FAIL: the following extensions of the reference are needed to continue, \
+please create these files' + 
+                      Bcolors.ENDC)
+                for n in needed:
+                    print(Bcolors.FAIL + n + Bcolors.ENDC)
+                print('exiting')
+                exit()
             poolref[pool] = ref
         rginfo[samp] = {}
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
@@ -176,7 +190,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
 
 def check_reqs():
     # check for assumed exports
-    print('\nchecking for exported variables')
+    print(Bcolors.BOLD + '\nchecking for exported variables' + Bcolors.ENDC)
     for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
                 'CRISP_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
         try:
