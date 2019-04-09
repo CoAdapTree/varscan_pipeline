@@ -43,7 +43,7 @@ def make_bedfile(lines, fcount):
     with open(f, 'w') as o:
         for line in lines:
             contig, length = line
-            o.write("%s\t%s\t%s\n" % (contig, 1, length))  # contig \t start \t stop
+            o.write("%s\t%s\t%s\n" % (contig, 0, length))  # contig \t start \t stop
 
 
 def make_bedfiles():
