@@ -26,18 +26,18 @@ def openlenfile(lenfile):
 
 def make_lenfile():
     if not op.exists('%(ref)s.length' % globals()):
-        print("creating %s.length file (this will take a few minutes)" % op.basename(ref))
+        print("\tcreating %s.length file (this will take a few minutes)" % op.basename(ref))
         os.system('''cat  %(ref)s | awk '$0 ~ ">" {print c; c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' | sed 1d >  %(ref)s.length''' % globals())
     else:
         text = openlenfile('%(ref)s.length' % globals())
-        print("ref.length file already created for %s\n\twhich has %s contigs" % (ref, len(text)-1))
+        print("\tref.length file already created for %s\n\t\twhich has %s contigs" % (ref, len(text)-1))
     if not op.exists("%(ref)s.length" % globals()):
         print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref, thisfile))
         exit()
 
 
 def make_bedfile(lines, fcount):
-    bname = op.basename(ref).replace(".fasta", "")
+    bname = op.basename(ref).split(".fa")[0]
     beddir = makedir(op.join(op.dirname(ref), 'bedfiles_%s' % bname))
     f = op.join(beddir, "%s_bedfile_%s.bed" % (bname, str(fcount).zfill(2)))
     with open(f, 'w') as o:
