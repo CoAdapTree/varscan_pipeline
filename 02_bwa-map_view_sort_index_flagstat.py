@@ -75,7 +75,7 @@ samtools flagstat {sortfile} > {flagfile}
 module unload samtools
 
 module load bedtools/2.27.1
-bedtools bamtobed -i {sort} > {coordfile}
+bedtools bamtobed -i {sortfile} > {coordfile}
 
 ''')
 
