@@ -55,6 +55,7 @@ def getbwatext(r1out, r2out):
     sort = op.basename(bamfile).replace('.bam', '_sorted.bam')
     sortfile = op.join(sortdir, sort)
     flagfile = op.join(sortdir, sort.replace('.bam', '.bam.flagstats'))
+    coordfile = op.join(sortdir, sort.replace('.bam', '.bam.coord'))
     
     return (sortfile, f'''# get RGID and RGPU
 RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)
@@ -73,6 +74,9 @@ samtools index {sortfile}
 samtools flagstat {sortfile} > {flagfile}
 module unload samtools
 
+module load bedtools/2.27.1
+bedtools bamtobed -i {sort} > {coordfile}
+
 ''')
 
 
@@ -89,7 +93,7 @@ pkldump(sortfiles, op.join(pooldir, '%s_sortfiles.pkl' % samp))
 email_text = get_email_info(parentdir, '02')
 text = f'''#!/bin/bash
 #SBATCH --time=23:59:00
-#SBATCH --mem=30000M
+#SBATCH --mem=35000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
