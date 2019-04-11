@@ -42,7 +42,7 @@ def askforinput():
 
 def get_datafiles(parentdir, f2pool, data):
     # get list of files from datatable, make sure they exist in parentdir, create symlinks in /parentdir/<pool_name>/
-    print('\nchecking for existance of fastq files in datatable.txt')
+    print(Bcolors.BOLD + '\nchecking for existance of fastq files in datatable.txt' + Bcolors.ENDC)
     files = [f for f in fs(parentdir) if 'fastq' in f and 'md5' not in f]
     datafiles = data['file_name_r1'].tolist()
     for x in data['file_name_r2'].tolist():
@@ -96,7 +96,7 @@ def make_pooldirs(data, parentdir):
 def create_crisp_bedfiles(poolref):
     # create bedfiles for crisp
     print(Bcolors.BOLD + "\ncreating CRISP bedfiles" + Bcolors.ENDC)
-    for ref in poolref.values():
+    for ref in uni(poolref.values()):
         create_bedfiles.main('create_bedfiles.py', ref)
 
 
@@ -173,7 +173,7 @@ please create these files' +
             if "__" in f:
                 print(Bcolors.BOLD + 
                       Bcolors.FAIL + 
-                      "FAIL: file names cannot have double underscores, exiting" + 
+                      "FAIL: file names cannot have double underscores, replace __ with _ (single)" + 
                       Bcolors.END)
                 exit()
             f2pool[f] = pool
