@@ -190,8 +190,8 @@ def make_sh(bamfiles, bedfile, crispdir, pool, pooldir):
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-crisp_bedfile_{num}
-#SBATCH --time=11:59:00
-#SBATCH --mem=4000M
+#SBATCH --time=23:59:00
+#SBATCH --mem=15000M
 #SBATCH --output={pool}-crisp_bedfile_{num}_%j.out
 {email_text}
 
