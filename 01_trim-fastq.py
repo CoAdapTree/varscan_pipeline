@@ -122,7 +122,6 @@ pkldump(samp2_r1r2out, op.join(pooldir, 'samp2_r1r2out.pkl'))
 print('\tshcount =', len(shfiles))
 print('\tshdir = ', shtrimDIR)
 # qsub the files
-print('\t', shfiles)
 for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
     print('\tshfile=', sh)
