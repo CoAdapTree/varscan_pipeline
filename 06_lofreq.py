@@ -35,7 +35,7 @@ source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 
 # call lofreq, convert VCF to table, filter for multi-allelic
-lofreq call-parallel --pp-threads 32 -f {ref} -o {lofile} {realbam}
+lofreq call-parallel --pp-threads 32 -f {ref} -o {lofile} {realbam} -l {bedfile}
 
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {lofile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
