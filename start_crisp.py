@@ -232,14 +232,14 @@ def sbatch(file):
     return pid
 
 
-def get_bedfiles():
+def get_bedfiles(parentdir, pool):
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     beddir = op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0])
     return [f for f in fs(beddir) if f.endswith('.bed')]  # TODO: see if I split any other refs by .fasta
 
 
 def create_sh(bamfiles, crispdir, pool, pooldir):
-    bedfiles = get_bedfiles()
+    bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, crispdir, pool, pooldir)

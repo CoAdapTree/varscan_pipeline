@@ -50,7 +50,7 @@ module unload gatk
 
 
 def create_sh(shdir):
-    bedfiles = get_bedfiles()
+    bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bedfile, shdir)
