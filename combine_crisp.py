@@ -25,25 +25,6 @@ def checkjobs(pooldir):
     return files
 
 
-def create_reservation(crispdir, exitneeded=False):
-    global resfile
-    resfile = op.join(crispdir, 'combine_reservation.sh')
-    jobid = os.environ['SLURM_JOB_ID']
-    if not op.exists(resfile):
-        with open(resfile, 'w') as o:
-            o.write("%s" % jobid)
-    else:
-        exitneeded = True
-    time.sleep(random.random()*15)
-    with open(resfile, 'r') as o:
-        fjobid = o.read().split()[0]
-    if not fjobid == jobid or exitneeded is True:
-        # just in case two jobs try at nearly the same time
-        print('another job has already created reservation for %s' % op.basename(sys.argv[0]))
-        exit()
-    return jobid
-
-
 def get_tables(files, pooldir):
     tablefiles = [f for f in fs(op.join(pooldir, 'crisp')) if f.endswith('.txt') and 'all_bedfiles' not in f]
     if not len(tablefiles) == len(files):
