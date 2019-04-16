@@ -17,7 +17,7 @@ from coadaptree import makedir, get_email_info, pklload, fs
 from start_crisp import sbatch, get_bedfiles
 
 
-def make_sh(bedfile, shdir):
+def make_sh(bedfile, shdir, lofdir):
     bednum = bedfile.split("_")[-1].replace(".bed", "")
     lofile = op.join(lofdir, f'{pool}-{samp}-bedfile_{bednum}-lofreq.vcf.gz')
     lofout = lofile.replace(".vcf.gz", "_table.txt")
@@ -49,11 +49,11 @@ module unload gatk
     return file
 
 
-def create_sh(shdir):
+def create_sh(shdir, lofdir):
     bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
-        file = make_sh(bedfile, shdir)
+        file = make_sh(bedfile, shdir, lofdir)
         pids.append(sbatch(file))
     return pids
 
@@ -90,7 +90,7 @@ def main():
         makedir(d)
 
     # get a list of bedfiles, create shfiles, sbatch, return pids
-    pids = create_sh(shdir)
+    pids = create_sh(shdir, lofdir)
 
     # creat file to combine batched lofreq calls
     create_combine(pids, shdir)
