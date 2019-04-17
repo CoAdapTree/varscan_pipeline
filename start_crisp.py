@@ -45,17 +45,9 @@ def getmostrecent(files, remove=False):
 
 
 def getfiles(samps, shdir, grep):
-    if grep == 'crisp_bedfile':
-        # numbedfiles = numshfiles = found; so set samps to numbedfiles to bypass len(found) == len(samps)
-        pooldir = op.dirname(op.dirname(shdir))
-        parentdir = op.dirname(pooldir)
-        pool = op.basename(pooldir)
-        ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
-        # this only works for start crisp, not combine crisp since crisp has 15 bedfiles.
         print('not all shfiles have been created, exiting %s' % sys.argv[0])
         exit()
     files = dict((f, getmostrecent([out for out in outs if op.basename(f).replace(".sh", "") in out]))
@@ -129,15 +121,6 @@ def checkfiles(pooldir):
     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
     check_seff(files.values())  # make sure the jobs didn't die
     return get_bamfiles(samps, pooldir)
-#     samps, files = getfiles()
-#     if not len(samps) == len(files):
-#         unmade = [samp for samp in samps if samp not in files]
-#         text = ''
-#         for missing in unmade:
-#             text = text + "\t%s\n" % missing
-#         print("still missing files from these samps:\n%s\n%s is exiting\n" % (text, thisfile))
-#         exit()
-#     return list(files.values())
 
 
 def create_reservation(pooldir, exitneeded=False):
@@ -200,7 +183,7 @@ module load python/2.7.14
 {cmd}
 module unload python
 
-# vcf -> table (multiallelic to multiple lines, filtered in combine_crisp.py
+# vcf -> table (multiallelic to multiple lines, filtered in combine_crispORlofreq.py
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {convertfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP -F HP -F MQS -F TYPE -F FILTER \
@@ -268,7 +251,7 @@ source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
 
-python $HOME/pipeline/combine_crisp.py {pooldir}
+python $HOME/pipeline/combine_crispORlofreq.py {pooldir} crisp {pool}
 
 '''
     pooldir = op.join(parentdir, pool)
