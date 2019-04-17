@@ -20,8 +20,6 @@ def checkjobs(pooldir):
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     shdir = op.join(pooldir, 'shfiles/crisp')
     files = getfiles(samps, shdir, 'crisp_bedfile')
-#     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
-#     check_seff(files.values())  # make sure the jobs didn't die
     return files
 
 
