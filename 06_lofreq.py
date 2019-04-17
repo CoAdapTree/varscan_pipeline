@@ -19,7 +19,7 @@ from start_crisp import sbatch, get_bedfiles
 
 def make_sh(bedfile, shdir, lofdir):
     bednum = bedfile.split("_")[-1].replace(".bed", "")
-    lofile = op.join(lofdir, f'{pool}-{samp}-bedfile_{bednum}-lofreq.vcf.gz')
+    lofile = op.join(lofdir, f'{pool}-{samp}-lofreq_bedfile_{bednum}.vcf.gz')
     lofout = lofile.replace(".vcf.gz", "_table.txt")
     text = f'''#!/bin/bash
 #SBATCH --time=23:59:00
@@ -27,8 +27,8 @@ def make_sh(bedfile, shdir, lofdir):
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name={pool}-{samp}-bedfile_{bednum}-lofreq
-#SBATCH --output={pool}-{samp}-bedfile_{bednum}-lofreq_%j.out 
+#SBATCH --job-name={pool}-{samp}-lofreq_bedfile_{bednum}
+#SBATCH --output={pool}-{samp}-lofreq_bedfile_{bednum}_%j.out 
 {email_text}
 
 source $HOME/.bashrc
@@ -45,7 +45,7 @@ module unload gatk
 python $HOME/pipeline/balance_queue.py lofreq
 
 '''
-    file = op.join(shdir, f'{pool}-{samp}-bedfile_{bednum}-lofreq.sh')
+    file = op.join(shdir, f'{pool}-{samp}-lofreq_bedfile_{bednum}.sh')
     with open(file, 'w') as o:
         o.write("%s" % text)
     return file
