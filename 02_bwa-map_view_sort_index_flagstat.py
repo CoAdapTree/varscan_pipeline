@@ -26,7 +26,7 @@ shdir = op.join(pooldir, 'shfiles')
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 r1r2outs = pklload(op.join(pooldir, 'samp2_r1r2out.pkl'))[samp]
 
-# create dirs 
+# create dirs
 bwashdir = op.join(shdir, '02_bwa_shfiles')
 samdir = op.join(pooldir, '02a_samfiles')
 bamdir = op.join(pooldir, '02b_bamfiles')
@@ -55,7 +55,7 @@ def getbwatext(r1out, r2out):
     sortfile = op.join(sortdir, sort)
     flagfile = op.join(sortdir, sort.replace('.bam', '.bam.flagstats'))
     coordfile = op.join(sortdir, sort.replace('.bam', '.bam.coord'))
-    
+
     return (sortfile, f'''# get RGID and RGPU
 RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)
 RGPU=$RGID.{rglb}

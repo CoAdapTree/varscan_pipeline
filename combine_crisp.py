@@ -45,7 +45,7 @@ def get_tables(files, pooldir):
 def main(pooldir):
     # make sure all of the crisp jobs have finished
     files = checkjobs(pooldir)
-    
+
     # combine table files from output of VariantsToTable
     get_tables(files, pooldir)
 

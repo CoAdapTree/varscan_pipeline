@@ -157,9 +157,9 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 if not op.exists(refext):
                     needed.append(refext)
             if len(needed) > 0:
-                print(Bcolors.FAIL + 
+                print(Bcolors.FAIL +
                       'FAIL: the following extensions of the reference are needed to continue, \
-please create these files' + 
+please create these files' +
                       Bcolors.ENDC)
                 for n in needed:
                     print(Bcolors.FAIL + n + Bcolors.ENDC)
@@ -171,9 +171,9 @@ please create these files' +
             rginfo[samp][col] = data.loc[row, col]
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
             if "__" in f:
-                print(Bcolors.BOLD + 
-                      Bcolors.FAIL + 
-                      "FAIL: file names cannot have double underscores, replace __ with _ (single)" + 
+                print(Bcolors.BOLD +
+                      Bcolors.FAIL +
+                      "FAIL: file names cannot have double underscores, replace __ with _ (single)" +
                       Bcolors.END)
                 exit()
             f2pool[f] = pool

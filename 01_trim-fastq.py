@@ -105,13 +105,13 @@ module load fastp/0.19.5
 ''' % locals()
         newtext = newtext + text
         
-    suffix = '''# once finished, map using bwa mem 
+    suffix = '''# once finished, map using bwa mem
 python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(parentdir)s %(samp)s
 
 ''' % locals()
     
     text = header + newtext + suffix
-    
+
     filE = op.join(shtrimDIR, '%(pool)s-%(samp)s-trim.sh' % locals())
     shfiles.append(filE)
     with open(filE, 'w') as o:
