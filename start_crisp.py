@@ -23,7 +23,7 @@ def gettimestamp(f):
     return time.ctime(op.getmtime(f))
 
 
-def getmostrecent(files, remove=False):
+def getmostrecent(files):
     if not isinstance(files, list):
         files = [files]
     if len(files) > 1:
@@ -34,8 +34,6 @@ def getmostrecent(files, remove=False):
             if dt2 > dt1:
                 whichout = o
                 dt1 = dt2
-        if remove is True:
-            rems = [os.remove(f) for f in files if not f == whichout]
         return whichout
     elif len(files) == 1:
         return files[0]
