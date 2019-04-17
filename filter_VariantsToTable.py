@@ -35,7 +35,7 @@ def main(thisfile, tablefile, ret=False):
         return df
     else:
         # save
-        newfile = tablefile.replace(".txt", "_biallelic_snps.txt")
+        newfile = tablefile.replace(".txt", "_snps.txt")
         df.to_csv(newfile, index=False, sep='\t')
         print('finished filtering VariantsToTable file: %s' % newfile)
 
