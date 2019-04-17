@@ -30,7 +30,7 @@ def main():
     df = pd.concat(dfs)
 
     # write to file
-    filename = op.join(pooldir, f'lofreq/{op.basename(pooldir)}-{samp}_all_bedfiles_biallelic_snps.txt')
+    filename = op.join(pooldir, f'lofreq/{op.basename(pooldir)}-{samp}_all_bedfiles_snps.txt')
     df.to_csv(filename, sep='\t', index=False)
     print('combined crisp files to %s' % filename)
 

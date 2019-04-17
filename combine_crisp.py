@@ -36,7 +36,7 @@ def get_tables(files, pooldir):
     dfs = [remove_multiallelic(thisfile, tablefile, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
     
-    filename = op.join(pooldir, 'crisp/%s_all_bedfiles_biallelic_snps.txt' % op.basename(pooldir))
+    filename = op.join(pooldir, 'crisp/%s_all_bedfiles_snps.txt' % op.basename(pooldir))
     df.to_csv(filename, sep='\t', index=False)
     
     print('combined crisp files to %s' % filename)
