@@ -8,7 +8,7 @@
 ###
 """
 
-import sys, os
+import sys, os, pandas as pd
 from os import path as op
 from coadaptree import fs
 from filter_VariantsToTable import main as remove_multiallelic
@@ -16,7 +16,7 @@ from filter_VariantsToTable import main as remove_multiallelic
 
 def get_tablefiles():
     lodir = op.join(pooldir, 'lofreq')
-    return [f for f in fs(lodir) if f.endswith("_table.txt")]
+    return [f for f in fs(lodir) if f.endswith("_table.txt") and samp in f]
 
 
 def main():
