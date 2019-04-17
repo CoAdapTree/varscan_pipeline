@@ -51,7 +51,7 @@ def getfiles(samps, shdir, grep):
         parentdir = op.dirname(pooldir)
         pool = op.basename(pooldir)
         ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta", "")))
+        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
