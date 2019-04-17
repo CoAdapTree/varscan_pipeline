@@ -87,7 +87,7 @@ def make_pooldirs(data, parentdir):
         DIR = op.join(parentdir, p)
         if op.exists(DIR):
             print("The pooldir already exists, this could overwrite previous data: %s" % DIR)
-            print("Do you want to exit?")
+            print("Do you want to proceed?")
             askforinput()
         pooldirs.append(makedir(DIR))
     return pooldirs
