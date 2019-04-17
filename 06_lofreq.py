@@ -65,7 +65,7 @@ def create_combine(pids, shdir):
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-{samp}-combine-lofreq
 #SBATCH --time=02:59:00
-#SBATCH --mem=8000M
+#SBATCH --mem=25000M
 #SBATCH --cpus-per-task=1
 #SBATCH --output={pool}-{samp}-combine-lofreq_%j.out
 {dependencies}
@@ -75,7 +75,10 @@ source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
 
-python $HOME/combine_lofreq.py {pooldir} {samp}
+python $HOME/pipeline/combine_lofreq.py {pooldir} {samp}
+
+python $HOME/pipeline/balance_queue.py combine-lofreq
+
 '''
     file = op.join(shdir, f'{pool}-{samp}-combine-lofreq.sh')
     with open(file, 'w') as o:
