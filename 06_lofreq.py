@@ -75,7 +75,7 @@ source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
 
-python $HOME/pipeline/combine_lofreq.py {pooldir} {samp}
+python $HOME/pipeline/combine_crispORlofreq.py {pooldir} lofreq {samp}
 
 python $HOME/pipeline/balance_queue.py combine-lofreq
 
