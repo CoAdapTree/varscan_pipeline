@@ -257,7 +257,7 @@ def create_combine(pids, parentdir, pool):
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-combine-crisp
 #SBATCH --time=02:59:00
-#SBATCH --mem=8000M
+#SBATCH --mem=125000M
 #SBATCH --cpus-per-task=1
 #SBATCH --output={pool}-combine-crisp_%j.out
 {dependencies}
