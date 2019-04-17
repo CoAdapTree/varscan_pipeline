@@ -23,7 +23,7 @@ def make_sh(bedfile, shdir, lofdir):
     lofout = lofile.replace(".vcf.gz", "_table.txt")
     text = f'''#!/bin/bash
 #SBATCH --time=23:59:00
-#SBATCH --mem=8000M
+#SBATCH --mem=16000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
@@ -41,6 +41,8 @@ module load gatk/4.1.0.0
 gatk VariantsToTable --variant {lofile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F DP -F SB -F DP4 -F CONSVAR -F HRUN -F TYPE -F FILTER -O {lofout} --split-multi-allelic
 module unload gatk
+
+python $HOME/pipeline/balance_queue.py lofreq
 
 '''
     file = op.join(shdir, f'{pool}-{samp}-bedfile_{bednum}-lofreq.sh')
