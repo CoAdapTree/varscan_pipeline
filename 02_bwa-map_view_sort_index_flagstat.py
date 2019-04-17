@@ -4,8 +4,7 @@
 ###
 
 ### usage
-# 02_bwa-map_rginfo_mark_realign_lofreq_crisp.py /path/to/ref.fa /path/to/trimmedR1.fastq /path/to/trimmedR2.fastq \
-#                                                                                              /sbatch/dir/ sampID
+# 02_bwa-map_view_sort_index_flagstat.py parentdir samp
 ###
 
 ### assumes
