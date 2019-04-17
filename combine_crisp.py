@@ -16,8 +16,10 @@ from start_crisp import getfiles
 
 
 def checkjobs(pooldir):
+    parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
-    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
+    ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
+    samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
     shdir = op.join(pooldir, 'shfiles/crisp')
     files = getfiles(samps, shdir, 'crisp_bedfile')
     return files
@@ -26,10 +28,7 @@ def checkjobs(pooldir):
 def get_tables(files, pooldir):
     tablefiles = [f for f in fs(op.join(pooldir, 'crisp')) if f.endswith('.txt') and 'all_bedfiles' not in f]
     if not len(tablefiles) == len(files):
-        msg = 'for some reason tablefiles != files. jobid=%s' % os.environ['SLURM_JOB_ID']
-        print(msg)
-        with open(resfile, 'a') as resFile:
-            resFile.write("\n%s\n" % msg)
+        print('for some reason tablefiles != files. exiting.')
         exit()
     dfs = [remove_multiallelic(thisfile, tablefile, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
