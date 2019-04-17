@@ -23,7 +23,7 @@ def make_sh(bedfile, shdir, lofdir):
     lofout = lofile.replace(".vcf.gz", "_table.txt")
     text = f'''#!/bin/bash
 #SBATCH --time=23:59:00
-#SBATCH --mem=16000M
+#SBATCH --mem=9000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
