@@ -16,9 +16,11 @@ from collections import Counter
 
 def main(thisfile, tablefile, ret=False):
     print('starting %s for %s' % (op.basename(thisfile), tablefile))
+    tf = op.basename(tablefile)
 
     # load the data, create a column with CHROM-POS for locusID
     df = pd.read_csv(tablefile, sep='\t')
+    print(f'{tf} has {len(df.index)} rows (includes multiallelic)')
     df['locus'] = ["%s-%s" % (contig, pos) for (contig, pos) in zip(df['CHROM'].tolist(), df['POS'].tolist())]
 
     # determine which loci are multiallelic
@@ -26,16 +28,18 @@ def main(thisfile, tablefile, ret=False):
     for locus in df['locus']:
         loccount[locus] += 1
     goodloci = [locus for locus in loccount if loccount[locus] == 1]
+    print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
 
     # filter df for multiallelic (multiple lines), and for SNP
     df = df[df['locus'].isin(goodloci)].copy()
     df = df[df['TYPE'] == 'SNP'].copy()
+    print(f'{tf} has {len(df.index)} good loci of the type SNP')
 
     if ret is True:
         return df
     else:
         # save
-        newfile = tablefile.replace(".txt", "_biallelic_snps.txt")
+        newfile = tablefile.replace(".txt", "_snps.txt")
         df.to_csv(newfile, index=False, sep='\t')
         print('finished filtering VariantsToTable file: %s' % newfile)
 

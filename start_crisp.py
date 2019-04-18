@@ -23,7 +23,7 @@ def gettimestamp(f):
     return time.ctime(op.getmtime(f))
 
 
-def getmostrecent(files, remove=False):
+def getmostrecent(files):
     if not isinstance(files, list):
         files = [files]
     if len(files) > 1:
@@ -34,8 +34,6 @@ def getmostrecent(files, remove=False):
             if dt2 > dt1:
                 whichout = o
                 dt1 = dt2
-        if remove is True:
-            rems = [os.remove(f) for f in files if not f == whichout]
         return whichout
     elif len(files) == 1:
         return files[0]
@@ -45,17 +43,9 @@ def getmostrecent(files, remove=False):
 
 
 def getfiles(samps, shdir, grep):
-    if grep == 'crisp_bedfile':
-        # numbedfiles = numshfiles = found; so set samps to numbedfiles to bypass len(found) == len(samps)
-        pooldir = op.dirname(op.dirname(shdir))
-        parentdir = op.dirname(pooldir)
-        pool = op.basename(pooldir)
-        ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-        samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta", "")))
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
-        # this only works for start crisp, not combine crisp since crisp has 15 bedfiles.
         print('not all shfiles have been created, exiting %s' % sys.argv[0])
         exit()
     files = dict((f, getmostrecent([out for out in outs if op.basename(f).replace(".sh", "") in out]))
@@ -129,15 +119,6 @@ def checkfiles(pooldir):
     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
     check_seff(files.values())  # make sure the jobs didn't die
     return get_bamfiles(samps, pooldir)
-#     samps, files = getfiles()
-#     if not len(samps) == len(files):
-#         unmade = [samp for samp in samps if samp not in files]
-#         text = ''
-#         for missing in unmade:
-#             text = text + "\t%s\n" % missing
-#         print("still missing files from these samps:\n%s\n%s is exiting\n" % (text, thisfile))
-#         exit()
-#     return list(files.values())
 
 
 def create_reservation(pooldir, exitneeded=False):
@@ -200,7 +181,7 @@ module load python/2.7.14
 {cmd}
 module unload python
 
-# vcf -> table (multiallelic to multiple lines, filtered in combine_crisp.py
+# vcf -> table (multiallelic to multiple lines, filtered in combine_crispORlofreq.py
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {convertfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP -F HP -F MQS -F TYPE -F FILTER \
@@ -232,14 +213,14 @@ def sbatch(file):
     return pid
 
 
-def get_bedfiles():
+def get_bedfiles(parentdir, pool):
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-    beddir = op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).replace(".fasta", ""))
-    return [f for f in fs(beddir) if f.endswith('.bed')]
+    beddir = op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0])
+    return [f for f in fs(beddir) if f.endswith('.bed')]  # TODO: see if I split any other refs by .fasta
 
 
 def create_sh(bamfiles, crispdir, pool, pooldir):
-    bedfiles = get_bedfiles()
+    bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, crispdir, pool, pooldir)
@@ -257,7 +238,7 @@ def create_combine(pids, parentdir, pool):
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-combine-crisp
 #SBATCH --time=02:59:00
-#SBATCH --mem=8000M
+#SBATCH --mem=125000M
 #SBATCH --cpus-per-task=1
 #SBATCH --output={pool}-combine-crisp_%j.out
 {dependencies}
@@ -268,7 +249,7 @@ source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
 
-python $HOME/pipeline/combine_crisp.py {pooldir}
+python $HOME/pipeline/combine_crispORlofreq.py {pooldir} crisp {pool}
 
 '''
     pooldir = op.join(parentdir, pool)
@@ -291,7 +272,7 @@ def main(parentdir, pool):
 
     # create .sh file and submit to scheduler
     pids = create_sh(bamfiles.values(), crispdir, pool, op.join(parentdir, pool))
-    
+
     # create .sh file to combine crisp parallels using jobIDs as dependencies
     create_combine(pids, parentdir, pool)
 
