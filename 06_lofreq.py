@@ -65,7 +65,7 @@ def create_combine(pids, shdir):
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-{samp}-combine-lofreq
 #SBATCH --time=02:59:00
-#SBATCH --mem=125000M
+#SBATCH --mem=16000M
 #SBATCH --cpus-per-task=1
 #SBATCH --output={pool}-{samp}-combine-lofreq_%j.out
 {dependencies}
