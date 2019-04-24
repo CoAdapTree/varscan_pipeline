@@ -1,10 +1,10 @@
 """
 ### purpose
-# combine output from bedfile output from either CRISP or LoFreq
-### 
+# combine output from bedfile output from either CRISP or VarScan
+###
 
 ### usage
-# python combine_crispORlofreq.py pooldir crispORlofreq poolORsamp
+# python combine_crispORvarscan.py pooldir crispORvarscan poolORsamp
 ###
 """
 
@@ -20,7 +20,7 @@ def checkjobs():
     pool = op.basename(pooldir)
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
-    shdir = op.join(pooldir, 'shfiles/%s' % program if program == 'crisp' else 'shfiles/06_lofreq_shfiles')
+    shdir = op.join(pooldir, 'shfiles/%s' % program if program == 'crisp' else 'shfiles/06_varscan_shfiles')
     files = getfiles(samps, shdir, f"{grep}-{program}")  # files = {f.sh: f.out, ...}
     return files
 
@@ -35,10 +35,10 @@ def get_tables(files):
         exit()
     dfs = [remove_multiallelic(thisfile, tablefile, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
-    
+
     filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_snps.txt')
     df.to_csv(filename, sep='\t', index=False)
-    
+
     print(f'combined {program} files to {filename}')
     print(f'final SNP count = {len(df.index)}')
 
@@ -52,7 +52,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # for crisp grep = pool, for lofreq grep = samp
+    # for crisp grep = pool, for varscan grep = samp
     thisfile, pooldir, program, grep = sys.argv 
     
     main()

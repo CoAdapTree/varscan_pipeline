@@ -93,9 +93,9 @@ def make_pooldirs(data, parentdir):
     return pooldirs
 
 
-def create_crisp_bedfiles(poolref):
-    # create bedfiles for crisp
-    print(Bcolors.BOLD + "\ncreating CRISP bedfiles" + Bcolors.ENDC)
+def create_all_bedfiles(poolref):
+    # create bedfiles for crisp and varscan
+    print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
         create_bedfiles.main('create_bedfiles.py', ref)
 
@@ -192,15 +192,15 @@ def check_reqs():
     # check for assumed exports
     print(Bcolors.BOLD + '\nchecking for exported variables' + Bcolors.ENDC)
     for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
-                'CRISP_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
+                'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
         try:
             print('\t%s = %s' % (var, os.environ[var]))
         except KeyError:
             print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
 later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
-    # look for lofreq, make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
-    for exe in ['lofreq', 'activate']:
+    # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
+    for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
             print('\tcould not find %s in $PATH\nexiting 00_start-pipeline.py' % exe)
             if exe == 'activate':
@@ -302,8 +302,8 @@ def main():
     # read in the datatable
     data, f2pool, poolref = read_datatable(args.parentdir)
 
-    # create bedfiles to parallelize crisp later on
-    create_crisp_bedfiles(poolref)
+    # create bedfiles to parallelize crisp and varscan later on
+    create_all_bedfiles(poolref)
 
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
@@ -336,7 +336,7 @@ if __name__ == '__main__':
                                              |
                                              |
 
-                          LoFreq and CRISP pipeline
+                         VarScan and CRISP pipeline
 
 *****************************************************************************
 
