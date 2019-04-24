@@ -93,7 +93,7 @@ def checkpids(outs, queue):
 
 def check_queue(outs, pooldir):
     # get jobs from the queue, except those that are closing (assumes jobs haven't failed)
-    sq = getsq(grepping=['crisp_bedfile', op.basename(pooldir)], states=['R', 'PD'])
+    sq = getsq(grepping=['crisp_bedfile', op.basename(pooldir)])
     if len(sq) > 0:
         checkpids(outs, sq)
     # no need for an else statement here, if len(sq) == 0: no need to check the pids
