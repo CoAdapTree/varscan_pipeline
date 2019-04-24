@@ -20,7 +20,7 @@ def checkjobs():
     pool = op.basename(pooldir)
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
-    shdir = op.join(pooldir, 'shfiles/%s' % program if program == 'crisp' else 'shfiles/06_varscan_shfiles')
+    shdir = op.join(pooldir, 'shfiles/%s' % program if program == 'crisp' else 'shfiles/crispANDvarscan')
     files = getfiles(samps, shdir, f"{grep}-{program}")  # files = {f.sh: f.out, ...}
     return files
 
@@ -52,7 +52,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # for crisp grep = pool, for varscan grep = samp
+    # for crisp grep = pool, for varscan grep = pool
     thisfile, pooldir, program, grep = sys.argv 
     
     main()

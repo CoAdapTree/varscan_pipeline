@@ -57,6 +57,7 @@ def getfiles(samps, shdir, grep):
 
 
 def check_seff(outs):
+    print('checking seff')
     jobid = os.environ['SLURM_JOB_ID']
     for f in outs:
         pid = f.split("_")[-1].replace(".out", "")
@@ -81,6 +82,7 @@ def check_seff(outs):
 
 def checkpids(outs, queue):
     # if any of the other crisp jobs are pending or running, exit
+    print('checking pids')
     pids = [q[0] for q in queue]
     jobid = os.environ['SLURM_JOB_ID']
     for out in outs:
@@ -93,6 +95,7 @@ def checkpids(outs, queue):
 
 def check_queue(outs, pooldir):
     # get jobs from the queue, except those that are closing (assumes jobs haven't failed)
+    print('checking queue')
     sq = getsq(grepping=['crisp_bedfile', op.basename(pooldir)])
     if len(sq) > 0:
         checkpids(outs, sq)
@@ -100,6 +103,7 @@ def check_queue(outs, pooldir):
 
 
 def get_bamfiles(samps, pooldir):
+    print('getting bamfiles')
     found = fs(op.join(pooldir, '04_realign'))
     files = dict((samp, f.replace(".bai", ".bam")) for samp in samps for f in found if samp in f and f.endswith('.bai'))
     if not len(files) == len(samps):
@@ -112,6 +116,7 @@ def get_bamfiles(samps, pooldir):
 
 def checkfiles(pooldir):
     # get the list of file names
+    print('checking files')
     pool = op.basename(pooldir)
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
@@ -122,6 +127,7 @@ def checkfiles(pooldir):
 
 
 def create_reservation(pooldir, exitneeded=False):
+    print('creating reservation')
     shdir = makedir(op.join(pooldir, 'shfiles/crispANDvarscan'))
     file = op.join(shdir, '%s_crispANDvarscan_reservation.sh' % pool)
     jobid = os.environ['SLURM_JOB_ID']
@@ -166,19 +172,21 @@ module unload python
             convertfile, logfile)
 
 
-def get_varscan_cmd(bamfiles, bedfile, bednum, vcf):
-    cmds = ''''''
+def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
+    cmds = '''module load samtools/1.9\n'''
     smallbams = []
     for bam in bamfiles:
-        pool = op.basename(bam).split("realigned")[0]
+        pool = op.basename(bam).split("_realigned")[0]
         smallbam = f'$SLURM_TMPDIR/{pool}_realigned_{bednum}.bam'
         cmd = f'''samtools view -b -L {bedfile} {bam} > {smallbam}\n'''
         cmds = cmds + cmd
         smallbams.append(smallbam)
     smallbams = ' '.join(smallbams)
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
-$VARSCAN_DIR/VarScan.v2.3.9.jar pileup2cns -d-min-coverage 8 --p-value 0.05 \
---strand-filter 1 --min-freq-for-hom 0.80 --min-avg-qual 20 --output-vcf 1 > {vcf}'''
+$VARSCAN_DIR/VarScan.v2.3.9.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
+--min-var-freq 0.000625 --strand-filter 1 --min-freq-for-hom 0.80 \
+--min-avg-qual 20 --output-vcf 1 > {vcf}
+module unload samtools'''
     cmds = cmds + cmd
     return (cmds, vcf)
 
@@ -196,10 +204,10 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
 rm {logfile}
 '''
     else:
-        cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, bednum, vcf)
+        cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
         second_cmd = ''''''
 
-    tablefile = vcffile.replace(".vcf", "_table.txt")
+    tablefile = finalvcf.replace(".vcf", "_table.txt")
     email_text = get_email_info(parentdir, program)
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
@@ -308,9 +316,9 @@ def main(parentdir, pool):
         # create .sh file to combine crisp parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)
 
-    # balance queue
-    balance_queue.main('balance_queue.py', 'crisp')
-    balance_queue.main('balance_queue.py', 'varscan')
+        # balance queue
+        time.sleep(3)
+        balance_queue.main('balance_queue.py', program)
 
 
 if __name__ == "__main__":
