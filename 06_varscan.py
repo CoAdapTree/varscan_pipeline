@@ -37,6 +37,7 @@ export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
 
 # call varscan, convert VCF to table, filter for multi-allelic
 module load samtools/1.9
+module load java
 samtools view -b -L {bedfile} {realbam} > $SLURM_TMPDIR/realigned_{bednum}.bam
 samtools mpileup -B -f {ref} $SLURM_TMPDIR/realigned_{bednum}.bam | java -Xmx8g -jar \
 $VARSCAN_DIR/VarScan.v2.3.9.jar pileup2cns --min-coverage 8 --p-value 0.05 \

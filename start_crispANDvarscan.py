@@ -173,7 +173,7 @@ module unload python
 
 
 def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
-    cmds = '''module load samtools/1.9\n'''
+    cmds = '''module load java\nmodule load samtools/1.9\n'''
     smallbams = []
     for bam in bamfiles:
         pool = op.basename(bam).split("_realigned")[0]
@@ -212,7 +212,7 @@ rm {logfile}
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-{program}_bedfile_{num}
-#SBATCH --time=23:59:00
+#SBATCH --time=3-00:00:00
 #SBATCH --mem=16000M
 #SBATCH --output={pool}-{program}_bedfile_{num}_%j.out
 {email_text}
@@ -272,7 +272,7 @@ def create_combine(pids, parentdir, pool, program, shdir):
     dependencies = '#SBATCH --dependency=afterok:' + ','.join(pids)
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-combine-{program}
-#SBATCH --time=02:59:00
+#SBATCH --time=12:00:00
 #SBATCH --mem=20000M
 #SBATCH --cpus-per-task=1
 #SBATCH --output={pool}-combine-{program}_%j.out

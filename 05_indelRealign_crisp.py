@@ -33,6 +33,7 @@ text = '''#!/bin/bash
 %(email_text)s
 
 module load gatk/3.8
+module load java
 java -Djava.io.tmpdir=$SLURM_TMPDIR -Xmx8g -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T IndelRealigner -R %(ref)s -I %(dupfile)s -targetIntervals %(listfile)s -o %(realbam)s
 module unload gatk
@@ -41,7 +42,7 @@ module unload gatk
 source $HOME/.bashrc
 export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
 export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
-python $HOME/pipeline/start_crisp.py %(parentdir)s %(pool)s
+python $HOME/pipeline/start_crispANDvarscan.py %(parentdir)s %(pool)s
 
 # next step
 python $HOME/pipeline/06_lofreq.py %(pooldir)s %(samp)s %(ref)s %(realbam)s

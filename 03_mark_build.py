@@ -39,20 +39,20 @@ text = f'''#!/bin/bash
 
 # remove dups
 module load picard/2.18.9
+module load java
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \
 I={" I=".join(sortfiles)} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
 M={dupstat} REMOVE_DUPLICATES=true
+module unload picard
+
+# Build bam index for GATK
+java -jar $EBROOTPICARD/picard.jar BuildBamIndex I={dupfile}
 module unload picard
 
 # get more dup stats
 module load samtools/1.9
 samtools flagstat {dupfile} > {dupflag}
 module unload samtools
-
-# Build bam index for GATK
-module load picard/2.18.9
-java -jar $EBROOTPICARD/picard.jar BuildBamIndex I={dupfile}
-module unload picard
 
 # call next step
 source $HOME/.bashrc
