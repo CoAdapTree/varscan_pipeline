@@ -151,15 +151,28 @@ def get_prereqs(bedfile, pooldir, parentdir, pool, program):
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     outdir = makedir(op.join(pooldir, program))
     vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
-    return num, ref, outdir, vcf
+    return (num, ref, outdir, vcf)
 
 
-def get_crisp_cmd(bamfiles, bedfile, pool, parentdir, ref, vcf):
-    bams = ' --bam '.join(bamfiles)
+def get_small_bam_cmds(bamfiles, bednum, bedfile):
+    smallbams = []
+    cmds = '''module load java\nmodule load samtools/1.9\n'''
+    for bam in bamfiles:
+        pool = op.basename(bam).split("_realigned")[0]
+        smallbam = f'$SLURM_TMPDIR/{pool}_realigned_{bednum}.bam'
+        cmd = f'''samtools view -b -L {bedfile} {bam} > {smallbam}\n'''
+        cmds = cmds + cmd
+        smallbams.append(smallbam)
+    return (smallbams, cmds)
+
+
+def get_crisp_cmd(bamfiles, bedfile, pool, parentdir, ref, vcf, bednum):
+    smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
+    bams = ' --bam '.join(smallbams)
     poolsize = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     logfile = vcf.replace(".vcf", ".log")
     convertfile = vcf.replace(".vcf", "_converted.vcf")
-    return (f'''module load python/2.7.14
+    cmds = smallcmds + f'''module load python/2.7.14
 $CRISP_DIR/CRISP --bam {bams} --ref {ref} --VCF {vcf} \
 --poolsize {poolsize} --mbq 20 --minc 5 --bed {bedfile} > {logfile}
 
@@ -168,26 +181,19 @@ touch $SLURM_TMPDIR/bam_file_list.txt # assumes equal pool sizes
 $CRISP_DIR/scripts/convert_pooled_vcf.py {vcf} $SLURM_TMPDIR/bam_file_list.txt \
 {poolsize} > {convertfile}
 module unload python
-''',
-            convertfile, logfile)
+'''
+    return (cmds, convertfile, logfile)
 
 
 def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
-    cmds = '''module load java\nmodule load samtools/1.9\n'''
-    smallbams = []
-    for bam in bamfiles:
-        pool = op.basename(bam).split("_realigned")[0]
-        smallbam = f'$SLURM_TMPDIR/{pool}_realigned_{bednum}.bam'
-        cmd = f'''samtools view -b -L {bedfile} {bam} > {smallbam}\n'''
-        cmds = cmds + cmd
-        smallbams.append(smallbam)
+    smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     smallbams = ' '.join(smallbams)
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
-$VARSCAN_DIR/VarScan.v2.3.9.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
+$VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
 --min-var-freq 0.000625 --strand-filter 1 --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
 module unload samtools'''
-    cmds = cmds + cmd
+    cmds = smallcmds + cmd
     return (cmds, vcf)
 
 
@@ -199,21 +205,30 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
                                                pool,
                                                parentdir,
                                                ref,
-                                               vcf)
+                                               vcf,
+                                               num)
         second_cmd = f'''gzip {vcf}
 rm {logfile}
 '''
+        mem = "10000M"
+        time = '23:59:00'
+        fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
+-F HP -F MQS '''
     else:
         cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
         second_cmd = ''''''
+        mem = "16000M"
+        time = '3-00:00:00'
+        fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
+-GF FREQ -GF PVAL '''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
     email_text = get_email_info(parentdir, program)
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-{program}_bedfile_{num}
-#SBATCH --time=3-00:00:00
-#SBATCH --mem=16000M
+#SBATCH --time={time}
+#SBATCH --mem={mem}
 #SBATCH --output={pool}-{program}_bedfile_{num}_%j.out
 {email_text}
 
@@ -223,8 +238,7 @@ rm {logfile}
 # vcf -> table (multiallelic to multiple lines, filtered in combine_crispORlofreq.py
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {finalvcf} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
--F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP -F HP -F MQS -F TYPE -F FILTER \
--O {tablefile} --split-multi-allelic
+-F TYPE -F FILTER {fields} -O {tablefile} --split-multi-allelic
 module unload gatk
 
 # gzip outfiles to save space
@@ -254,7 +268,7 @@ def sbatch(file):
 def get_bedfiles(parentdir, pool):
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     beddir = op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0])
-    return [f for f in fs(beddir) if f.endswith('.bed')]  # TODO: see if I split any other refs by .fasta
+    return [f for f in fs(beddir) if f.endswith('.bed')]
 
 
 def create_sh(bamfiles, shdir, pool, pooldir, program):
@@ -306,6 +320,7 @@ def main(parentdir, pool):
     # create .sh files
     # for program in ['crisp', 'varscan']:
     for program in ['varscan']:
+        print('starting %s commands' % program)
         # create .sh file and submit to scheduler
         pids = create_sh(bamfiles.values(),
                          shdir,
