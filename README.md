@@ -16,6 +16,8 @@
 
 # VarScan and CRISP poolseq pipeline
 
+Call SNPs and INDELs across pooled populations using CRISP and VarScan.
+
 ---
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
