@@ -205,7 +205,7 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
             print(Bcolors.BOLD +
                   Bcolors.FAIL +
                   "FAIL: could not find the following program: %s" % program +
-                  Bcolors.END)
+                  Bcolors.ENDC)
     # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
     for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
