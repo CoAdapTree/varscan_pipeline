@@ -43,7 +43,7 @@ def main(thisfile, tablefile, tipe, ret=False):
         return df
     else:
         # save
-        newfile = tablefile.replace(".txt", "_snps.txt")
+        newfile = tablefile.replace(".txt", f"_{tipe}.txt")
         df.to_csv(newfile, index=False, sep='\t')
         print('finished filtering VariantsToTable file: %s' % newfile)
 
