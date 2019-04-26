@@ -199,6 +199,13 @@ def check_reqs():
             print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
 later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
+    for program in [op.join(os.environ['VARSCAN_DIR'], 'VarScan.v2.4.3.jar'),
+                    op.join(os.environ['CRISP_DIR'], 'CRISP')]:
+        if not op.exists(program):
+            print(Bcolors.BOLD +
+                  Bcolors.FAIL +
+                  "FAIL: could not find the following program: %s" % program +
+                  Bcolors.END)
     # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
     for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
