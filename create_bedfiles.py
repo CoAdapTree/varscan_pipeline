@@ -39,7 +39,7 @@ def make_lenfile():
 def make_bedfile(lines, fcount):
     bname = op.basename(ref).split(".fa")[0]
     beddir = makedir(op.join(op.dirname(ref), 'bedfiles_%s' % bname))
-    f = op.join(beddir, "%s_bedfile_%s.bed" % (bname, str(fcount).zfill(2)))
+    f = op.join(beddir, "%s_bedfile_%s.bed" % (bname, str(fcount).zfill(4)))
     with open(f, 'w') as o:
         for line in lines:
             contig, length = line
@@ -48,7 +48,7 @@ def make_bedfile(lines, fcount):
 
 def make_bedfiles():
     text = openlenfile("%s.length" % ref)
-    thresh = math.ceil(len(text) / 15)
+    thresh = math.ceil(len(text) / 450)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
