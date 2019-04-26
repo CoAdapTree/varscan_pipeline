@@ -25,6 +25,17 @@ def checkjobs():
     return files
 
 
+def get_types(tablefiles, tipe):
+    dfs = [remove_multiallelic(thisfile, tablefile, tipe, ret=True) for tablefile in tablefiles]
+    df = pd.concat(dfs)
+
+    filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')
+    df.to_csv(filename, sep='\t', index=False)
+
+    print(f'combined {program} files to {filename}')
+    print(f'final {tipe} count = {len(df.index)}')
+
+
 def get_tables(files):
     tablefiles = [f for f in fs(op.join(pooldir, program))
                   if f.endswith('.txt')
@@ -33,14 +44,7 @@ def get_tables(files):
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()
-    dfs = [remove_multiallelic(thisfile, tablefile, ret=True) for tablefile in tablefiles]
-    df = pd.concat(dfs)
-
-    filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_snps.txt')
-    df.to_csv(filename, sep='\t', index=False)
-
-    print(f'combined {program} files to {filename}')
-    print(f'final SNP count = {len(df.index)}')
+    return tablefiles
 
 
 def main():
@@ -48,7 +52,13 @@ def main():
     files = checkjobs()
 
     # combine table files from output of VariantsToTable
-    get_tables(files)
+    tablefiles = get_tables(files)
+    
+    # get SNP and indels
+    for tipe in ['SNP', 'INDEL']:
+        get_types(tablefiles, tipe)
+    
+    
 
 
 if __name__ == '__main__':
