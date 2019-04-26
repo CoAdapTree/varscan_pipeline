@@ -1,10 +1,14 @@
 """
 ### purpose
-# remove multiallelic sites from VariantsToTable output
+# remove multiallelic sites from VariantsToTable output, keep SNP or INDEL (tipe)
+###
+
+### assumes
+# gatk VariantsToTable [...] --split-multi-allelic 
 ###
 
 ### usage
-# python filter_VariantsToTable.py VariantsToTable_outfile.txt
+# python filter_VariantsToTable.py SNPorINDEL
 ###
 """
 
@@ -14,7 +18,7 @@ from os import path as op
 from collections import Counter
 
 
-def main(thisfile, tablefile, ret=False):
+def main(thisfile, tablefile, tipe, ret=False):
     print('starting %s for %s' % (op.basename(thisfile), tablefile))
     tf = op.basename(tablefile)
 
@@ -28,12 +32,12 @@ def main(thisfile, tablefile, ret=False):
     for locus in df['locus']:
         loccount[locus] += 1
     goodloci = [locus for locus in loccount if loccount[locus] == 1]
-    print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
+    print(f'{tf} has {len(goodloci)} good {tipe}s (non-multiallelic)')
 
     # filter df for multiallelic (multiple lines), and for SNP
     df = df[df['locus'].isin(goodloci)].copy()
-    df = df[df['TYPE'] == 'SNP'].copy()
-    print(f'{tf} has {len(df.index)} good loci of the type SNP')
+    df = df[df['TYPE'] == tipe].copy()
+    print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
 
     if ret is True:
         return df
@@ -45,6 +49,6 @@ def main(thisfile, tablefile, ret=False):
 
 
 if __name__ == '__main__':
-    thisfile, tablefile = sys.argv
+    thisfile, tablefile, tipe = sys.argv
 
-    main(thisfile, tablefile)
+    main(thisfile, tablefile, tipe)
