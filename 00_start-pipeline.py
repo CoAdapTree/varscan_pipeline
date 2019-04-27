@@ -32,12 +32,12 @@ def askforinput():
     while True:
         inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
         if inp in ['yes', 'no']:
+            if inp == 'no':
+                print('exiting %s' % sys.argv[0])
+                exit()
             break
         else:
             print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
-            if inp == 'no':
-                print('exiting 00_start-pipeline.py')
-                exit()
 
 
 def get_datafiles(parentdir, f2pool, data):
