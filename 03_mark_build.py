@@ -43,7 +43,6 @@ module load java
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \
 I={" I=".join(sortfiles)} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
 M={dupstat} REMOVE_DUPLICATES=true
-module unload picard
 
 # Build bam index for GATK
 java -jar $EBROOTPICARD/picard.jar BuildBamIndex I={dupfile}
