@@ -45,7 +45,7 @@ export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %
 python $HOME/pipeline/start_crispANDvarscan.py %(parentdir)s %(pool)s
 
 # next step
-python $HOME/pipeline/06_lofreq.py %(pooldir)s %(samp)s %(ref)s %(realbam)s
+# python $HOME/pipeline/06_varscan.py %(pooldir)s %(samp)s %(ref)s %(realbam)s
 ''' % locals()
 
 # create shdir and shfile
