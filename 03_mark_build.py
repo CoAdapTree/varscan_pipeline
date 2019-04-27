@@ -1,9 +1,4 @@
 """
-### FIX
-# recode for multiple infiles
-# sys.arg from 02.py
-###
-
 ### purpose
 # use picard to mark/remove duplicates, build bam index for GATK
 ###
