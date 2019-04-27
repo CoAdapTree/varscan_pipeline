@@ -170,12 +170,6 @@ please create these files' +
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
             rginfo[samp][col] = data.loc[row, col]
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
-            if "__" in f:
-                print(Bcolors.BOLD +
-                      Bcolors.FAIL +
-                      "FAIL: file names cannot have double underscores, replace __ with _ (single)" +
-                      Bcolors.END)
-                exit()
             f2pool[f] = pool
             f2samp[op.join(pooldir, f)] = samp
     pkldump(rginfo, op.join(parentdir, 'rginfo.pkl'))
