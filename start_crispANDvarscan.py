@@ -1,10 +1,10 @@
 """
 ### purpose
-# sbatch crisp cmd if all bamfiles have been created
+# sbatch crisp and varscan cmds if all realigned bamfiles have been created
 ###
 
 ### usage
-# python start_crisp.py parentdir pool
+# python start_crispANDvarscan.py parentdir pool
 ###
 
 ### fix
