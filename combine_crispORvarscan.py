@@ -40,7 +40,9 @@ def get_tables(files):
     tablefiles = [f for f in fs(op.join(pooldir, program))
                   if f.endswith('.txt')
                   and 'all_bedfiles' not in f
-                  and grep in f]
+                  and 'SNP' not in f
+                  and 'INDEL' not in f
+                  and grep in f]  # I don't think I need the SNP and INDEL check
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()
