@@ -64,7 +64,7 @@ def make_lenfile():
         text = openlenfile('%(ref)s.length' % globals())
         print("\tref.length file already created for %s\n\t\twhich has %s contigs" % (ref, len(text)-1))
     if not op.exists("%(ref)s.length" % globals()):
-        print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref, thisfile))
+        print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref, sys.argv[0]))
         exit()
 
     # spread contigs across 450 bed files
@@ -96,8 +96,8 @@ def make_bedfiles():
     return fcount
 
 
-def main(thisfile, ref):
-    globals().update({'thisfile': thisfile, 'ref': ref})
+def main(ref):
+    globals().update({'ref': ref})
     # get sequence lengths
     make_lenfile()
 
@@ -105,4 +105,4 @@ def main(thisfile, ref):
 if __name__ == "__main__":
     # args
     thisfile, ref = sys.argv
-    main(thisfile, ref)
+    main(ref)

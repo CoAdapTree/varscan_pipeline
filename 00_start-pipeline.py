@@ -97,7 +97,7 @@ def create_all_bedfiles(poolref):
     # create bedfiles for crisp and varscan
     print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
-        create_bedfiles.main('create_bedfiles.py', ref)
+        create_bedfiles.main(ref)
 
 
 def read_datatable(parentdir):
