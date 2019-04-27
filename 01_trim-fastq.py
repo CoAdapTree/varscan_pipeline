@@ -126,5 +126,4 @@ for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
     print('\tshfile=', sh)
     subprocess.call([shutil.which('sbatch'), sh])
-    # os.system('sbatch %s' % sh)
-    time.sleep(2)
+    time.sleep(0.5)
