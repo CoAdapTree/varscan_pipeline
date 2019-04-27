@@ -1,4 +1,8 @@
 """
+### purpose
+# trim fastq files with fastp
+###
+
 ### execution
 # python 01a_trim-fastq.py /path/to/pooldir /path/to/ref.fa
 ###
