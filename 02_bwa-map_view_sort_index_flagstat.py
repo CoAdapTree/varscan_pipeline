@@ -75,6 +75,7 @@ module unload samtools
 
 module load bedtools/2.27.1
 bedtools bamtobed -i {sortfile} > {coordfile}
+module unload bedtools
 
 ''')
 
