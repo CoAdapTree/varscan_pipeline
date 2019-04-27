@@ -63,8 +63,10 @@ for f in gzfiles:
     if op.exists(read2):
         seq_pairs[samp].append((op.abspath(f), op.abspath(read2)))
     else:
-        text = '\nWARNING: no pair for %s\n' % f
+        text = '\nFAIL: no pair for %s\n' % f
         writetomfile(text)
+        print(text)
+        exit()
 text = "found %s R1/R2 seq pairs\n" % str(len([f for samp, files in seq_pairs.items() for f in files]))
 print('\t%s' % text)
 writetomfile(text)
