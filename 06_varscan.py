@@ -6,7 +6,7 @@
 ###
 
 ### usage
-# python 06_varscan.py /path/to/pooldir/ sampID
+# python 06_varscan.py /path/to/pooldir/ sampID /p/t/ref.fa /p/t/realigned.bam
 ###
 """
 
@@ -46,7 +46,8 @@ module unload samtools
 
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {varscanfile} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
--F DP -F SB -F DP4 -F CONSVAR -F HRUN -F TYPE -F FILTER -O {varscanout} --split-multi-allelic
+-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP -GF FREQ -GF PVAL \
+-F TYPE -F FILTER -O {varscanout} --split-multi-allelic
 module unload gatk
 
 python $HOME/pipeline/balance_queue.py varscan
