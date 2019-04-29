@@ -223,14 +223,12 @@ rm {logfile}
 -GF FREQ -GF PVAL '''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
-    email_text = get_email_info(parentdir, program)
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-{program}_bedfile_{num}
 #SBATCH --time={time}
 #SBATCH --mem={mem}
 #SBATCH --output={pool}-{program}_bedfile_{num}_%j.out
-{email_text}
 
 # run CRISP (commit 60966e7) or VarScan (v.2.4.2)
 {cmd}
