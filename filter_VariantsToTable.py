@@ -32,7 +32,7 @@ def main(thisfile, tablefile, tipe, ret=False):
     for locus in df['locus']:
         loccount[locus] += 1
     goodloci = [locus for locus in loccount if loccount[locus] == 1]
-    print(f'{tf} has {len(goodloci)} good {tipe}s (non-multiallelic)')
+    print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
 
     # filter df for multiallelic (multiple lines), and for SNP
     df = df[df['locus'].isin(goodloci)].copy()
