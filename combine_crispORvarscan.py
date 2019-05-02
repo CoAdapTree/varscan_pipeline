@@ -60,12 +60,10 @@ def main():
     # get SNP and indels
     for tipe in ['SNP', 'INDEL']:
         get_types(tablefiles, tipe)
-    
-    
 
 
 if __name__ == '__main__':
     # for crisp grep = pool, for varscan grep = pool
     thisfile, pooldir, program, grep = sys.argv 
-    
+
     main()
