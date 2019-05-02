@@ -190,7 +190,7 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
     smallbams = ' '.join(smallbams)
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
 $VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
---min-var-freq 0.000625 --strand-filter 1 --min-freq-for-hom 0.80 \
+--min-var-freq 0.025 --strand-filter 1 --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
 module unload samtools'''
     cmds = smallcmds + cmd
@@ -210,15 +210,15 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
         second_cmd = f'''gzip {vcf}
 rm {logfile}
 '''
-        mem = "10000M"
-        time = '23:59:00'
+        mem = "9000M"
+        time = '2-00:00:00'
         fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
 -F HP -F MQS '''
     else:
         cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
         second_cmd = ''''''
-        mem = "16000M"
-        time = '3-00:00:00'
+        mem = "2000M"
+        time = '1-00:00:00'
         fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
 -GF FREQ -GF PVAL '''
 
