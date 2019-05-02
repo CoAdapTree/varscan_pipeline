@@ -97,6 +97,7 @@ def main(thisfile, tablefile, tipe, ret=False):
         print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
         dfs.append(df)
         df = pd.concat(dfs)
+        df.index = range(len(df.index))
 
     if ret is True:
         return df
