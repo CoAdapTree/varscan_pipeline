@@ -316,8 +316,7 @@ def main(parentdir, pool):
     shdir = create_reservation(op.join(parentdir, pool))
 
     # create .sh files
-    # for program in ['crisp', 'varscan']:
-    for program in ['varscan']:
+    for program in ['crisp', 'varscan']:
         print('starting %s commands' % program)
         # create .sh file and submit to scheduler
         pids = create_sh(bamfiles.values(),
