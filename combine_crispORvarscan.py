@@ -16,6 +16,7 @@ from start_crisp import getfiles
 
 
 def checkjobs():
+    print('checking jobs')
     parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
@@ -27,6 +28,7 @@ def checkjobs():
 
 
 def get_types(tablefiles, tipe):
+    print('starting to filter')
     dfs = [remove_multiallelic(thisfile, tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
 
@@ -38,6 +40,7 @@ def get_types(tablefiles, tipe):
 
 
 def get_tables(files):
+    print('getting tablefiles')
     tablefiles = [f for f in fs(op.join(pooldir, program))
                   if f.endswith('.txt')
                   and 'all_bedfiles' not in f
