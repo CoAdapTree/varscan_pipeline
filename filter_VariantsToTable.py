@@ -35,7 +35,7 @@ def get_copy(df, cols):
 
 
 def filter_freq(df, tf, tipe):
-    """filter out loci with MAF < 0.05"""
+    """filter out loci with global MAF < 0.05"""
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
     print('filtering for frequency ...')
     df.reset_index(drop=True, inplace=True)
@@ -45,7 +45,7 @@ def filter_freq(df, tf, tipe):
     for locus in tqdm(copy.columns):
         freqs = [x for x in copy[locus].str.rstrip('%').astype('float') if not math.isnan(x)]
         globfreq = sum(freqs)/(100*len(freqs))
-        if globfreq >= 0.05 and globfreq <= 0.95:
+        if 0.05 <= globfreq <= 0.95:
             filtloci.append(locus)
     print(f'{tf} has {len(filtloci)} {tipe}s that have MAF > 5%')
     return df[df.index.isin(filtloci)].copy()
@@ -119,7 +119,7 @@ def adjust_freqs(smalldf):
     return smalldf
 
 def main(thisfile, tablefile, tipe, ret=False):
-    print('starting filter_VariantsToTable.py for %s' % tablefile)
+    print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
     tf = op.basename(tablefile)
 
     # load the data, create a column with CHROM-POS for locusID
