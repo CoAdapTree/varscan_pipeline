@@ -14,10 +14,6 @@
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
 ###
-
-### fix
-# quality filter does not ensure that qualities belong to loci that pass freq filter
-###
 """
 
 import os, sys, pandas as pd, numpy as np, math
