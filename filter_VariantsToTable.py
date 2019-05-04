@@ -18,7 +18,7 @@
 
 import os, sys, pandas as pd, numpy as np, math
 from tqdm import tqdm
-from coadaptree import uni
+from coadaptree import uni, pklload
 from os import path as op
 from collections import Counter
 
@@ -34,10 +34,25 @@ def get_copy(df, cols):
     return df[cols].T.copy()
 
 
-def filter_freq(df, tf, tipe):
-    """filter out loci with global MAF < 0.05"""
+def get_freq_cutoffs(tablefile):
+    pooldir = op.dirname(op.dirname(tablefile))
+    parentdir = op.dirname(pooldir)
+    pool = op.basename(pooldir)
+    poolsamps = pklload(op.join(parentdir, 'poolsamps.pkl'))[pool]
+    ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
+    lowfreq = 1/(ploidy * len(poolsamps))
+    highfreq = 1 - lowfreq
+    return lowfreq, highfreq
+
+
+def filter_freq(df, tf, tipe, tablefile):
+    """
+    filter out loci with global MAF < 0.05
+    right now this is unnecessary when setting pool-level freq to 1/ploidy
+    """
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
-    print('filtering for frequency ...')
+    lowfreq, highfreq = get_freq_cutoffs(tablefile)
+    print(f'filtering for global frequency ({lowfreq}, {highfreq})...')
     df.reset_index(drop=True, inplace=True)
     freqcols = [col for col in df.columns if '.FREQ' in col]
     copy = get_copy(df, freqcols)
@@ -45,14 +60,20 @@ def filter_freq(df, tf, tipe):
     for locus in tqdm(copy.columns):
         freqs = [x for x in copy[locus].str.rstrip('%').astype('float') if not math.isnan(x)]
         globfreq = sum(freqs)/(100*len(freqs))
-        if 0.05 <= globfreq <= 0.95:
+        if globfreq > 1.0:
+            print('impossible globfreq, exiting')
+            exit()
+        if lowfreq <= globfreq <= highfreq:
             filtloci.append(locus)
-    print(f'{tf} has {len(filtloci)} {tipe}s that have MAF > 5%')
+    print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     return df[df.index.isin(filtloci)].copy()
 
 
 def filter_missing_data(df, tf, tipe):
-    """count np.nan in .FREQ col to assess % missing data"""
+    """
+    count np.nan in .FREQ col to assess % missing data
+    keep only loci with < 25% missing data
+    """
     freqcols = [col for col in df.columns if '.FREQ' in col]
     copy = get_copy(df, freqcols)
     keepers = []
@@ -66,15 +87,16 @@ def filter_missing_data(df, tf, tipe):
     return df
 
 
-def filter_qual(df, tf, tipe):
-    """mask freqs that have GQ < 20, keep only loci with < 25% missing data"""
+def filter_qual(df, tf, tipe, tablefile):
+    """mask freqs that have GQ < 20 or local MAF < 5%"""
     print('masking bad freqs ...')
     qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
     thresh = math.ceil(0.75 * len(gqcols))  # assumes len(gqcols) == numpools
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
-        badloci = df[col] < 20  # True if qual < 20 else False
+        # badloci True if qual < 20 or local MAF < 5% else False
+        badloci = (df[col] < 20) | (df[freqcol] < "2.5%") | (df[freqcol] > "97.5%")
         df.loc[badloci, freqcol] = np.nan
 
     print('filtering for missing data ...')
@@ -82,10 +104,10 @@ def filter_qual(df, tf, tipe):
 
     if len(df.index) > 0:
         print(f'{tf} has {len(df.index)} {tipe}s that have GQ >= 20 and < 25% missing data')
-        df = filter_freq(df, tf, tipe)
+        df = filter_freq(df, tf, tipe, tablefile)
         df.index = range(len(df.index))
     else:
-        print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
+        print(f'{tf} did not have any {tipe}s that have GQ >= 20, local MAF >= 2.5%, for >= 75% of pops' +
               '\nnot bothering to filter for freq')
     return df
 
@@ -118,6 +140,27 @@ def adjust_freqs(smalldf):
                 smalldf.loc[0, freqcol] = np.nan
     return smalldf
 
+
+def get_refn_snps(df, tipe, ndfs=None):
+    # as far as I can tell, crisp output from convert_pooled_vcf.py will not output REF = N
+    ndf = df[df['REF'] == 'N'].copy()
+    ndf = ndf[ndf['TYPE'] == tipe].copy()
+    ncount = table(ndf['locus'])
+    nloci = [locus for locus in ncount if ncount[locus] == 2]
+    ndf = ndf[ndf['locus'].isin(nloci)].copy()
+    dfs = []
+    for locus in uni(ndf['locus']):
+        smalldf = ndf[ndf['locus'] == locus].copy()
+        if len(smalldf.index) == 2:
+            smalldf.index = range(len(smalldf.index))
+            smalldf = adjust_freqs(smalldf)
+            smalldf.loc[0,'ALT'] = "%s+%s" % (smalldf.loc[0,'ALT'], smalldf.loc[1,"ALT"])
+            dfs.append(pd.DataFrame(smalldf.loc[0,:]).T)
+    if len(dfs) > 0:
+        ndfs = pd.concat(dfs)
+    return (dfs, ndfs)
+
+
 def main(thisfile, tablefile, tipe, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
     tf = op.basename(tablefile)
@@ -129,22 +172,7 @@ def main(thisfile, tablefile, tipe, ret=False):
 
     # determine loci with REF=N but biallelic otherwise
     if tipe == 'SNP':
-        # as far as I can tell, crisp output from convert_pooled_vcf.py will not output REF = N
-        ndf = df[df['REF'] == 'N'].copy()
-        ndf = ndf[ndf['TYPE'] == tipe].copy()
-        ncount = table(ndf['locus'])
-        nloci = [locus for locus in ncount if ncount[locus] == 2]
-        ndf = ndf[ndf['locus'].isin(nloci)].copy()
-        dfs = []
-        for locus in uni(ndf['locus']):
-            smalldf = ndf[ndf['locus'] == locus].copy()
-            if len(smalldf.index) == 2:
-                smalldf.index = range(len(smalldf.index))
-                smalldf = adjust_freqs(smalldf)
-                smalldf.loc[0,'ALT'] = "%s+%s" % (smalldf.loc[0,'ALT'], smalldf.loc[1,"ALT"])
-                dfs.append(pd.DataFrame(smalldf.loc[0,:]).T)
-        if len(dfs) > 0:
-            ndfs = pd.concat(dfs)
+        dfs, ndfs = get_refn_snps(df, tipe)
 
     # determine which loci are multiallelic
     loccount = table(df['locus'])
@@ -166,7 +194,7 @@ def main(thisfile, tablefile, tipe, ret=False):
     # filter for quality and missing data
     df.index = range(len(df.index))
     if 'varscan' in tf and tipe == 'SNP':
-        df = filter_qual(df, tf, tipe)
+        df = filter_qual(df, tf, tipe, tablefile)
 
     if ret is True:
         return df
