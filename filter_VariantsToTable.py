@@ -190,7 +190,7 @@ def main(thisfile, tablefile, tipe, ret=False):
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
     
     # add in loci with REF=N but biallelic otherwise
-    if tipe == 'SNP'
+    if tipe == 'SNP':
         if len(dfs) > 0:
             print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
             dfs.append(df)
