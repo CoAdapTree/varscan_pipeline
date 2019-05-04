@@ -14,6 +14,10 @@
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
 ###
+
+### fix
+# set local MAF filter to use ploidy instead of number
+###
 """
 
 import os, sys, pandas as pd, numpy as np, math
@@ -88,7 +92,7 @@ def filter_missing_data(df, tf, tipe):
 
 
 def filter_qual(df, tf, tipe, tablefile):
-    """mask freqs that have GQ < 20 or local MAF < 5%"""
+    """mask freqs that have GQ < 20 or local MAF < 2.5%"""
     print('masking bad freqs ...')
     qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
@@ -186,10 +190,11 @@ def main(thisfile, tablefile, tipe, ret=False):
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
     
     # add in loci with REF=N but biallelic otherwise
-    if tipe == 'SNP' and len(dfs) > 0:
-        print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
-        dfs.append(df)
-        df = pd.concat(dfs)
+    if tipe == 'SNP'
+        if len(dfs) > 0:
+            print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
+            dfs.append(df)
+            df = pd.concat(dfs)
     
     # filter for quality and missing data
     df.index = range(len(df.index))
