@@ -93,10 +93,10 @@ def filter_missing_data(df, tf, tipe):
 
 def filter_qual(df, tf, tipe, tablefile):
     """mask freqs that have GQ < 20 or local MAF < 2.5%"""
-    print('masking bad freqs ...')
     qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
     thresh = math.ceil(0.75 * len(gqcols))  # assumes len(gqcols) == numpools
+    print(f'masking bad freqs for {len(gqcols)} pools...')
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
         # badloci True if qual < 20 or local MAF < 5% else False
