@@ -11,8 +11,8 @@
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
-from filter_VariantsToTable import main as remove_multiallelic
-from start_crisp import getfiles
+from filter_VariantsToTable import main as filtvtt
+from start_crispANDvarscan import getfiles
 
 
 def checkjobs():
@@ -29,7 +29,7 @@ def checkjobs():
 
 def get_types(tablefiles, tipe):
     print('starting to filter')
-    dfs = [remove_multiallelic(thisfile, tablefile, tipe, ret=True) for tablefile in tablefiles]
+    dfs = [filtvtt(thisfile, tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
 
     filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')

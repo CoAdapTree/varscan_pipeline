@@ -1,8 +1,7 @@
 """
 ### purpose
-# remove multiallelic sites from VariantsToTable output, keep SNP or INDEL (tipe)
-# will keep biallelic SNPs when REF = N (two ALT alleles)
-# will remove INDELs with REF = N
+# filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
+# will also keep biallelic SNPs when REF = N (two ALT alleles)
 ###
 
 ### assumes
@@ -63,9 +62,9 @@ def filter_freq(df, tf, tipe, tablefile):
     filtloci = []
     for locus in tqdm(copy.columns):
         freqs = [x for x in copy[locus].str.rstrip('%').astype('float') if not math.isnan(x)]
-        try:
+        if len(freqs) > 0:
             globfreq = sum(freqs)/(100*len(freqs))
-        except ZeroDivisionError:
+        else:
             # except loci that end up having all freqs masked
             continue
         if globfreq > 1.0:
@@ -96,15 +95,15 @@ def filter_missing_data(df, tf, tipe):
 
 
 def filter_qual(df, tf, tipe, tablefile):
-    """mask freqs that have GQ < 20 or local MAF < 2.5%"""
+    """mask freqs that have GQ < 20"""
     qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
     thresh = math.ceil(0.75 * len(gqcols))  # assumes len(gqcols) == numpools
     print(f'masking bad freqs for {len(gqcols)} pools...')
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
-        # badloci True if qual < 20 or local MAF < 5% else False
-        badloci = (df[col] < 20) | (df[freqcol] < "2.5%") | (df[freqcol] > "97.5%")
+        # badloci True if qual < 20
+        badloci = df[col] < 20
         df.loc[badloci, freqcol] = np.nan
 
     print('filtering for missing data ...')
@@ -115,7 +114,7 @@ def filter_qual(df, tf, tipe, tablefile):
         df = filter_freq(df, tf, tipe, tablefile)
         df.index = range(len(df.index))
     else:
-        print(f'{tf} did not have any {tipe}s that have GQ >= 20, local MAF >= 2.5%, for >= 75% of pops' +
+        print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
               '\nnot bothering to filter for freq')
     return df
 
@@ -169,7 +168,7 @@ def get_refn_snps(df, tipe, ndfs=None):
     return (dfs, ndfs)
 
 
-def main(thisfile, tablefile, tipe, ret=False):
+def main(tablefile, tipe, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
     tf = op.basename(tablefile)
 
@@ -182,14 +181,16 @@ def main(thisfile, tablefile, tipe, ret=False):
     if tipe == 'SNP':
         dfs, ndfs = get_refn_snps(df, tipe)
 
-    # determine which loci are multiallelic
-    loccount = table(df['locus'])
-    goodloci = [locus for locus in loccount if loccount[locus] == 1]
-    print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
+        # determine which loci are multiallelic
+        loccount = table(df['locus'])
+        goodloci = [locus for locus in loccount if loccount[locus] == 1]
+        print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
     
-    # filter df for multiallelic (multiple lines), REF != N, and for SNP
-    df = df[df['locus'].isin(goodloci)].copy()
-    df = df[df['REF'] != 'N'].copy()
+        # filter df for multiallelic (multiple lines), REF != N
+        df = df[df['locus'].isin(goodloci)].copy()
+        df = df[df['REF'] != 'N'].copy()
+
+    # filter for tipe, announce num after initial filtering
     df = df[df['TYPE'] == tipe].copy()
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
     
@@ -217,4 +218,4 @@ def main(thisfile, tablefile, tipe, ret=False):
 if __name__ == '__main__':
     thisfile, tablefile, tipe = sys.argv
 
-    main(thisfile, tablefile, tipe)
+    main(tablefile, tipe)

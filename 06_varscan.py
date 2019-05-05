@@ -14,7 +14,7 @@
 import sys, os, balance_queue, subprocess, shutil
 from os import path as op
 from coadaptree import makedir, get_email_info, pklload, fs
-from start_crisp import sbatch, get_bedfiles
+from start_crispANDvarscan import sbatch, get_bedfiles
 
 
 def make_sh(bedfile, shdir, varscandir):
