@@ -29,7 +29,7 @@ def checkjobs():
 
 def get_types(tablefiles, tipe):
     print('starting to filter')
-    dfs = [filtvtt(thisfile, tablefile, tipe, ret=True) for tablefile in tablefiles]
+    dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
 
     filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')
