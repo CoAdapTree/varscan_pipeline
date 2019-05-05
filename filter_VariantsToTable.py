@@ -63,7 +63,11 @@ def filter_freq(df, tf, tipe, tablefile):
     filtloci = []
     for locus in tqdm(copy.columns):
         freqs = [x for x in copy[locus].str.rstrip('%').astype('float') if not math.isnan(x)]
-        globfreq = sum(freqs)/(100*len(freqs))
+        try:
+            globfreq = sum(freqs)/(100*len(freqs))
+        except ZeroDivisionError:
+            # except loci that end up having all freqs masked
+            continue
         if globfreq > 1.0:
             print('impossible globfreq, exiting')
             exit()
