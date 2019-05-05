@@ -61,7 +61,9 @@ def filter_freq(df, tf, tipe, tablefile):
     copy = get_copy(df, freqcols)
     filtloci = []
     for locus in tqdm(copy.columns):
-        freqs = [x for x in copy[locus].str.rstrip('%').astype('float') if not math.isnan(x)]
+        freqs = [x for x 
+                 in copy[locus].str.rstrip('%').astype('float') 
+                 if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
         if len(freqs) == 0:
             # when loci end up having all freqs masked
             continue
