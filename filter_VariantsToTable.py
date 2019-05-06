@@ -3,7 +3,7 @@
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
 # will also keep biallelic SNPs when REF = N (two ALT alleles)
 # for SNP - filter for non-multiallelic, global MAF = 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
-# for INDEL - filter same as for SNP but without non-multiallelic filter (output has multiple rows)
+# for INDEL - no filter, just combine (output has multiple rows)
 ###
 
 ### assumes
