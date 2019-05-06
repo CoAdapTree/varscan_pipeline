@@ -201,7 +201,7 @@ def main(tablefile, tipe, ret=False):
     
     # filter for quality and missing data
     df.index = range(len(df.index))
-    if 'varscan' in tf and tipe == 'SNP':
+    if 'varscan' in tf:
         df = filter_qual(df, tf, tipe, tablefile)
 
     if ret is True:
