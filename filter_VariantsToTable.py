@@ -102,8 +102,7 @@ def filter_qual(df, tf, tipe, tablefile):
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
         # badloci True if qual < 20
-        badloci = df[col] < 20
-        df.loc[badloci, freqcol] = np.nan
+        df.loc[df[col] < 20, freqcol] = np.nan
 
     print('filtering for missing data ...')
     df = filter_missing_data(df, tf, tipe)
