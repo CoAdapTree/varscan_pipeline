@@ -213,7 +213,7 @@ rm {logfile}
         mem = "9000M"
         time = '2-00:00:00'
         fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
--F HP -F MQS '''
+-F HP -F MQS -GF GT -GF GQ -GF DP'''
     else:
         cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
         second_cmd = ''''''
