@@ -28,7 +28,7 @@ def checkjobs():
 
 
 def get_types(tablefiles, tipe):
-    print('starting to filter')
+    print(f'starting to filter {len(tablefiles)} tablefiles')
     dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
 
