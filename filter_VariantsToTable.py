@@ -66,12 +66,11 @@ def filter_freq(df, tf, tipe, tablefile):
         freqs = [x for x 
                  in copy[locus].str.rstrip('%').astype('float') 
                  if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
-        if len(freqs) == 0:
-            # when loci end up having all freqs masked
-            continue
-        globfreq = sum(freqs)/(100*len(freqs))
-        if lowfreq <= globfreq <= highfreq:
-            filtloci.append(locus)
+        if not len(freqs) == 0:
+            # avoid loci with all freqs masked (avoid ZeroDivisionError)
+            globfreq = sum(freqs)/(100*len(freqs))
+            if lowfreq <= globfreq <= highfreq:
+                filtloci.append(locus)
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     return df[df.index.isin(filtloci)].copy()
 
