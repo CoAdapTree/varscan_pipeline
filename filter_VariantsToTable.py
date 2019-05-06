@@ -2,6 +2,8 @@
 ### purpose
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
 # will also keep biallelic SNPs when REF = N (two ALT alleles)
+# for SNP - filter for global MAF = 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
+# for INDEL - no filtering, just combine varscan outfiles (and filter later)
 ###
 
 ### assumes
