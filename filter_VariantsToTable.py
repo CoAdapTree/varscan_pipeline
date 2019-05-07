@@ -51,8 +51,8 @@ def get_freq_cutoffs(tablefile):
 
 def filter_freq(df, tf, tipe, tablefile):
     """
-    filter out loci with global MAF < 0.05
-    right now this is unnecessary when setting pool-level freq to 1/ploidy
+    filter out loci with global MAF < 1/(ploidyPerPop * nPops)
+    right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy
     """
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
     lowfreq, highfreq = get_freq_cutoffs(tablefile)
@@ -71,7 +71,9 @@ def filter_freq(df, tf, tipe, tablefile):
             if lowfreq <= globfreq <= highfreq:
                 filtloci.append(locus)
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
-    return df[df.index.isin(filtloci)].copy()
+    df = df[df.index.isin(filtloci)].copy()
+    df.index = range(len(df.index))
+    return df
 
 
 def filter_missing_data(df, tf, tipe):
@@ -171,27 +173,24 @@ def recalc_global_freq(df, tf, freqcols):
     - moves crisp AF column to 'crisp_AF'
     - recalulate global AF (alt), save as AF column
     """
+    print('Recalculating global freq ... ')
     df.index = range(len(df.index))
     df['crisp_AF'] = df['AF']
     copy = get_copy(df, freqcols)
-    badloci = []
     for locus in tqdm(copy):
-        denom = sum(~tran[locus].isnull())  # num of non-NA
+        denom = sum(~copy[locus].isnull())  # num of non-NA
         if denom > 0:
-            num = np.nansum(tran[locus])
+            num = np.nansum(copy[locus])
             res = round(num/denom, 6)
-            filt.loc[locus,'AF'] = res
+            df.loc[locus,'AF'] = res
         else:
             # all pops have NaN for .FREQ
-            # would get filtered later when looking @ missing data
-            # might as well filter now
-            badloci.append(locus)
-    df = df[~df['locus'].isin(badloci)].copy()
-    df.index = range(len(df.index))
+            # will get filtered later when looking @ missing data
+            pass
     return df
 
 def add_freq_cols(df, tf, tipe, tablefile):
-    print('Adding in .FREQ cols for crisp file ...')
+    print('Adding in .FREQ columns for crisp file ...')
     # remove bednum from column names so we can pd.concat() later
     bednum = tf.split("file_")[-1].split("_converted")[0]
     df.columns = [col.replace("_" + bednum, "") for col in df.columns]
@@ -270,6 +269,10 @@ def main(tablefile, tipe, ret=False):
         print('filtering for missing data ...')
         df = filter_missing_data(df, tf, tipe)
         print(f'{tf} has {len(df.index)} loci with < 25% missing data')
+        lowfreq, highfreq = get_freq_cutoffs(tablefile)
+        df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
+        print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
+        df.index = range(len(df.index))
 
     if ret is True:
         return df
