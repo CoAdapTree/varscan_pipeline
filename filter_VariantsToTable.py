@@ -2,7 +2,10 @@
 ### purpose
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
 # will also keep biallelic SNPs when REF = N (two ALT alleles)
-# for SNP - filter for non-multiallelic, global MAF = 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
+# for varscan SNP: 
+# = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
+# for crisp SNP:
+# = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, < 25% missing data
 # for INDEL - no filter, just combine (output has multiple rows)
 ###
 
@@ -14,10 +17,6 @@
 # python filter_VariantsToTable.py SNPorINDEL
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
-###
-
-### fix
-# set local MAF filter to use ploidy instead of number
 ###
 """
 
@@ -86,7 +85,7 @@ def filter_missing_data(df, tf, tipe):
     thresh = math.floor(0.25 * len(freqcols))
     for locus in tqdm(copy.columns):
         # if there is less than 25% missing data:
-        if copy[locus].tolist().count(np.nan) < thresh:
+        if copy[locus].isnull().sum() < thresh:
             keepers.append(locus)
     df = df[df.index.isin(keepers)].copy()
     df.index = range(len(df.index))
@@ -166,6 +165,68 @@ def get_refn_snps(df, tipe, ndfs=None):
     return (dfs, ndfs)
 
 
+def recalc_global_freq(df, tf, freqcols):
+    """
+    For some reason AF reported by crisp is a little off
+    - moves crisp AF column to 'crisp_AF'
+    - recalulate global AF (alt), save as AF column
+    """
+    df.index = range(len(df.index))
+    df['crisp_AF'] = df['AF']
+    copy = get_copy(df, freqcols)
+    badloci = []
+    for locus in tqdm(copy):
+        denom = sum(~tran[locus].isnull())  # num of non-NA
+        if denom > 0:
+            num = np.nansum(tran[locus])
+            res = round(num/denom, 6)
+            filt.loc[locus,'AF'] = res
+        else:
+            # all pops have NaN for .FREQ
+            # would get filtered later when looking @ missing data
+            # might as well filter now
+            badloci.append(locus)
+    df = df[~df['locus'].isin(badloci)].copy()
+    df.index = range(len(df.index))
+    return df
+
+def add_freq_cols(df, tf, tipe, tablefile):
+    print('Adding in .FREQ cols for crisp file ...')
+    # remove bednum from column names so we can pd.concat() later
+    bednum = tf.split("file_")[-1].split("_converted")[0]
+    df.columns = [col.replace("_" + bednum, "") for col in df.columns]
+    # add in a .FREQ column for pool-level freqs
+    gtcols = [col for col in df.columns if '.GT' in col]
+    freqcols = []
+    for col in tqdm(gtcols):
+        refcol  = col.replace(".GT", ".REFCOUNT")
+        altcol  = col.replace(".GT", ".ALTCOUNT")
+        freqcol = col.replace(".GT", ".FREQ")
+        freqcols.append(freqcol)
+        for alt in uni(df['ALT']):
+            df.loc[df['ALT'] == alt, altcol] = df[col].str.count(alt)
+        for ref in uni(df['REF']):
+            df.loc[df['REF'] == ref, refcol] = df[col].str.count(ref)
+        df[freqcol] = df[altcol] / (df[altcol] + df[refcol])
+    # remove count cols
+    print('Removing unnecessary cols ...')
+    df = df[[col for col in df.columns
+             if '.REFCOUNT' not in col
+             and '.ALTCOUNT' not in col]].copy()
+    # recalculate global AF
+    df = recalc_global_freq(df, tf, freqcols)
+    # sort columns to group data together for each pool
+    datacols = sorted([col for col in df.columns if '.' in col])
+    othercols = [col for col in df.columns
+                 if '.' not in col
+                 and col != 'locus'
+                 and 'crisp' not in col]
+    othercols.insert(othercols.index('AF') + 1, 'crisp_AF')
+    df = df[['locus'] + othercols + datacols].copy()
+    df.index = range(len(df.index))
+    return df
+
+
 def main(tablefile, tipe, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
     tf = op.basename(tablefile)
@@ -204,6 +265,11 @@ def main(tablefile, tipe, ret=False):
     if 'varscan' in tf and tipe == 'SNP':
         # if we allow to continue for INDEL, each line is treated as a locus (not true for INDEL)
         df = filter_qual(df, tf, tipe, tablefile)
+    if 'crisp' in tf:
+        df = add_freq_cols(df, tf, tipe, tablefile)
+        print('filtering for missing data ...')
+        df = filter_missing_data(df, tf, tipe)
+        print(f'{tf} has {len(df.index)} loci with < 25% missing data')
 
     if ret is True:
         return df
