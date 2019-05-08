@@ -47,14 +47,14 @@ def make_bed_from_intervals(intdir):
             start, stop = (int(start) - 1, int(stop) - 1)
             lines.append((scaff, start, stop))
         make_bed(lines, num)
-    print('created %s bedfiles for %s from interval files' % (len(intfiles), ref))
+    print('\t\tcreated %s bedfiles for %s from interval files' % (len(intfiles), ref))
 
 
 def make_lenfile():
     refdir = op.dirname(ref)
     intdir = op.join(refdir, 'intervals')
     if op.exists(intdir):
-        print('\tusing intervals dir to create bedfiles')
+        print('\tusing intervals dir to create bedfiles for %s' % ref)
         make_bed_from_intervals(intdir)
         return
     if not op.exists('%(ref)s.length' % globals()):
@@ -70,7 +70,7 @@ def make_lenfile():
     # spread contigs across 450 bed files
     fcount = make_bedfiles()
 
-    print('created %s bedfiles for %s' % (fcount, ref))
+    print('\t\tcreated %s bedfiles for %s' % (fcount, ref))
 
 
 def make_bedfile(lines, fcount):
