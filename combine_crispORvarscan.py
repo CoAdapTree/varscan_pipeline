@@ -20,7 +20,7 @@ from start_crispANDvarscan import getfiles
 
 
 def get_varscan_names(df):
-    print('renaming varscan columns')
+    print('renaming varscan columns ...')
     # get order of samps used to create varscan cmds (same order as datatable)
     pool = op.basename(pooldir)
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
@@ -61,6 +61,7 @@ def get_types(tablefiles, tipe):
     if program == 'varscan':
         df = get_varscan_names(df)
 
+    print('writing df to file ...')
     filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')
     df.to_csv(filename, sep='\t', index=False)
 
@@ -96,6 +97,6 @@ def main():
 
 if __name__ == '__main__':
     # for crisp grep = pool, for varscan grep = pool
-    thisfile, pooldir, program, grep = sys.argv 
+    thisfile, pooldir, program, grep = sys.argv
 
     main()
