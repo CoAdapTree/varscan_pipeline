@@ -1,27 +1,12 @@
 """
 ### purpose
-# make sure these modules can be loaded before starting pipline
-# this is a list of modules across .py scripts
-# also a source for functions common across .py scripts
-###
-
-### fix
-# export PYTHONPATH in .sh files to import these functions
+# custom modules used across .py scripts
 ###
 """
 
 import os
-# import sys # commented imports are not used in these funcs below, but are used in other python apps in the pipeline
-# import json
-# import math
-# import time
 import pickle
-# import random
-# import compiler
-# import numpy as np
-# import pandas as pd
 from os import path as op
-# from collections import OrderedDict, Counter
 
 
 def fs(directory):
