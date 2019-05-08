@@ -87,7 +87,8 @@ def filter_missing_data(df, tf, tipe):
     thresh = math.floor(0.25 * len(freqcols))
     for locus in tqdm(copy.columns):
         # if there is less than 25% missing data:
-        if copy[locus].isnull().sum() < thresh:
+        count = sum(1 for x in copy[locus].tolist() if math.isnan(x))
+        if count < thresh:
             keepers.append(locus)
     df = df[df.index.isin(keepers)].copy()
     df.index = range(len(df.index))
