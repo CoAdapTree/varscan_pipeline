@@ -16,7 +16,7 @@ import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
-from start_crispANDvarscan import getfiles, get_bedfiles
+from start_crispANDvarscan import getfiles
 
 
 def get_varscan_names(df):
