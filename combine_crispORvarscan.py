@@ -62,7 +62,7 @@ def get_types(tablefiles, tipe):
         df = get_varscan_names(df)
 
     print('writing df to file ...')
-    filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')
+    filename = op.join(pooldir, f'{program}/{grep}-{program}_all_bedfiles_{tipe}.txt')
     df.to_csv(filename, sep='\t', index=False)
 
     print(f'combined {program} files to {filename}')
