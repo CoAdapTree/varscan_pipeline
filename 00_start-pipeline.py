@@ -211,7 +211,6 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
     if not op.exists(op.join(os.environ['HOME'], 'pipeline')):
         print('\tcould not find pipeline via $HOME/pipeline')
         exit()
-    print('DONE!\n')
 
 
 def check_pyversion():
