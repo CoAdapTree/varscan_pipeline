@@ -6,13 +6,38 @@
 ### usage
 # python combine_crispORvarscan.py pooldir crispORvarscan poolORsamp
 ###
+
+### assumes
+# that all bamfiles were given to samtools in the same order for each bedfile
+###
 """
 
 import os, sys, time, random, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
-from start_crispANDvarscan import getfiles
+from start_crispANDvarscan import getfiles, get_bedfiles
+
+
+def get_varscan_names(df):
+    print('renaming varscan columns')
+    # get order of samps used to create varscan cmds (same order as datatable)
+    pool = op.basename(pooldir)
+    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
+    # create a list of names that varscan gives by default
+    generic = ['Sample%s' % (i+1) for i in range(len(samps))]
+    # create a map between generic and true samp names
+    dic = dict((gen,samp) for (gen,samp) in zip(generic,samps))
+    # rename the columns in df
+    cols = []
+    for col in df:
+        if '.' in col:
+            gen, rest = col.split(".")
+            samp = dic[gen]
+            col = '.'.join([samp,rest])
+        cols.append(col)
+    df.columns = cols
+    return df
 
 
 def checkjobs():
@@ -20,10 +45,11 @@ def checkjobs():
     parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-    samps = fs(op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
-    # shdir = op.join(pooldir, 'shfiles/%s' % program if program == 'crisp' else 'shfiles/crispANDvarscan')
+    samps = fs(op.join(op.dirname(ref),
+                       'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
     shdir = op.join(pooldir, 'shfiles/crispANDvarscan')
-    files = getfiles(samps, shdir, f"{grep}-{program}")  # files = {f.sh: f.out, ...}
+    # files = {f.sh: f.out, ...}
+    files = getfiles(samps, shdir, f"{grep}-{program}")
     return files
 
 
@@ -31,6 +57,9 @@ def get_types(tablefiles, tipe):
     print(f'starting to filter {len(tablefiles)} tablefiles')
     dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
+    
+    if program == 'varscan':
+        df = get_varscan_names(df)
 
     filename = op.join(pooldir, f'{program}/{grep}_all_bedfiles_{tipe}.txt')
     df.to_csv(filename, sep='\t', index=False)
@@ -46,7 +75,7 @@ def get_tables(files):
                   and 'all_bedfiles' not in f
                   and 'SNP' not in f
                   and 'INDEL' not in f
-                  and grep in f]  # I don't think I need the SNP and INDEL check
+                  and grep in f]  # I don't think I need the SNP & INDEL check
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()
