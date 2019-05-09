@@ -10,7 +10,7 @@
 ###
 
 ### assumes
-# gatk VariantsToTable [...] --split-multi-allelic 
+# gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ [-GF FREQ] --split-multi-allelic
 ###
 
 ### usage
