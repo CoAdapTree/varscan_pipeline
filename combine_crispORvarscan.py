@@ -27,14 +27,14 @@ def get_varscan_names(df):
     # create a list of names that varscan gives by default
     generic = ['Sample%s' % (i+1) for i in range(len(samps))]
     # create a map between generic and true samp names
-    dic = dict((gen,samp) for (gen,samp) in zip(generic,samps))
+    dic = dict((gen, samp) for (gen, samp) in zip(generic, samps))
     # rename the columns in df
     cols = []
     for col in df:
         if '.' in col:
             gen, rest = col.split(".")
             samp = dic[gen]
-            col = '.'.join([samp,rest])
+            col = '.'.join([samp, rest])
         cols.append(col)
     df.columns = cols
     return df
@@ -76,7 +76,7 @@ def get_tables(files):
                   and 'all_bedfiles' not in f
                   and 'SNP' not in f
                   and 'INDEL' not in f
-                  and grep in f]  # I don't think I need the SNP & INDEL check
+                  and grep in f]
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()
