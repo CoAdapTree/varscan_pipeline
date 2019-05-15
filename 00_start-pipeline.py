@@ -1,6 +1,10 @@
 """
 ### usage
-# usage: 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
+# 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
+###
+
+### assumes
+# that samples duplicated in the 'sample_name' column have the same rglb and rgsm read groups
 ###
 """
 
@@ -109,7 +113,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
         sys.exit(3)
     print(Bcolors.BOLD + 'reading datatable, getting fastq info' + Bcolors.ENDC)
     data = pd.read_csv(datatable, sep='\t')
-    rginfo = {}     # key=sampname vals=rginfo
+    rginfo = {}     # key=samp vals=rginfo
     samp2pool = {}  # key=samp val=pool
     poolref = {}    # key=pool val=ref.fa
     ploidy = {}     # key=pool val=ploidy
@@ -332,7 +336,7 @@ if __name__ == '__main__':
         ___|               \         |          _   __|
        |      _ \           \    __  |  _     _    |    _|  _ \\  _ \\
        |     (   | __|   /_  \  (    | (   | (  |  |   |    __/   __/
-        ___|\___/      _/    _\\___/_|\__/_|  __/  |  _|  \___| \___|
+        ___|\___/      _/    _\\\___/_|\__/_|  __/  |  _|  \___| \___|
                                              |
                                              |
 
