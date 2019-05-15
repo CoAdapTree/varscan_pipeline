@@ -83,7 +83,7 @@ def getsq(grepping=None, states=[], balancing=False):
                             if grep.lower() in split.lower():
                                 keepit += 1
                                 break
-                if (keepit == len(grepping) and len(grepping) != 0):
+                if keepit == len(grepping) and len(grepping) != 0:
                     grepped.append(tuple(splits))
 
         if len(grepped) > 0:
