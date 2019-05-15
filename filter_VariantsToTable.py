@@ -198,6 +198,7 @@ def add_freq_cols(df, tf, tipe, tablefile):
     df.columns = [col.replace("_" + bednum, "") for col in df.columns]
     # add in a .FREQ column for pool-level freqs
     gtcols = [col for col in df.columns if '.GT' in col]
+    print('len(gtcols) = ', len(gtcols))
     freqcols = []
     for col in tqdm(gtcols):
         refcol  = col.replace(".GT", ".REFCOUNT")
@@ -228,6 +229,12 @@ def add_freq_cols(df, tf, tipe, tablefile):
     return df
 
 
+def write_file(tablefile, df, tipe):
+    newfile = tablefile.replace(".txt", f"_{tipe}.txt")
+    df.to_csv(newfile, index=False, sep='\t')
+    print('finished filtering VariantsToTable file: %s' % newfile)
+
+
 def main(tablefile, tipe, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
     tf = op.basename(tablefile)
@@ -253,13 +260,18 @@ def main(tablefile, tipe, ret=False):
     # filter for tipe, announce num after initial filtering
     df = df[df['TYPE'] == tipe].copy()
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
+    if len(df.index) == 0:
+        if ret is True:
+            return df
+        else:
+            # save
+            write_file(tablefile, df, tipe)
     
     # add in loci with REF=N but biallelic otherwise
     if tipe == 'SNP':
-        if len(dfs) > 0:
-            print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
-            dfs.append(df)
-            df = pd.concat(dfs)
+        print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
+        dfs.append(df)
+        df = pd.concat(dfs)
     
     # filter for quality and missing data
     df.index = range(len(df.index))
@@ -275,14 +287,12 @@ def main(tablefile, tipe, ret=False):
         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
-
+    
     if ret is True:
         return df
     else:
         # save
-        newfile = tablefile.replace(".txt", f"_{tipe}.txt")
-        df.to_csv(newfile, index=False, sep='\t')
-        print('finished filtering VariantsToTable file: %s' % newfile)
+        write_file(tablefile, df, tipe)
 
 
 if __name__ == '__main__':
