@@ -5,6 +5,7 @@
 
 ### assumes
 # that samples duplicated in the 'sample_name' column have the same rglb and rgsm read groups
+# that ploidy is the same across samples in a pool
 ###
 """
 
