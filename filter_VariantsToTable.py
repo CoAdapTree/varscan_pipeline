@@ -268,7 +268,7 @@ def main(tablefile, tipe, ret=False):
             write_file(tablefile, df, tipe)
     
     # add in loci with REF=N but biallelic otherwise
-    if tipe == 'SNP':
+    if tipe == 'SNP' and len(dfs) > 0:
         print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
         dfs.append(df)
         df = pd.concat(dfs)
