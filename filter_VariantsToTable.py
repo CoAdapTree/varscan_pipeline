@@ -235,31 +235,49 @@ def write_file(tablefile, df, tipe):
     print('finished filtering VariantsToTable file: %s' % newfile)
 
 
-def main(tablefile, tipe, ret=False):
-    print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
+def load_data(tablefile):
     tf = op.basename(tablefile)
 
     # load the data, create a column with CHROM-POS for locusID
     df = pd.read_csv(tablefile, sep='\t')
     print(f'{tf} has {len(df.index)} rows (includes multiallelic)')
     df['locus'] = ["%s-%s" % (contig, pos) for (contig, pos) in zip(df['CHROM'].tolist(), df['POS'].tolist())]
+    return df, tf
+
+
+def keep_snps(df, tf):
+    loccount = table(df['locus'])
+    goodloci = [locus for locus in loccount if loccount[locus] == 1]
+    print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
+
+    # filter df for multiallelic (multiple lines), REF != N
+    df = df[df['locus'].isin(goodloci)].copy()
+    df = df[df['REF'] != 'N'].copy()
+    return df
+
+
+def filter_type(df, tf):
+    df = df[df['TYPE'] == tipe].copy()
+    print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
+    return df
+
+
+def main(tablefile, tipe, ret=False):
+    print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
+    
+    # load the data
+    df, tf = load_data(tablefile)
 
     # determine loci with REF=N but biallelic otherwise
     if tipe == 'SNP':
         dfs, ndfs = get_refn_snps(df, tipe)
 
         # determine which loci are multiallelic
-        loccount = table(df['locus'])
-        goodloci = [locus for locus in loccount if loccount[locus] == 1]
-        print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
-    
-        # filter df for multiallelic (multiple lines), REF != N
-        df = df[df['locus'].isin(goodloci)].copy()
-        df = df[df['REF'] != 'N'].copy()
+        df = keep_snps(df, tf)
 
     # filter for tipe, announce num after initial filtering
-    df = df[df['TYPE'] == tipe].copy()
-    print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
+    df = filter_type(df, tf)
+
     if len(df.index) == 0:
         if ret is True:
             return df
