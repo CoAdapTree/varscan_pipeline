@@ -38,6 +38,21 @@ def get_copy(df, cols):
     return df[cols].T.copy()
 
 
+def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
+    gtcols = [col for col in df if '.GT' in col]
+    copy = get_copy(df, gtcols)
+    for locus in tqdm(copy.columns):
+        alt = df.loc[locus, 'ALT']
+        alleles = "".join(copy[locus].dropna().str.replace("/", ""))
+        df.loc[locus, 'AF'] = alleles.count(alt)/len(alleles)
+    filtloci = df.index[(df['AF'] <= highfreq) & (lowfreq <= df['AF'])].tolist()
+    
+    # drop .FREQ cols (no meaning for individual data)
+    df = df[[col for col in df.columns if not col in freqcols]].copy()
+
+    return filtloci, df
+    
+
 def get_freq_cutoffs(tablefile):
     pooldir = op.dirname(op.dirname(tablefile))
     parentdir = op.dirname(pooldir)
@@ -46,7 +61,7 @@ def get_freq_cutoffs(tablefile):
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     lowfreq = 1/(ploidy * len(poolsamps))
     highfreq = 1 - lowfreq
-    return lowfreq, highfreq
+    return lowfreq, highfreq, ploidy
 
 
 def filter_freq(df, tf, tipe, tablefile):
@@ -55,21 +70,31 @@ def filter_freq(df, tf, tipe, tablefile):
     right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy
     """
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
-    lowfreq, highfreq = get_freq_cutoffs(tablefile)
+    lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
     print(f'filtering for global frequency ({lowfreq}, {highfreq})...')
     df.reset_index(drop=True, inplace=True)
+    
+    # prep for filtering
     freqcols = [col for col in df.columns if '.FREQ' in col]
-    copy = get_copy(df, freqcols)
-    filtloci = []
-    for locus in tqdm(copy.columns):
-        freqs = [x for x 
-                 in copy[locus].str.rstrip('%').astype('float') 
-                 if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
-        if not len(freqs) == 0:
-            # avoid loci with all freqs masked (avoid ZeroDivisionError)
-            globfreq = sum(freqs)/(100*len(freqs))
-            if lowfreq <= globfreq <= highfreq:
-                filtloci.append(locus)
+    
+    # filter individual data differently
+    if ploidy <= 2:  # individual file:
+        print(f'{tf} is an individual file with ploidy = {ploidy}')
+        filtloci, df = filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols)
+    else:
+        # carry on with poolseq datas
+        filtloci = []
+        copy = get_copy(df, freqcols)
+        for locus in tqdm(copy.columns):
+            freqs = [x for x 
+                     in copy[locus].str.rstrip('%').astype('float') 
+                     if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
+            if not len(freqs) == 0:
+                # avoid loci with all freqs masked (avoid ZeroDivisionError)
+                globfreq = sum(freqs)/(100*len(freqs))
+                if lowfreq <= globfreq <= highfreq:
+                    filtloci.append(locus)
+                    df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
     df.index = range(len(df.index))
@@ -104,8 +129,9 @@ def filter_qual(df, tf, tipe, tablefile):
     print(f'masking bad freqs for {len(gqcols)} pools...')
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
+        gtcol = col.replace(".GQ", ".GT")
         # badloci True if qual < 20
-        df.loc[df[col] < 20, freqcol] = np.nan
+        df.loc[df[col] < 20, [freqcol, gtcol]] = np.nan
 
     print('filtering for missing data ...')
     df = filter_missing_data(df, tf, tipe)
@@ -256,7 +282,7 @@ def keep_snps(df, tf):
     return df
 
 
-def filter_type(df, tf):
+def filter_type(df, tf, tipe):
     df = df[df['TYPE'] == tipe].copy()
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
     return df
@@ -276,7 +302,7 @@ def main(tablefile, tipe, ret=False):
         df = keep_snps(df, tf)
 
     # filter for tipe, announce num after initial filtering
-    df = filter_type(df, tf)
+    df = filter_type(df, tf, tipe)
 
     if len(df.index) == 0:
         if ret is True:
