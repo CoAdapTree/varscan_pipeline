@@ -1,12 +1,14 @@
-"""
-# usage
+"""Convert json file from fastp into data table.
+Count reads in bamfiles from throughout pipeline.
+
+### usage
 # module load samtools/1.9
 # python 99_get_read_stats.py $1 32
-#
+###
 
-# purpose
+### purpose
 # get counts for trimmed, bams
-#
+###
 """
 
 # imports
