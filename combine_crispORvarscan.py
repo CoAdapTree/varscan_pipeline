@@ -62,7 +62,7 @@ def checkjobs():
     return files
 
 
-def get_types(tablefiles, tipe, program, pooldir):
+def get_types(tablefiles, tipe, program, pooldir, grep):
     """
     Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
 
@@ -114,7 +114,7 @@ def main():
 
     # get SNP and indels
     for tipe in ['SNP', 'INDEL']:
-        get_types(tablefiles, tipe, program, pooldir)
+        get_types(tablefiles, tipe, program, pooldir, grep)
 
 
 if __name__ == '__main__':
