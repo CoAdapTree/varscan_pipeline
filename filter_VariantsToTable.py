@@ -391,7 +391,7 @@ def filter_type(df, tf, tipe):
 
 def main(tablefile, tipe, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
-    
+
     # load the data
     df, tf = load_data(tablefile)
 

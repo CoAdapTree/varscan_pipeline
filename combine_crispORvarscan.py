@@ -43,9 +43,10 @@ def get_varscan_names(df, pooldir):
 
 
 def checkjobs():
-    """Make sure previous realigned bamfiles were created without error.
+    """
+    Make sure previous realigned bamfiles were created without error.
     Avoids unintentionally combining a subset of all final expected files.
-    
+
     Calls:
     getfiles from start_crispANDvarscan
     """
@@ -62,8 +63,9 @@ def checkjobs():
 
 
 def get_types(tablefiles, tipe, program, pooldir):
-    """Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
-    
+    """
+    Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
+
     Positional arguments:
     tablefiles - list of paths pointing to the gatk VariantsToTable .txt outputs from varscan or crisp vcf files
     tipe - str; either "SNP" or "INDEL"

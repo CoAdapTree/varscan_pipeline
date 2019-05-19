@@ -47,12 +47,12 @@ def getmostrecent(files):
 
 def getfiles(samps, shdir, grep):
     """Determine if all realign bam jobs have been created and sbatched.
-    
+
     Positional arguments:
     samps - list of sample names (length is number of expected shfiles)
     shdir - directory where .sh and .out files are
     grep - program name - keyword used to find correct files
-    
+
     Returns:
     files - dictionary where key = sh file, val = most recent outfile
     """

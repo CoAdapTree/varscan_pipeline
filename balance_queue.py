@@ -130,12 +130,13 @@ def adjustjob(acct, jobid):
 
 
 def getaccounts(sq, stage):
-    """Count the number of priority jobs assigned to each account.
-    
-    Positional arguments:
-    sq - list of squeue slurm command jobs, each line is str.split()
-       - slurm_job_id is zeroth element of str.split()
-    stage - stage of pipeline, used as keyword to filter jobs in queue
+    """
+Count the number of priority jobs assigned to each account.
+
+Positional arguments:
+sq - list of squeue slurm command jobs, each line is str.split()
+   - slurm_job_id is zeroth element of str.split()
+stage - stage of pipeline, used as keyword to filter jobs in queue
     """
     accounts = {}
     for q in sq:

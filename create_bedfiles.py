@@ -16,8 +16,9 @@ from coadaptree import fs, makedir
 
 
 def openlenfile(lenfile):
-    """Open lenfile to determine length of each contig in ref.fa.
-    
+    """
+    Open lenfile to determine length of each contig in ref.fa.
+
     Positional arguments:
     lenfile = path to a file created from the ref.fa that has lengths of each contig/chromosome
     """

@@ -68,7 +68,11 @@ for f in gzfiles:
         writetomfile(text)
         print(text)
         exit()
-text = "found %s R1/R2 seq pairs\n" % str(len([f for samp, files in seq_pairs.items() for f in files]))
+lenn = len([f for samp, files in seq_pairs.items() for f in files])
+text = "found %s R1/R2 seq pairs\n" % str(lenn)
+if not len(gzfiles) == lenn:
+    print("not all R2 files were found for R1 files, exiting")
+    exit()
 print('\t%s' % text)
 writetomfile(text)
 

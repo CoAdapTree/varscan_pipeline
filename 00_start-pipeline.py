@@ -19,11 +19,12 @@ from coadaptree import fs, pkldump, uni, luni, makedir
 
 
 def create_sh(pooldirs, poolref):
-    """run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
-    
-    Positional arguments:
-    pooldirs - a list of subdirectories in parentdir for groups of pools
-    poolref - dictionary with key = pool, val = /path/to/ref
+    """
+run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
+
+Positional arguments:
+pooldirs - a list of subdirectories in parentdir for groups of pools
+poolref - dictionary with key = pool, val = /path/to/ref
     """
     # create sh files
     print(Bcolors.BOLD + '\nwriting sh files' + Bcolors.ENDC)
