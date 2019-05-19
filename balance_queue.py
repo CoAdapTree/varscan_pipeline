@@ -69,13 +69,14 @@ def getsq_exit(balancing):
 
 
 def getsq(grepping=None, states=[], balancing=False):
-    """Get jobs from squeue slurm command matching crieteria.
-    
+    """
+    Get jobs from squeue slurm command matching crieteria.
+
     Positional arguments:
     grepping - list of key words to look for in each column of job info
     states - list of states {pending, running} wanted in squeue jobs
     balancing - bool: True if using to balance priority jobs, else for other queue queries
-    
+
     Returns:
     grepped - list of tuples where tuple elements are line.split() for each line of squeue \
 slurm command that matched grepping queries

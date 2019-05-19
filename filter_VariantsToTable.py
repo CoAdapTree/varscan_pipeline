@@ -29,7 +29,8 @@ from collections import Counter
 
 
 def table(lst):
-    """Count each item in a list.
+    """
+    Count each item in a list.
     
     Returns:
     - Counter() with key = item, val = count
@@ -46,7 +47,8 @@ def get_copy(df, cols):
 
 
 def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
-    """Determine frequency of allele by counting alleles in genotype FORMAT field, fill in AF.
+    """
+    Determine frequency of allele by counting alleles in genotype FORMAT field, fill in AF.
     
     Positional arguments:
     df - pandas.dataframe; current filtered VariantsToTable output
@@ -73,7 +75,8 @@ def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
     
 
 def get_freq_cutoffs(tablefile):
-    """Determind MAF using ploidy.
+    """
+    Determind MAF using ploidy.
     
     Positional arguments:
     tablefile - path to VariantsToTable output - used to find ploidy etc
@@ -94,7 +97,8 @@ def get_freq_cutoffs(tablefile):
 
 
 def filter_freq(df, tf, tipe, tablefile):
-    """Filter out loci with global MAF < 1/(ploidyPerPop * nPops).
+    """
+    Filter out loci with global MAF < 1/(ploidyPerPop * nPops).
     Right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy.
     
     Positional arguments:
@@ -139,7 +143,8 @@ def filter_freq(df, tf, tipe, tablefile):
 
 
 def filter_missing_data(df, tf, tipe):
-    """Remove loci with < 25% missing data.
+    """
+    Remove loci with < 25% missing data.
     Count np.nan in .FREQ col to assess % missing data.
     
     Positional arguments:
@@ -166,7 +171,8 @@ def filter_missing_data(df, tf, tipe):
 
 
 def filter_qual(df, tf, tipe, tablefile):
-    """mask freqs that have GQ < 20.
+    """
+    mask freqs that have GQ < 20.
     
     Positional arguments:
     df - pandas.dataframe; VariantsToTable output
@@ -197,7 +203,8 @@ def filter_qual(df, tf, tipe, tablefile):
 
 
 def adjust_freqs(smalldf):
-    """For loci with REF=N, set freqs of pools with REF=N in GT to np.nan.
+    """
+    For loci with REF=N, set freqs of pools with REF=N in GT to np.nan.
     Set alt freqs with respect to the second alt allele.
     
     Positional arguments:
@@ -230,7 +237,8 @@ def adjust_freqs(smalldf):
 
 
 def get_refn_snps(df, tipe, ndfs=None):
-    """Isolate polymorphisms with REF=N but two ALT single nuleodite alleles.
+    """
+    Isolate polymorphisms with REF=N but two ALT single nuleodite alleles.
     
     Positional arguments:
     df - pandas.dataframe; current filtered VariantsToTable output
@@ -259,7 +267,8 @@ def get_refn_snps(df, tipe, ndfs=None):
 
 
 def recalc_global_freq(df, tf, freqcols):
-    """For some reason AF reported by crisp is a little off. Recalc.
+    """
+    For some reason AF reported by crisp is a little off. Recalc.
     Moves crisp AF column to 'crisp_AF'.
     Recalulates global AF (alt), save as AF column.
     
@@ -288,7 +297,8 @@ def recalc_global_freq(df, tf, freqcols):
     return df
 
 def add_freq_cols(df, tf, tipe, tablefile):
-    """Adding in .FREQ columns for crisp file.
+    """
+    Adding in .FREQ columns for crisp file.
     
     Positional arguments:
     df - pandas.dataframe; current filtered VariantsToTable output
@@ -344,7 +354,8 @@ def write_file(tablefile, df, tipe):
 
 
 def load_data(tablefile):
-    """Load the VariantsToTable output.
+    """
+    Load the VariantsToTable output.
     
     Positional arguments:
     tablefile - path to VariantsToTable output - used to find ploidy etc
@@ -363,12 +374,13 @@ def load_data(tablefile):
 
 
 def keep_snps(df, tf):
-    """Count CHROM-POS (locus) and keep only those with one ALT.
+    """
+    Count CHROM-POS (locus) and keep only those with one ALT.
     
     Positional arguments:
     df - pandas.dataframe; currently filtered VariantsToTable output
     tf - basename of path to VariantsToTable output
-    
+
     Returns:
     df - pandas.dataframe; non-multiallelic-filtered VariantsToTable output
     """
