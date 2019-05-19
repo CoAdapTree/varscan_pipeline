@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch mapping, samtools, and bedtools command files.
+
 ### purpose
 # map with bwa, view/sort/index with samtools
 ###
@@ -53,8 +54,8 @@ def getbwatext(r1out, r2out):
     # samtools sort: bamfile -> sortfile
     sort = op.basename(bamfile).replace('.bam', '_sorted.bam')
     sortfile = op.join(sortdir, sort)
-    flagfile = op.join(sortdir, sort.replace('.bam', '.bam.flagstats'))
-    coordfile = op.join(sortdir, sort.replace('.bam', '.bam.coord'))
+    flagfile = sortfile.replace('.bam', '.bam.flagstats')
+    coordfile = sortfile.replace('.bam', 'bam.coord')
 
     return (sortfile, f'''# get RGID and RGPU
 RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)
@@ -75,6 +76,7 @@ module unload samtools
 
 module load bedtools/2.27.1
 bedtools bamtobed -i {sortfile} > {coordfile}
+module unload bedtools
 
 ''')
 
@@ -92,7 +94,7 @@ pkldump(sortfiles, op.join(pooldir, '%s_sortfiles.pkl' % samp))
 email_text = get_email_info(parentdir, '02')
 text = f'''#!/bin/bash
 #SBATCH --time=23:59:00
-#SBATCH --mem=35000M
+#SBATCH --mem=55000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1

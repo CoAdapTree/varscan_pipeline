@@ -1,6 +1,13 @@
 """
+start the pipeline.
+
 ### usage
-# usage: 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
+# 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
+###
+
+### assumes
+# that samples duplicated in the 'sample_name' column have the same rglb, rgsm, and rgpl read groups
+# that ploidy is the same across samples in a pool
 ###
 """
 
@@ -12,6 +19,13 @@ from coadaptree import fs, pkldump, uni, luni, makedir
 
 
 def create_sh(pooldirs, poolref):
+    """
+run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
+
+Positional arguments:
+pooldirs - a list of subdirectories in parentdir for groups of pools
+poolref - dictionary with key = pool, val = /path/to/ref
+    """
     # create sh files
     print(Bcolors.BOLD + '\nwriting sh files' + Bcolors.ENDC)
     for pooldir in pooldirs:
@@ -28,20 +42,28 @@ def create_sh(pooldirs, poolref):
 
 
 def askforinput():
+    "Ask for input; if no, exit."
     print('\n')
     while True:
         inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
         if inp in ['yes', 'no']:
+            if inp == 'no':
+                print('exiting %s' % sys.argv[0])
+                exit()
             break
         else:
             print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
-            if inp == 'no':
-                print('exiting 00_start-pipeline.py')
-                exit()
 
 
 def get_datafiles(parentdir, f2pool, data):
-    # get list of files from datatable, make sure they exist in parentdir, create symlinks in /parentdir/<pool_name>/
+    """Get list of files from datatable, make sure they exist in parentdir.
+    Create symlinks in /parentdir/<pool_name>/.
+
+    Positional arguments:
+    parentdir - directory with datatable.txt and (symlinks to) fastq data
+    f2pool - dictionary with key = file.fastq, val = pool_name
+    data - datatable.txt with info for pipeline
+    """
     print(Bcolors.BOLD + '\nchecking for existance of fastq files in datatable.txt' + Bcolors.ENDC)
     files = [f for f in fs(parentdir) if 'fastq' in f and 'md5' not in f]
     datafiles = data['file_name_r1'].tolist()
@@ -79,6 +101,12 @@ def get_datafiles(parentdir, f2pool, data):
 
 
 def make_pooldirs(data, parentdir):
+    """Create subdirectories of parentdir.
+
+    Positional arguments:
+    data - datatable.txt with info for pipeline
+    parentdir - directory with datatable.txt and (symlinks to) fastq data
+    """
     # make pool dirs
     print(Bcolors.BOLD + "\nmaking pool dirs" + Bcolors.ENDC)
     pools = uni(data['pool_name'].tolist())
@@ -93,14 +121,20 @@ def make_pooldirs(data, parentdir):
     return pooldirs
 
 
-def create_crisp_bedfiles(poolref):
-    # create bedfiles for crisp
-    print(Bcolors.BOLD + "\ncreating CRISP bedfiles" + Bcolors.ENDC)
+def create_all_bedfiles(poolref):
+    """For each unique ref.fa in datatable.txt, create bedfiles for varscan/crisp.
+
+    Positional arguments:
+    poolref - dictionary with key = pool, val = /path/to/ref
+    """
+    # create bedfiles for crisp and varscan
+    print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
-        create_bedfiles.main('create_bedfiles.py', ref)
+        create_bedfiles.main(ref)
 
 
 def read_datatable(parentdir):
+    """Read in datatable.txt"""
     # read in the datatable, save rginfo for later
     datatable = op.join(parentdir, 'datatable.txt')
     if not op.exists(datatable):
@@ -109,7 +143,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
         sys.exit(3)
     print(Bcolors.BOLD + 'reading datatable, getting fastq info' + Bcolors.ENDC)
     data = pd.read_csv(datatable, sep='\t')
-    rginfo = {}     # key=sampname vals=rginfo
+    rginfo = {}     # key=samp vals=rginfo
     samp2pool = {}  # key=samp val=pool
     poolref = {}    # key=pool val=ref.fa
     ploidy = {}     # key=pool val=ploidy
@@ -170,12 +204,6 @@ please create these files' +
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
             rginfo[samp][col] = data.loc[row, col]
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
-            if "__" in f:
-                print(Bcolors.BOLD +
-                      Bcolors.FAIL +
-                      "FAIL: file names cannot have double underscores, replace __ with _ (single)" +
-                      Bcolors.END)
-                exit()
             f2pool[f] = pool
             f2samp[op.join(pooldir, f)] = samp
     pkldump(rginfo, op.join(parentdir, 'rginfo.pkl'))
@@ -189,18 +217,25 @@ please create these files' +
 
 
 def check_reqs():
-    # check for assumed exports
+    """Check for assumed exports."""
     print(Bcolors.BOLD + '\nchecking for exported variables' + Bcolors.ENDC)
     for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
-                'CRISP_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
+                'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
         try:
             print('\t%s = %s' % (var, os.environ[var]))
         except KeyError:
             print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
 later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
-    # look for lofreq, make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
-    for exe in ['lofreq', 'activate']:
+    for program in [op.join(os.environ['VARSCAN_DIR'], 'VarScan.v2.4.3.jar'),
+                    op.join(os.environ['CRISP_DIR'], 'CRISP')]:
+        if not op.exists(program):
+            print(Bcolors.BOLD +
+                  Bcolors.FAIL +
+                  "FAIL: could not find the following program: %s" % program +
+                  Bcolors.ENDC)
+    # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
+    for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
             print('\tcould not find %s in $PATH\nexiting 00_start-pipeline.py' % exe)
             if exe == 'activate':
@@ -210,11 +245,10 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
     if not op.exists(op.join(os.environ['HOME'], 'pipeline')):
         print('\tcould not find pipeline via $HOME/pipeline')
         exit()
-    print('DONE!\n')
 
 
 def check_pyversion():
-    # check python version
+    """Make sure python version is 3.6+"""
     pyversion = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
     if not pyversion >= 3.6:
         text = '''FAIL: You are using python %s. This pipeline was built with python 3.7+.
@@ -302,8 +336,8 @@ def main():
     # read in the datatable
     data, f2pool, poolref = read_datatable(args.parentdir)
 
-    # create bedfiles to parallelize crisp later on
-    create_crisp_bedfiles(poolref)
+    # create bedfiles to parallelize crisp and varscan later on
+    create_all_bedfiles(poolref)
 
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
@@ -329,14 +363,14 @@ if __name__ == '__main__':
 *****************************************************************************
 
 
-   ___|                 \          |              _   __|
-  |       _ \            \     __  |   _      _      |      _|    _ \\    _ \\
-  |      (   | __|    /_  \   (    |  (   |  (  |    |     |      __/    __/
-   ___| \___/       _/    _\ \___/_| \__/_|   __/    |    _|    \___|  \___|
-                                             |
-                                             |
+         ___|               \         |          _   __|
+        |      _ \           \    __  |  _     _    |    _|  _ \\  _ \\
+        |     (   | __|   /_  \  (    | (   | (  |  |   |    __/  __/
+         ___|\___/      _/    _\\\___/_|\__/_|  __/  |  _|  \___|\___|
+                                              |
+                                              |
 
-                          LoFreq and CRISP pipeline
+                         VarScan and CRISP pipeline
 
 *****************************************************************************
 

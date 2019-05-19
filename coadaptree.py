@@ -1,27 +1,13 @@
-"""
-### purpose
-# make sure these modules can be loaded before starting pipline
-# this is a list of modules across .py scripts
-# also a source for functions common across .py scripts
-###
+"""Common functions.
 
-### fix
-# export PYTHONPATH in .sh files to import these functions
+### purpose
+# custom modules used across .py scripts
 ###
 """
 
 import os
-# import sys # commented imports are not used in these funcs below, but are used in other python apps in the pipeline
-# import json
-# import math
-# import time
 import pickle
-# import random
-# import compiler
-# import numpy as np
-# import pandas as pd
 from os import path as op
-# from collections import OrderedDict, Counter
 
 
 def fs(directory):
@@ -39,9 +25,6 @@ def pklload(path):
 
 
 def get_email_info(parentdir, stage):
-    # TODO: but how will I know it's actually the final stage? - lofreq and crisp combine have reservation files!
-
-    from coadaptree import pklload
     pkl = op.join(parentdir, 'email_opts.pkl')
     if op.exists(pkl):
         email_info = pklload(pkl)

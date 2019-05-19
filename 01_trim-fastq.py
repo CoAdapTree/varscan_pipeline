@@ -1,4 +1,9 @@
-"""
+"""Create and sbatch trimming command files.
+
+### purpose
+# trim fastq files with fastp
+###
+
 ### execution
 # python 01a_trim-fastq.py /path/to/pooldir /path/to/ref.fa
 ###
@@ -59,9 +64,15 @@ for f in gzfiles:
     if op.exists(read2):
         seq_pairs[samp].append((op.abspath(f), op.abspath(read2)))
     else:
-        text = '\nWARNING: no pair for %s\n' % f
+        text = '\nFAIL: no pair for %s\n' % f
         writetomfile(text)
-text = "found %s R1/R2 seq pairs\n" % str(len([f for samp, files in seq_pairs.items() for f in files]))
+        print(text)
+        exit()
+lenn = len([f for samp, files in seq_pairs.items() for f in files])
+text = "found %s R1/R2 seq pairs\n" % str(lenn)
+if not len(gzfiles) == lenn:
+    print("not all R2 files were found for R1 files, exiting")
+    exit()
 print('\t%s' % text)
 writetomfile(text)
 
@@ -104,7 +115,7 @@ module load fastp/0.19.5
 
 ''' % locals()
         newtext = newtext + text
-        
+
     suffix = '''# once finished, map using bwa mem
 python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(parentdir)s %(samp)s
 
@@ -126,5 +137,4 @@ for sh in shfiles:
     os.chdir(op.dirname(sh))     # want sbatch outfiles in same folder as sh file
     print('\tshfile=', sh)
     subprocess.call([shutil.which('sbatch'), sh])
-    # os.system('sbatch %s' % sh)
-    time.sleep(2)
+    time.sleep(0.5)

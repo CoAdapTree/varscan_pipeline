@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch gatk realignTargetCreator command files.
+
 ### purpose
 # use the GATK to create target intervals for realignment around indels
 ###
@@ -36,6 +37,7 @@ text = '''#!/bin/bash
 
 # realign using the GATK
 module load gatk/3.8
+module load java
 java -Djava.io.tmpdir=$SLURM_TMPDIR -Xmx8g -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T RealignerTargetCreator -R %(ref)s --num_threads 32 -I %(dupfile)s -o %(listfile)s
 module unload gatk
