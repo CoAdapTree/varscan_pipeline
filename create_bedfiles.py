@@ -97,7 +97,7 @@ def make_lenfile():
 def make_bedfile(lines, fcount):
     """Use ref.fa.length file to write contig/chorm, start, stop to bedfile.
     Different than make_bed(): ref.fa.length is 1-based, need to assert zero-based indexing.
-    
+
     Positional arguments:
     lines - list of tuples - zeroth element is contig/chrom name, first is length of contig/chrom
     fcount - the fcount'th bedfile; used for naming file

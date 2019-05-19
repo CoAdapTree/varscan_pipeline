@@ -232,7 +232,7 @@ def gettaker(accounts, defs):
 
 def givetotaker(giver, taker, accounts, bal):
     """Give jobs to the account without jobs with priority status.
-    
+
     Positional arguments:
     giver - account giving jobs to taker
     taker - account receiving jobs from giver

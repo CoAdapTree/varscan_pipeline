@@ -12,11 +12,11 @@ Count reads in bamfiles from throughout pipeline.
 """
 
 # imports
-import os, sys, json, pandas as pd, numpy as np
+import os, sys, json, pandas as pd
 from tqdm import tqdm
 from os import path as op
 from collections import OrderedDict
-from coadaptree import fs, createdirs, uni, pklload
+from coadaptree import fs, uni, pklload
 
 
 # args
@@ -26,23 +26,22 @@ if parentdir.endswith("/"):
 
 
 # reqs
-os.system('echo getting reqs')
+print('getting reqs')
 samp2pool = pklload(op.join(parentdir, 'samp2pool.pkl'))
 pools = uni(list(samp2pool.values()))
 
 
 # get a list of subdirectory pool dirs created earlier in pipeline
-os.system('echo getting pooldirs')
+print('getting pooldirs')
 pooldirs = []
 for p in pools:
     pooldir = op.join(parentdir, p)
-    assert op.exists(pooldir)
     pooldirs.append(pooldir)
 
 
 # TRIMMING DATA
 # get the json data from trimming
-os.system('echo getting trim data')
+print('getting trim data')
 data = {}
 count = 0
 for p in pooldirs:
@@ -55,7 +54,7 @@ for p in pooldirs:
 
 
 # put data into a dataframe, and sort columns
-os.system('echo reading data')
+print('reading data')
 readinfo = OrderedDict()
 samps = []
 for j in sorted(data):
@@ -75,16 +74,16 @@ for j in sorted(data):
 
 
 # get counts from downstream
-os.system('echo getting bam counts')
+print('getting bam counts')
 key = ['mapped_bamfile', 'dedup_bamfile', 'realigned_bamfile']
 for k in key:
     readinfo[k] = OrderedDict()
 for p in pooldirs:
-    os.system('echo %s' % p)
+    print(p)
     for i,d in enumerate(['02c_sorted_bamfiles',
                           '03_dedup_rg_filtered_indexed_sorted_bamfiles',
                           '04_realign']):
-        os.system('echo %s' % d)
+        print(d)
         DIR = op.join(p, d)
         bams = [f for f in fs(DIR) if f.endswith('.bam')]
         for b in tqdm(bams):
@@ -101,20 +100,20 @@ for p in pooldirs:
 
 
 # make the dataframe
-os.system('echo creating dataframe')
+print('creating dataframe')
 df = pd.DataFrame(readinfo)
 df['samp'] = list(df.index)
 df.index = range(len(df.index))
 order = ['samp',
          'total_reads-before_trimming', 
-         'total_reads-after_trimming', 
-         'total_bases-before_trimming', 
-         'total_bases-after_trimming', 
-         'q30_bases-before_trimming', 
-         'q30_bases-after_trimming', 
-         'q20_bases-before_trimming', 
-         'q20_bases-after_trimming', 
-         'mapped_bamfile', 
+         'total_reads-after_trimming',
+         'total_bases-before_trimming',
+         'total_bases-after_trimming',
+         'q30_bases-before_trimming',
+         'q30_bases-after_trimming',
+         'q20_bases-before_trimming',
+         'q20_bases-after_trimming',
+         'mapped_bamfile',
          'dedup_bamfile',
          'realigned_bamfile',
          'trim_command']

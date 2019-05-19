@@ -122,7 +122,7 @@ def make_pooldirs(data, parentdir):
 
 def create_all_bedfiles(poolref):
     """For each unique ref.fa in datatable.txt, create bedfiles for varscan/crisp.
-    
+
     Positional arguments:
     poolref - dictionary with key = pool, val = /path/to/ref
     """

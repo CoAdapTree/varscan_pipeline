@@ -3,7 +3,7 @@
 ### purpose
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
 # will also keep biallelic SNPs when REF = N (two ALT alleles)
-# for varscan SNP: 
+# for varscan SNP:
 # = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
 # for crisp SNP:
 # = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, < 25% missing data
@@ -21,7 +21,7 @@
 ###
 """
 
-import os, sys, pandas as pd, numpy as np, math
+import sys, pandas as pd, numpy as np, math
 from tqdm import tqdm
 from coadaptree import uni, pklload
 from os import path as op
@@ -123,8 +123,8 @@ def filter_freq(df, tf, tipe, tablefile):
         filtloci = []
         copy = get_copy(df, freqcols)
         for locus in tqdm(copy.columns):
-            freqs = [x for x 
-                     in copy[locus].str.rstrip('%').astype('float') 
+            freqs = [x for x
+                     in copy[locus].str.rstrip('%').astype('float')
                      if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
             if not len(freqs) == 0:
                 # avoid loci with all freqs masked (avoid ZeroDivisionError)
@@ -175,9 +175,7 @@ def filter_qual(df, tf, tipe, tablefile):
     
     Returns: pandas.dataframe; quality-filtered VariantsToTable output
     """
-    qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
-    thresh = math.ceil(0.75 * len(gqcols))  # assumes len(gqcols) == numpools
     print(f'masking bad freqs for {len(gqcols)} pools...')
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
@@ -209,7 +207,6 @@ def adjust_freqs(smalldf):
     ndf - smalldf with adjusted freqs in zeroth row
     """
     gtcols = [col for col in smalldf.columns if 'GT' in col]
-    refalt = smalldf.loc[1, 'ALT']
 
     for col in gtcols:
         gt = smalldf.loc[1, col]
@@ -435,7 +432,7 @@ def main(tablefile, tipe, ret=False):
         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
-    
+
     if ret is True:
         return df
     else:

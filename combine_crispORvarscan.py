@@ -13,7 +13,7 @@
 ###
 """
 
-import os, sys, time, random, pandas as pd
+import os, sys, time, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
@@ -24,7 +24,7 @@ def get_varscan_names(df):
     """Convert generic sample/pool names from varscan to something meaningful."""
     print('renaming varscan columns ...')
     # get order of samps used to create varscan cmds (same order as datatable)
-    pool = op.basename(pooldir)
+    pool = op.basename(globals()[pooldir])
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     # create a list of names that varscan gives by default
     generic = ['Sample%s' % (i+1) for i in range(len(samps))]
@@ -88,7 +88,7 @@ def get_tables(files):
     """Find all existing .txt files, exit if the number doesn't match expectations.
     
     Positional arguments:
-    files - 
+    files - list of shfiles, should be same length as tablefiles (if all jobs are sbatched and done).
     """
     print('getting tablefiles')
     tablefiles = [f for f in fs(op.join(pooldir, program))
@@ -109,7 +109,7 @@ def main():
 
     # combine table files from output of VariantsToTable
     tablefiles = get_tables(files)
-    
+
     # get SNP and indels
     for tipe in ['SNP', 'INDEL']:
         get_types(tablefiles, tipe, program)

@@ -149,7 +149,7 @@ def checkfiles(pooldir):
 
 
 def create_reservation(pooldir, exitneeded=False):
-    """Create a file so that other realign jobs can't start crisp and varscan too.""""
+    """Create a file so that other realign jobs can't start crisp and varscan too."""
     print('creating reservation')
     shdir = makedir(op.join(pooldir, 'shfiles/crispANDvarscan'))
     file = op.join(shdir, '%s_crispANDvarscan_reservation.sh' % pool)
