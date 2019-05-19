@@ -207,7 +207,7 @@ def getbalance(accounts, num):
 
 def gettaker(accounts, defs):
     """Determine which job should receive jobs from the one with priority jobs.
-    
+
     Positional arguments:
     accounts - dictionary with key = account_name, val = list of jobs (squeue output)
     defs - default account names to balance among. (TODO: will 'work' if defs > 2, but won't evenly dist.)

@@ -175,7 +175,7 @@ def get_prereqs(bedfile, pooldir, parentdir, pool, program):
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     outdir = makedir(op.join(pooldir, program))
     vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
-    return (num, ref, outdir, vcf)
+    return (num, ref, vcf)
 
 
 def get_small_bam_cmds(bamfiles, bednum, bedfile):
@@ -226,7 +226,7 @@ module unload samtools'''
 
 def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
     """Create sh file for varscan or crisp command."""
-    num, ref, outdir, vcf = get_prereqs(bedfile, pooldir, parentdir, pool, program)
+    num, ref, vcf = get_prereqs(bedfile, pooldir, parentdir, pool, program)
     if program == 'crisp':
         cmd, finalvcf, logfile = get_crisp_cmd(bamfiles,
                                                bedfile,
@@ -311,7 +311,7 @@ def create_sh(bamfiles, shdir, pool, pooldir, program):
 
 def create_combine(pids, parentdir, pool, program, shdir):
     """Create command file to combine crisp or varscan jobs once they're finished.
-    
+
     Positional arguments:
     pids = list of slurm job id dependencies (the jobs that need to finish first)
     ...

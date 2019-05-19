@@ -105,7 +105,7 @@ df = pd.DataFrame(readinfo)
 df['samp'] = list(df.index)
 df.index = range(len(df.index))
 order = ['samp',
-         'total_reads-before_trimming', 
+         'total_reads-before_trimming',
          'total_reads-after_trimming',
          'total_bases-before_trimming',
          'total_bases-after_trimming',

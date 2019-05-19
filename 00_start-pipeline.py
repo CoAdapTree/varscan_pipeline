@@ -101,7 +101,7 @@ def get_datafiles(parentdir, f2pool, data):
 
 def make_pooldirs(data, parentdir):
     """Create subdirectories of parentdir.
-    
+
     Positional arguments:
     data - datatable.txt with info for pipeline
     parentdir - directory with datatable.txt and (symlinks to) fastq data

@@ -13,7 +13,7 @@
 ###
 """
 
-import os, sys, time, pandas as pd
+import os, sys, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
@@ -86,7 +86,7 @@ def get_types(tablefiles, tipe, program):
 
 def get_tables(files):
     """Find all existing .txt files, exit if the number doesn't match expectations.
-    
+
     Positional arguments:
     files - list of shfiles, should be same length as tablefiles (if all jobs are sbatched and done).
     """

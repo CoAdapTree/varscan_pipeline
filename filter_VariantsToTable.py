@@ -417,7 +417,7 @@ def main(tablefile, tipe, ret=False):
         print(f'{tf} has {len(ndfs.index)} biallelic {tipe}s with REF=N')
         dfs.append(df)
         df = pd.concat(dfs)
-    
+
     # filter for quality and missing data
     df.index = range(len(df.index))
     if 'varscan' in tf and tipe == 'SNP':

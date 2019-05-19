@@ -49,7 +49,7 @@ def make_bed(lines, num):
 
 def make_bed_from_intervals(intdir):
     """If intervals.list files exist, use these instead of ref.fa.length file.
-    
+
     Positional arguments:
     intdir - path to intervals.list files
     """
