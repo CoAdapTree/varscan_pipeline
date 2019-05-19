@@ -120,7 +120,7 @@ def check_queue(outs, pooldir):
 
 def get_bamfiles(samps, pooldir):
     """Using a list of sample names, find the realigned bamfiels.
-    
+
     Return:
     files - dictionary with key = samp_name, val = /path/to/bamfile
     """

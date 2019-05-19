@@ -28,7 +28,7 @@ def openlenfile(lenfile):
 
 def get_prereqs(num):
     """Create a name for a bedfile based on the ref.fa path name and num.
-    
+
     Positional arguments:
     num - int; the num'th bedfile
     """

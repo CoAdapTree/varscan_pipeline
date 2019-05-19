@@ -13,18 +13,18 @@
 ###
 """
 
-import os, sys, pandas as pd
+import sys, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
 from start_crispANDvarscan import getfiles
 
 
-def get_varscan_names(df):
+def get_varscan_names(df, pooldir):
     """Convert generic sample/pool names from varscan to something meaningful."""
     print('renaming varscan columns ...')
     # get order of samps used to create varscan cmds (same order as datatable)
-    pool = op.basename(globals()[pooldir])
+    pool = op.basename(pooldir)
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
     # create a list of names that varscan gives by default
     generic = ['Sample%s' % (i+1) for i in range(len(samps))]
@@ -61,7 +61,7 @@ def checkjobs():
     return files
 
 
-def get_types(tablefiles, tipe, program):
+def get_types(tablefiles, tipe, program, pooldir):
     """Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
     
     Positional arguments:
@@ -72,9 +72,9 @@ def get_types(tablefiles, tipe, program):
     print(f'starting to filter {len(tablefiles)} tablefiles')
     dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
-    
+
     if program == 'varscan':
-        df = get_varscan_names(df)
+        df = get_varscan_names(df, pooldir)
 
     print('writing df to file ...')
     filename = op.join(pooldir, f'{program}/{grep}-{program}_all_bedfiles_{tipe}.txt')
@@ -112,7 +112,7 @@ def main():
 
     # get SNP and indels
     for tipe in ['SNP', 'INDEL']:
-        get_types(tablefiles, tipe, program)
+        get_types(tablefiles, tipe, program, pooldir)
 
 
 if __name__ == '__main__':

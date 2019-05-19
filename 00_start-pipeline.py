@@ -57,7 +57,7 @@ def askforinput():
 def get_datafiles(parentdir, f2pool, data):
     """Get list of files from datatable, make sure they exist in parentdir.
     Create symlinks in /parentdir/<pool_name>/.
-    
+
     Positional arguments:
     parentdir - directory with datatable.txt and (symlinks to) fastq data
     f2pool - dictionary with key = file.fastq, val = pool_name

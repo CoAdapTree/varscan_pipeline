@@ -155,7 +155,7 @@ def getaccounts(sq, stage):
 
 def getbalance(accounts, num):
     """Determine how many jobs should be given from one account to another.
-    
+
     Positional arguments:
     accounts - dictionary with key = account_name, val = list of jobs (squeue output)
     num - number of accounts to balance among (this needs to be changed to object not number)
