@@ -1,10 +1,12 @@
 """
+start the pipeline.
+
 ### usage
 # 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
 ###
 
 ### assumes
-# that samples duplicated in the 'sample_name' column have the same rglb and rgsm read groups
+# that samples duplicated in the 'sample_name' column have the same rglb, rgsm, and rgpl read groups
 # that ploidy is the same across samples in a pool
 ###
 """
@@ -17,6 +19,12 @@ from coadaptree import fs, pkldump, uni, luni, makedir
 
 
 def create_sh(pooldirs, poolref):
+    """run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
+    
+    Positional arguments:
+    pooldirs - a list of subdirectories in parentdir for groups of pools
+    poolref - dictionary with key = pool, val = /path/to/ref
+    """
     # create sh files
     print(Bcolors.BOLD + '\nwriting sh files' + Bcolors.ENDC)
     for pooldir in pooldirs:
@@ -33,6 +41,7 @@ def create_sh(pooldirs, poolref):
 
 
 def askforinput():
+    "Ask for input; if no, exit."
     print('\n')
     while True:
         inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
@@ -46,7 +55,14 @@ def askforinput():
 
 
 def get_datafiles(parentdir, f2pool, data):
-    # get list of files from datatable, make sure they exist in parentdir, create symlinks in /parentdir/<pool_name>/
+    """Get list of files from datatable, make sure they exist in parentdir.
+    Create symlinks in /parentdir/<pool_name>/.
+    
+    Positional arguments:
+    parentdir - directory with datatable.txt and (symlinks to) fastq data
+    f2pool - dictionary with key = file.fastq, val = pool_name
+    data - datatable.txt with info for pipeline
+    """
     print(Bcolors.BOLD + '\nchecking for existance of fastq files in datatable.txt' + Bcolors.ENDC)
     files = [f for f in fs(parentdir) if 'fastq' in f and 'md5' not in f]
     datafiles = data['file_name_r1'].tolist()
@@ -84,6 +100,12 @@ def get_datafiles(parentdir, f2pool, data):
 
 
 def make_pooldirs(data, parentdir):
+    """Create subdirectories of parentdir.
+    
+    Positional arguments:
+    data - datatable.txt with info for pipeline
+    parentdir - directory with datatable.txt and (symlinks to) fastq data
+    """
     # make pool dirs
     print(Bcolors.BOLD + "\nmaking pool dirs" + Bcolors.ENDC)
     pools = uni(data['pool_name'].tolist())
@@ -99,6 +121,11 @@ def make_pooldirs(data, parentdir):
 
 
 def create_all_bedfiles(poolref):
+    """For each unique ref.fa in datatable.txt, create bedfiles for varscan/crisp.
+    
+    Positional arguments:
+    poolref - dictionary with key = pool, val = /path/to/ref
+    """
     # create bedfiles for crisp and varscan
     print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
@@ -106,6 +133,7 @@ def create_all_bedfiles(poolref):
 
 
 def read_datatable(parentdir):
+    """Read in datatable.txt"""
     # read in the datatable, save rginfo for later
     datatable = op.join(parentdir, 'datatable.txt')
     if not op.exists(datatable):
@@ -188,7 +216,7 @@ please create these files' +
 
 
 def check_reqs():
-    # check for assumed exports
+    """Check for assumed exports."""
     print(Bcolors.BOLD + '\nchecking for exported variables' + Bcolors.ENDC)
     for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
@@ -219,7 +247,7 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
 
 
 def check_pyversion():
-    # check python version
+    """Make sure python version is 3.6+"""
     pyversion = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
     if not pyversion >= 3.6:
         text = '''FAIL: You are using python %s. This pipeline was built with python 3.7+.

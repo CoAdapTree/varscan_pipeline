@@ -1,4 +1,6 @@
-"""
+"""Create and sbatch gatk indelRealign command files.
+Start varscan and crisp if all realigned bamfiles have been made.
+
 ### purpose
 # use the GATK to realign around indels
 ###
@@ -44,8 +46,6 @@ export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
 export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
 python $HOME/pipeline/start_crispANDvarscan.py %(parentdir)s %(pool)s
 
-# next step
-# python $HOME/pipeline/06_varscan.py %(pooldir)s %(samp)s %(ref)s %(realbam)s
 ''' % locals()
 
 # create shdir and shfile

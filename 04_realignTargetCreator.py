@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch gatk realignTargetCreator command files.
+
 ### purpose
 # use the GATK to create target intervals for realignment around indels
 ###

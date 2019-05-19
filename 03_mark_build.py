@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch picard and samtools command files.
+
 ### purpose
 # use picard to mark/remove duplicates, build bam index for GATK
 ###

@@ -1,4 +1,5 @@
-"""
+"""Common functions.
+
 ### purpose
 # custom modules used across .py scripts
 ###

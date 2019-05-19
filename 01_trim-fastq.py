@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch trimming command files.
+
 ### purpose
 # trim fastq files with fastp
 ###

@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch crisp and varscan command files if all realigned bamfiles have been created.
+
 ### purpose
 # sbatch crisp and varscan cmds if all realigned bamfiles have been created
 ###
@@ -20,10 +21,12 @@ from balance_queue import getsq
 
 
 def gettimestamp(f):
+    """Get last time modified."""
     return time.ctime(op.getmtime(f))
 
 
 def getmostrecent(files):
+    """Determine the most recent file from a list of files."""
     if not isinstance(files, list):
         files = [files]
     if len(files) > 1:
@@ -43,6 +46,16 @@ def getmostrecent(files):
 
 
 def getfiles(samps, shdir, grep):
+    """Determine if all realign bam jobs have been created and sbatched.
+    
+    Positional arguments:
+    samps - list of sample names (length is number of expected shfiles)
+    shdir - directory where .sh and .out files are
+    grep - program name - keyword used to find correct files
+    
+    Returns:
+    files - dictionary where key = sh file, val = most recent outfile
+    """
     found = [sh for sh in fs(shdir) if sh.endswith(".sh") and grep in sh]
     outs = [out for out in fs(shdir) if out.endswith('.out') and grep in out]
     if len(found) != len(samps):
@@ -57,6 +70,9 @@ def getfiles(samps, shdir, grep):
 
 
 def check_seff(outs):
+    """Execute slurm seff command on each outfile's slurm_job_id to ensure it ran without error.
+    Exit otherwise.
+    """
     print('checking seff')
     jobid = os.environ['SLURM_JOB_ID']
     for f in outs:
@@ -81,7 +97,7 @@ def check_seff(outs):
 
 
 def checkpids(outs, queue):
-    # if any of the other crisp jobs are pending or running, exit
+    """If any of the other crisp jobs are pending or running, exit."""
     print('checking pids')
     pids = [q[0] for q in queue]
     jobid = os.environ['SLURM_JOB_ID']
@@ -94,7 +110,7 @@ def checkpids(outs, queue):
 
 
 def check_queue(outs, pooldir):
-    # get jobs from the queue, except those that are closing (assumes jobs haven't failed)
+    """Get jobs from the queue, except those that are closing (assumes jobs haven't failed)."""
     print('checking queue')
     sq = getsq(grepping=['crisp_bedfile', op.basename(pooldir)])
     if len(sq) > 0:
@@ -103,6 +119,11 @@ def check_queue(outs, pooldir):
 
 
 def get_bamfiles(samps, pooldir):
+    """Using a list of sample names, find the realigned bamfiels.
+    
+    Return:
+    files - dictionary with key = samp_name, val = /path/to/bamfile
+    """
     print('getting bamfiles')
     found = fs(op.join(pooldir, '04_realign'))
     files = dict((samp, f.replace(".bai", ".bam")) for samp in samps for f in found if samp in f and f.endswith('.bai'))
@@ -115,6 +136,7 @@ def get_bamfiles(samps, pooldir):
 
 
 def checkfiles(pooldir):
+    """Call get_bamfiles."""
     # get the list of file names
     print('checking files')
     pool = op.basename(pooldir)
@@ -127,6 +149,7 @@ def checkfiles(pooldir):
 
 
 def create_reservation(pooldir, exitneeded=False):
+    """Create a file so that other realign jobs can't start crisp and varscan too.""""
     print('creating reservation')
     shdir = makedir(op.join(pooldir, 'shfiles/crispANDvarscan'))
     file = op.join(shdir, '%s_crispANDvarscan_reservation.sh' % pool)
@@ -147,6 +170,7 @@ def create_reservation(pooldir, exitneeded=False):
 
 
 def get_prereqs(bedfile, pooldir, parentdir, pool, program):
+    """Get object names."""
     num = bedfile.split("_")[-1].split(".bed")[0]
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     outdir = makedir(op.join(pooldir, program))
@@ -155,6 +179,7 @@ def get_prereqs(bedfile, pooldir, parentdir, pool, program):
 
 
 def get_small_bam_cmds(bamfiles, bednum, bedfile):
+    """Get samtools commands to reduce a bamfile to intervals in the bedfile."""
     smallbams = []
     cmds = '''module load java\nmodule load samtools/1.9\n'''
     for bam in bamfiles:
@@ -167,6 +192,7 @@ def get_small_bam_cmds(bamfiles, bednum, bedfile):
 
 
 def get_crisp_cmd(bamfiles, bedfile, pool, parentdir, ref, vcf, bednum):
+    """Create command to call crisp."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     bams = ' --bam '.join(smallbams)
     poolsize = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
@@ -186,6 +212,7 @@ module unload python
 
 
 def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
+    """Create command to call varscan."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     smallbams = ' '.join(smallbams)
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
@@ -198,6 +225,7 @@ module unload samtools'''
 
 
 def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
+    """Create sh file for varscan or crisp command."""
     num, ref, outdir, vcf = get_prereqs(bedfile, pooldir, parentdir, pool, program)
     if program == 'crisp':
         cmd, finalvcf, logfile = get_crisp_cmd(bamfiles,
@@ -257,6 +285,7 @@ python $HOME/pipeline/balance_queue.py {program}
 
 
 def sbatch(file):
+    """Sbatch file."""
     os.chdir(op.dirname(file))
     pid = subprocess.check_output([shutil.which('sbatch'), file]).decode('utf-8').replace("\n", "").split()[-1]
     print("sbatched %s" % file)
@@ -264,12 +293,14 @@ def sbatch(file):
 
 
 def get_bedfiles(parentdir, pool):
+    """Get a list of paths to all of the bed files for ref.fa."""
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     beddir = op.join(op.dirname(ref), 'bedfiles_%s' % op.basename(ref).split(".fa")[0])
     return [f for f in fs(beddir) if f.endswith('.bed')]
 
 
 def create_sh(bamfiles, shdir, pool, pooldir, program):
+    """Create and sbatch shfiles, record pid to use as dependency for combine job."""
     bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
@@ -279,6 +310,12 @@ def create_sh(bamfiles, shdir, pool, pooldir, program):
 
 
 def create_combine(pids, parentdir, pool, program, shdir):
+    """Create command file to combine crisp or varscan jobs once they're finished.
+    
+    Positional arguments:
+    pids = list of slurm job id dependencies (the jobs that need to finish first)
+    ...
+    """
     pooldir = op.join(parentdir, pool)
     email_text = get_email_info(parentdir, 'final')
     dependencies = '#SBATCH --dependency=afterok:' + ','.join(pids)
@@ -307,7 +344,7 @@ python $HOME/pipeline/combine_crispORvarscan.py {pooldir} {program} {pool}
 
 
 def main(parentdir, pool):
-    """Start <program> if it's appropriate to do so"""
+    """Start <program> if it's appropriate to do so."""
 
     # check to see if all bam files have been created; if not: exit()
     bamfiles = checkfiles(op.join(parentdir, pool))

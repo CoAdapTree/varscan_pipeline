@@ -1,4 +1,5 @@
-"""
+"""Filter output from gatk VariantsToTable.
+
 ### purpose
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
 # will also keep biallelic SNPs when REF = N (two ALT alleles)
@@ -28,6 +29,11 @@ from collections import Counter
 
 
 def table(lst):
+    """Count each item in a list.
+    
+    Returns:
+    - Counter() with key = item, val = count
+    """
     c = Counter()
     for x in lst:
         c[x] += 1
@@ -35,10 +41,23 @@ def table(lst):
 
 
 def get_copy(df, cols):
+    """Transpose dataframe using specific columns (that will be index after transformation)."""
     return df[cols].T.copy()
 
 
 def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
+    """Determine frequency of allele by counting alleles in genotype FORMAT field, fill in AF.
+    
+    Positional arguments:
+    df - pandas.dataframe; current filtered VariantsToTable output
+    lowfreq - minimum allele freq to keep (MAF)
+    highfreq - maximum allele freq to keep (1-MAF)
+    freqcols - columns in VariantsToTable output pandas.dataframe with ".FREQ" in them
+    
+    Returns:
+    filtloci - row numbers (loci) of VariantsToTable output pandas.dataframe that are to be kept
+    df - pandas.dataframe; VariantsToTable output without freqcols since these don't make sense for individuals
+    """
     gtcols = [col for col in df if '.GT' in col]
     copy = get_copy(df, gtcols)
     for locus in tqdm(copy.columns):
@@ -54,6 +73,16 @@ def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
     
 
 def get_freq_cutoffs(tablefile):
+    """Determind MAF using ploidy.
+    
+    Positional arguments:
+    tablefile - path to VariantsToTable output - used to find ploidy etc
+    
+    Returns:
+    lowfreq - minimum allele freq to keep (MAF)
+    highfreq - maximum allele freq to keep (1-MAF)
+    ploidy - count of haploid genomes in pool/sample
+    """
     pooldir = op.dirname(op.dirname(tablefile))
     parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
@@ -65,9 +94,17 @@ def get_freq_cutoffs(tablefile):
 
 
 def filter_freq(df, tf, tipe, tablefile):
-    """
-    filter out loci with global MAF < 1/(ploidyPerPop * nPops)
-    right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy
+    """Filter out loci with global MAF < 1/(ploidyPerPop * nPops).
+    Right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy.
+    
+    Positional arguments:
+    df - pandas.dataframe; VariantsToTable output
+    tablefile - path to VariantsToTable output - used to find ploidy etc
+    tf - str; basename of tablefile
+    tipe - str; one of either "SNP" or "INDEL"
+    
+    Returns:
+    df - pandas.dataframe; freq-filtered VariantsToTable output
     """
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
     lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
@@ -102,9 +139,16 @@ def filter_freq(df, tf, tipe, tablefile):
 
 
 def filter_missing_data(df, tf, tipe):
-    """
-    count np.nan in .FREQ col to assess % missing data
-    keep only loci with < 25% missing data
+    """Remove loci with < 25% missing data.
+    Count np.nan in .FREQ col to assess % missing data.
+    
+    Positional arguments:
+    df - pandas.dataframe; VariantsToTable output
+    tf - str; basename of tablefile
+    tipe - str; one of either "SNP" or "INDEL"
+    
+    Returns:
+    df - pandas.dataframe; missing data-filtered VariantsToTable output
     """
     freqcols = [col for col in df.columns if '.FREQ' in col]
     copy = get_copy(df, freqcols)
@@ -122,7 +166,15 @@ def filter_missing_data(df, tf, tipe):
 
 
 def filter_qual(df, tf, tipe, tablefile):
-    """mask freqs that have GQ < 20"""
+    """mask freqs that have GQ < 20.
+    
+    Positional arguments:
+    df - pandas.dataframe; VariantsToTable output
+    tf - str; basename of tablefile
+    tipe - str; one of either "SNP" or "INDEL"
+    
+    Returns: pandas.dataframe; quality-filtered VariantsToTable output
+    """
     qualloci = []
     gqcols = [col for col in df.columns if '.GQ' in col]
     thresh = math.ceil(0.75 * len(gqcols))  # assumes len(gqcols) == numpools
@@ -147,13 +199,18 @@ def filter_qual(df, tf, tipe, tablefile):
 
 
 def adjust_freqs(smalldf):
-    """
-    for loci with REF=N, set freqs of pools with REF=N in GT to np.nan,
-    set alt freqs with respect to the second alt allele
+    """For loci with REF=N, set freqs of pools with REF=N in GT to np.nan.
+    Set alt freqs with respect to the second alt allele.
+    
+    Positional arguments:
+    smalldf - pandas.dataframe; df with only REF=N
+    
+    Returns:
+    ndf - smalldf with adjusted freqs in zeroth row
     """
     gtcols = [col for col in smalldf.columns if 'GT' in col]
     refalt = smalldf.loc[1, 'ALT']
-    # adjust freq of first alt with respect to second alt
+
     for col in gtcols:
         gt = smalldf.loc[1, col]
         if isinstance(gt, str):
@@ -176,6 +233,15 @@ def adjust_freqs(smalldf):
 
 
 def get_refn_snps(df, tipe, ndfs=None):
+    """Isolate polymorphisms with REF=N but two ALT single nuleodite alleles.
+    
+    Positional arguments:
+    df - pandas.dataframe; current filtered VariantsToTable output
+    
+    Returns:
+    dfs - list of loci (pandas.dataframes) with REF=N and two ALT alleles, counts with respect to second ALT
+    ndfs - return from pd.conat(dfs)
+    """
     # as far as I can tell, crisp output from convert_pooled_vcf.py will not output REF = N
     ndf = df[df['REF'] == 'N'].copy()
     ndf = ndf[ndf['TYPE'] == tipe].copy()
@@ -196,10 +262,17 @@ def get_refn_snps(df, tipe, ndfs=None):
 
 
 def recalc_global_freq(df, tf, freqcols):
-    """
-    For some reason AF reported by crisp is a little off
-    - moves crisp AF column to 'crisp_AF'
-    - recalulate global AF (alt), save as AF column
+    """For some reason AF reported by crisp is a little off. Recalc.
+    Moves crisp AF column to 'crisp_AF'.
+    Recalulates global AF (alt), save as AF column.
+    
+    Positional arguments:
+    df - pandas.dataframe; current filtered VariantsToTable output
+    tf - basename of file path of df
+    freqcols - columns in VariantsToTable output pandas.dataframe with ".FREQ" in them
+    
+    Returns:
+    df - pandas.dataframe; global freq-filtered VariantsToTable output
     """
     print('Recalculating global freq ... ')
     df.index = range(len(df.index))
@@ -218,6 +291,17 @@ def recalc_global_freq(df, tf, freqcols):
     return df
 
 def add_freq_cols(df, tf, tipe, tablefile):
+    """Adding in .FREQ columns for crisp file.
+    
+    Positional arguments:
+    df - pandas.dataframe; current filtered VariantsToTable output
+    tablefile - path to VariantsToTable output - used to find ploidy etc
+    tf - basename of tablefile
+    tipe - one of either "SNP" or "INDEL"
+    
+    Returns:
+    df - pandas.dataframe; current filtered VariantsToTable output + freqcols
+    """
     print('Adding in .FREQ columns for crisp file ...')
     # remove bednum from column names so we can pd.concat() later
     bednum = tf.split("file_")[-1].split("_converted")[0]
@@ -256,12 +340,22 @@ def add_freq_cols(df, tf, tipe, tablefile):
 
 
 def write_file(tablefile, df, tipe):
+    """Write filtered pandas.dataframe to file using args to create file name."""
     newfile = tablefile.replace(".txt", f"_{tipe}.txt")
     df.to_csv(newfile, index=False, sep='\t')
     print('finished filtering VariantsToTable file: %s' % newfile)
 
 
 def load_data(tablefile):
+    """Load the VariantsToTable output.
+    
+    Positional arguments:
+    tablefile - path to VariantsToTable output - used to find ploidy etc
+    
+    Returns:
+    df - pandas.dataframe; VariantsToTable output
+    tf - basename of tablefile
+    """
     tf = op.basename(tablefile)
 
     # load the data, create a column with CHROM-POS for locusID
@@ -272,6 +366,15 @@ def load_data(tablefile):
 
 
 def keep_snps(df, tf):
+    """Count CHROM-POS (locus) and keep only those with one ALT.
+    
+    Positional arguments:
+    df - pandas.dataframe; currently filtered VariantsToTable output
+    tf - basename of path to VariantsToTable output
+    
+    Returns:
+    df - pandas.dataframe; non-multiallelic-filtered VariantsToTable output
+    """
     loccount = table(df['locus'])
     goodloci = [locus for locus in loccount if loccount[locus] == 1]
     print(f'{tf} has {len(goodloci)} good loci (non-multiallelic)')
@@ -283,6 +386,7 @@ def keep_snps(df, tf):
 
 
 def filter_type(df, tf, tipe):
+    """Keep onli loci called a SNP by program."""
     df = df[df['TYPE'] == tipe].copy()
     print(f'{tf} has {len(df.index)} good loci of the type {tipe}')
     return df

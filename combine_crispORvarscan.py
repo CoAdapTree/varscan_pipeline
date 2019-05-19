@@ -1,4 +1,5 @@
-"""
+"""Filter and combine all gatk VariantsToTable .txt outputs from varscan or crisp vcf files.
+
 ### purpose
 # combine output from bedfile output from either CRISP or VarScan
 ###
@@ -20,6 +21,7 @@ from start_crispANDvarscan import getfiles
 
 
 def get_varscan_names(df):
+    """Convert generic sample/pool names from varscan to something meaningful."""
     print('renaming varscan columns ...')
     # get order of samps used to create varscan cmds (same order as datatable)
     pool = op.basename(pooldir)
@@ -41,6 +43,12 @@ def get_varscan_names(df):
 
 
 def checkjobs():
+    """Make sure previous realigned bamfiles were created without error.
+    Avoids unintentionally combining a subset of all final expected files.
+    
+    Calls:
+    getfiles from start_crispANDvarscan
+    """
     print('checking jobs')
     parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
@@ -53,7 +61,14 @@ def checkjobs():
     return files
 
 
-def get_types(tablefiles, tipe):
+def get_types(tablefiles, tipe, program):
+    """Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
+    
+    Positional arguments:
+    tablefiles - list of paths pointing to the gatk VariantsToTable .txt outputs from varscan or crisp vcf files
+    tipe - str; either "SNP" or "INDEL"
+    program - str; either "varscan" or "crisp" - used to find and name files
+    """
     print(f'starting to filter {len(tablefiles)} tablefiles')
     dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
     df = pd.concat(dfs)
@@ -70,6 +85,11 @@ def get_types(tablefiles, tipe):
 
 
 def get_tables(files):
+    """Find all existing .txt files, exit if the number doesn't match expectations.
+    
+    Positional arguments:
+    files - 
+    """
     print('getting tablefiles')
     tablefiles = [f for f in fs(op.join(pooldir, program))
                   if f.endswith('.txt')
@@ -92,7 +112,7 @@ def main():
     
     # get SNP and indels
     for tipe in ['SNP', 'INDEL']:
-        get_types(tablefiles, tipe)
+        get_types(tablefiles, tipe, program)
 
 
 if __name__ == '__main__':

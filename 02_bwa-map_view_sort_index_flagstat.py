@@ -1,4 +1,5 @@
-"""
+"""Create and sbatch mapping, samtools, and bedtools command files.
+
 ### purpose
 # map with bwa, view/sort/index with samtools
 ###
