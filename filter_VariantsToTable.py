@@ -46,6 +46,12 @@ def get_copy(df, cols):
     return df[cols].T.copy()
 
 
+def drop_freq_cols(df):
+    """drop .FREQ cols (no meaning for individual data)"""
+    df = df[[col for col in df.columns if not col in freqcols]].copy()
+    return df
+
+
 def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
     """
     Determine frequency of allele by counting alleles in genotype FORMAT field, fill in AF.
@@ -69,7 +75,7 @@ def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
     filtloci = df.index[(df['AF'] <= highfreq) & (lowfreq <= df['AF'])].tolist()
     
     # drop .FREQ cols (no meaning for individual data)
-    df = df[[col for col in df.columns if not col in freqcols]].copy()
+    df = drop_freq_cols(df)
 
     return filtloci, df
     
@@ -199,6 +205,7 @@ def filter_qual(df, tf, tipe, tablefile):
     else:
         print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
               '\nnot bothering to filter for freq')
+        df = drop_freq_cols(df)
     return df
 
 
