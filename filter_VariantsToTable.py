@@ -2,7 +2,7 @@
 
 ### purpose
 # filter VariantsToTable output by GQ/globfreq/missing data, keep SNP or INDEL (tipe)
-# will also keep biallelic SNPs when REF = N (two ALT alleles)
+# will also keep biallelic SNPs when REF = N (two ALT alleles) that pass filters
 # for varscan SNP:
 # = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
 # for crisp SNP:
@@ -42,47 +42,19 @@ def table(lst):
 
 
 def get_copy(df, cols):
-    """Transpose dataframe using specific columns (that will be index after transformation)."""
+    """
+    Transpose dataframe using specific columns (that will be index after transformation).
+    Doing so helps speed things up.
+    """
     return df[cols].T.copy()
 
 
-def drop_freq_cols(df):
-    """drop .FREQ cols (no meaning for individual data)"""
-    df = df[[col for col in df.columns if not col in freqcols]].copy()
-    return df
-
-
-def filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols):
-    """
-    Determine frequency of allele by counting alleles in genotype FORMAT field, fill in AF.
-    
-    Positional arguments:
-    df - pandas.dataframe; current filtered VariantsToTable output
-    lowfreq - minimum allele freq to keep (MAF)
-    highfreq - maximum allele freq to keep (1-MAF)
-    freqcols - columns in VariantsToTable output pandas.dataframe with ".FREQ" in them
-    
-    Returns:
-    filtloci - row numbers (loci) of VariantsToTable output pandas.dataframe that are to be kept
-    df - pandas.dataframe; VariantsToTable output without freqcols since these don't make sense for individuals
-    """
-    gtcols = [col for col in df if '.GT' in col]
-    copy = get_copy(df, gtcols)
-    for locus in tqdm(copy.columns):
-        alt = df.loc[locus, 'ALT']
-        alleles = "".join(copy[locus].dropna().str.replace("/", ""))
-        df.loc[locus, 'AF'] = alleles.count(alt)/len(alleles)
-    filtloci = df.index[(df['AF'] <= highfreq) & (lowfreq <= df['AF'])].tolist()
-    
-    # drop .FREQ cols (no meaning for individual data)
-    df = drop_freq_cols(df)
-
-    return filtloci, df
-    
-
 def get_freq_cutoffs(tablefile):
     """
-    Determind MAF using ploidy.
+    Determine MAF using ploidy.
+    
+    Assumes:
+    - equal ploidy across samples/pools
     
     Positional arguments:
     tablefile - path to VariantsToTable output - used to find ploidy etc
@@ -125,7 +97,8 @@ def filter_freq(df, tf, tipe, tablefile):
     freqcols = [col for col in df.columns if '.FREQ' in col]
     
     # filter individual data differently
-    if ploidy <= 2:  # individual file:
+#     if ploidy <= 2:  # individual file:
+    if ploidy <= 0:  # -----------------------------------THIS TURNS OFF DIFFERENCE BT INDSEQ AND POOLSEQ FILTERING
         print(f'{tf} is an individual file with ploidy = {ploidy}')
         filtloci, df = filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols)
     else:
@@ -186,6 +159,7 @@ def filter_qual(df, tf, tipe, tablefile):
     tipe - str; one of either "SNP" or "INDEL"
     
     Returns: pandas.dataframe; quality-filtered VariantsToTable output
+    - FREQ and GT are masked (np.nan) if GQ < 20
     """
     gqcols = [col for col in df.columns if '.GQ' in col]
     print(f'masking bad freqs for {len(gqcols)} pools...')
@@ -205,7 +179,7 @@ def filter_qual(df, tf, tipe, tablefile):
     else:
         print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
               '\nnot bothering to filter for freq')
-        df = drop_freq_cols(df)
+#         df = drop_freq_cols(df)
     return df
 
 
@@ -452,6 +426,7 @@ def main(tablefile, tipe, ret=False):
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
 
+    
     if ret is True:
         return df
     else:
