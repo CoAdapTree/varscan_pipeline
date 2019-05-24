@@ -96,25 +96,19 @@ def filter_freq(df, tf, tipe, tablefile):
     # prep for filtering
     freqcols = [col for col in df.columns if '.FREQ' in col]
     
-    # filter individual data differently
-#     if ploidy <= 2:  # individual file:
-    if ploidy <= 0:  # -----------------------------------THIS TURNS OFF DIFFERENCE BT INDSEQ AND POOLSEQ FILTERING
-        print(f'{tf} is an individual file with ploidy = {ploidy}')
-        filtloci, df = filter_freq_for_individual_data(df, lowfreq, highfreq, freqcols)
-    else:
-        # carry on with poolseq datas
-        filtloci = []
-        copy = get_copy(df, freqcols)
-        for locus in tqdm(copy.columns):
-            freqs = [x for x
-                     in copy[locus].str.rstrip('%').astype('float')
-                     if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
-            if not len(freqs) == 0:
-                # avoid loci with all freqs masked (avoid ZeroDivisionError)
-                globfreq = sum(freqs)/(100*len(freqs))
-                if lowfreq <= globfreq <= highfreq:
-                    filtloci.append(locus)
-                    df.loc[locus, 'AF'] = globfreq
+    # carry on with poolseq datas
+    filtloci = []
+    copy = get_copy(df, freqcols)
+    for locus in tqdm(copy.columns):
+        freqs = [x for x
+                 in copy[locus].str.rstrip('%').astype('float')
+                 if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
+        if not len(freqs) == 0:
+            # avoid loci with all freqs masked (avoid ZeroDivisionError)
+            globfreq = sum(freqs)/(100*len(freqs))
+            if lowfreq <= globfreq <= highfreq:
+                filtloci.append(locus)
+                df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
     df.index = range(len(df.index))
