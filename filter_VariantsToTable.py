@@ -70,6 +70,9 @@ def get_freq_cutoffs(tablefile):
     poolsamps = pklload(op.join(parentdir, 'poolsamps.pkl'))[pool]
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     lowfreq = 1/(ploidy * len(poolsamps))
+    if lowfreq == 1:
+        # for megagametophyte data
+        lowfreq = 0
     highfreq = 1 - lowfreq
     return lowfreq, highfreq, ploidy
 
@@ -98,23 +101,20 @@ def filter_freq(df, tf, tipe, tablefile):
     
     # carry on with poolseq datas
     filtloci = []
-    afs = []
     copy = get_copy(df, freqcols)
     for locus in tqdm(copy.columns):
         freqs = [x for x
                  in copy[locus].str.rstrip('%').astype('float')
                  if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
-        if len(freqs) > 0: # avoid loci with all freqs masked (avoid ZeroDivisionError)
+        if not len(freqs) == 0:
+            # avoid loci with all freqs masked (avoid ZeroDivisionError)
             globfreq = sum(freqs)/(100*len(freqs))
             if lowfreq <= globfreq <= highfreq:
                 filtloci.append(locus)
-                afs.append(globfreq)
-                # since we're going in order of rows in df, we can use afs to replace AF col later
-                # which is about 40x faster than: df.loc[locus, 'AF'] = globfreq
+                df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
     df.index = range(len(df.index))
-    df['AF'] = afs
     return df
 
 
@@ -134,7 +134,8 @@ def filter_missing_data(df, tf, tipe):
     freqcols = [col for col in df.columns if '.FREQ' in col]
     copy = get_copy(df, freqcols)
     keepers = []
-    thresh = math.floor(0.25 * len(freqcols))
+    # else statement for running single pop (megagamtophyte) through:
+    thresh = math.floor(0.25 * len(freqcols)) if len(freqcols) > 1 else 1
     for locus in tqdm(copy.columns):
         # if there is less than 25% missing data:
         # the only time x != x is when x is nan (fastest way to count it)
@@ -172,6 +173,7 @@ def filter_qual(df, tf, tipe, tablefile):
     if len(df.index) > 0:
         print(f'{tf} has {len(df.index)} {tipe}s that have GQ >= 20 and < 25% missing data')
         df = filter_freq(df, tf, tipe, tablefile)
+        df.index = range(len(df.index))
     else:
         print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
               '\nnot bothering to filter for freq')
