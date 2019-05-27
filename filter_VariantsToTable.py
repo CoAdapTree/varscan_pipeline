@@ -163,9 +163,10 @@ def filter_qual(df, tf, tipe, tablefile):
     print(f'masking bad freqs for {len(gqcols)} pools...')
     for col in tqdm(gqcols):
         freqcol = col.replace(".GQ", ".FREQ")
-        gtcol = col.replace(".GQ", ".GT")
+#         gtcol = col.replace(".GQ", ".GT")  # pretty sure this is depricated
         # badloci True if qual < 20
-        df.loc[df[col] < 20, [freqcol, gtcol]] = np.nan
+#         df.loc[df[col] < 20, [freqcol, gtcol]] = np.nan
+        df.loc[df[col] < 20, freqcol] = np.nan
 
     print('filtering for missing data ...')
     df = filter_missing_data(df, tf, tipe)
