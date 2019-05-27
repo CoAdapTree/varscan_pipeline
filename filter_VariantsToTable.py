@@ -98,20 +98,23 @@ def filter_freq(df, tf, tipe, tablefile):
     
     # carry on with poolseq datas
     filtloci = []
+    afs = []
     copy = get_copy(df, freqcols)
     for locus in tqdm(copy.columns):
         freqs = [x for x
                  in copy[locus].str.rstrip('%').astype('float')
                  if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
-        if not len(freqs) == 0:
-            # avoid loci with all freqs masked (avoid ZeroDivisionError)
+        if len(freqs) > 0: # avoid loci with all freqs masked (avoid ZeroDivisionError)
             globfreq = sum(freqs)/(100*len(freqs))
             if lowfreq <= globfreq <= highfreq:
                 filtloci.append(locus)
-                df.loc[locus, 'AF'] = globfreq
+                afs.append(globfreq)
+                # since we're going in order of rows in df, we can use afs to replace AF col later
+                # which is about 40x faster than: df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
     df.index = range(len(df.index))
+    df['AF'] = afs
     return df
 
 
@@ -169,7 +172,6 @@ def filter_qual(df, tf, tipe, tablefile):
     if len(df.index) > 0:
         print(f'{tf} has {len(df.index)} {tipe}s that have GQ >= 20 and < 25% missing data')
         df = filter_freq(df, tf, tipe, tablefile)
-        df.index = range(len(df.index))
     else:
         print(f'{tf} did not have any {tipe}s that have GQ >= 20 for >= 75% of pops' +
               '\nnot bothering to filter for freq')
