@@ -3,7 +3,7 @@ Count reads in bamfiles from throughout pipeline.
 
 ### usage
 # module load samtools/1.9
-# python 99_get_read_stats.py $1 32
+# python 99_get_read_stats.py parentdir 32
 ###
 
 ### purpose
@@ -73,6 +73,7 @@ for j in sorted(data):
     samps.append(samp)
 
 
+# BAM DATA
 # get counts from downstream
 print('getting bam counts')
 key = ['mapped_bamfile', 'dedup_bamfile', 'realigned_bamfile']
@@ -94,7 +95,6 @@ for p in pooldirs:
                 samp = op.basename(b).replace("_rd.bam", "")
             else:
                 samp = op.basename(b).split("_realigned")[0]
-#             assert samp in samps ### change back - commented because some samps were trimmed elsewhere for this round
             num = os.popen('samtools view -@ %(engines)s -c %(b)s' % locals()).read().replace("\n", "")
             readinfo[key[i]][samp] = num
 
