@@ -67,3 +67,28 @@ def makedir(directory):
 def createdirs(dirs):
     for d in dirs:
         makedir(d)
+
+
+class Bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+def askforinput():
+    "Ask for input; if no, exit."
+    print('\n')
+    while True:
+        inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
+        if inp in ['yes', 'no']:
+            if inp == 'no':
+                print('exiting %s' % sys.argv[0])
+                exit()
+            break
+        else:
+            print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
