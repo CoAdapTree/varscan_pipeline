@@ -289,6 +289,7 @@ def sbatch(file):
     os.chdir(op.dirname(file))
     pid = subprocess.check_output([shutil.which('sbatch'), file]).decode('utf-8').replace("\n", "").split()[-1]
     print("sbatched %s" % file)
+    time.sleep(0.25)
     return pid
 
 
@@ -353,7 +354,8 @@ def main(parentdir, pool):
     shdir = create_reservation(op.join(parentdir, pool))
 
     # create .sh files
-    for program in ['crisp', 'varscan']:
+    #for program in ['crisp', 'varscan']:
+    for program in ['varscan']:
         print('starting %s commands' % program)
         # create .sh file and submit to scheduler
         pids = create_sh(bamfiles.values(),
@@ -364,10 +366,6 @@ def main(parentdir, pool):
 
         # create .sh file to combine crisp parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)
-
-        # balance queue
-        time.sleep(3)
-        balance_queue.main('balance_queue.py', program)
 
 
 if __name__ == "__main__":
