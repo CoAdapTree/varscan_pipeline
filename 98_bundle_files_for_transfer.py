@@ -66,7 +66,7 @@ hostname = ''.join([x for x in os.environ['HOSTNAME'].split(".")[0] if x.isalpha
 # get shfiles
 for p in pooldirs:
     shdir = op.join(p, 'shfiles')
-    remotesh = op.join(remote, f'{p}/sh_and_outfiles')
+    remotesh = op.join(remote, f'{op.basename(p)}/sh_and_outfiles')
     newdirs.append(remotesh)
     dirs = [d for d in fs(shdir) if op.isdir(d)]
     for d in dirs:
@@ -80,7 +80,7 @@ for p in pooldirs:
 # get realigned bamfiles
 for p in pooldirs:
     bamdir = op.join(p, '04_realign')
-    remotebamdir = op.join(remote, f'{p}/realigned_bamfiles')
+    remotebamdir = op.join(remote, f'{op.basename(p)}/realigned_bamfiles')
     newdirs.append(remotebamdir)
     md5files = [f for f in fs(bamdir) if f.endswith('.md5')]
     srcfiles = [f for f in fs(bamdir) if not f.endswith('.md5')]
@@ -107,7 +107,12 @@ cmds.append(f"scp {hostname}:{datatable} {datatabledst}")
 # get varscan output
 for p in pooldirs:
     varscan = op.join(p, 'varscan')
-    remotevarscan = op.join(remote, f'{p}/snpsANDindels')
+    if not op.exists(varscan):
+        warning = f"\nWARN: varscan dir does not exist for pool: {op.basename(p)}"
+        print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
+        askforinput()
+        continue
+    remotevarscan = op.join(remote, f'{op.basename(p)}/snpsANDindels')
     newdirs.append(remotevarscan)
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' not in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') and '_all_' not in f]
@@ -116,7 +121,7 @@ for p in pooldirs:
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
     if not len(srcfiles) == 2:
-        warning = "\nWARN: There are not two all-files (SNP + INDEL) which are expected output"
+        warning = f"\nWARN: There are not two all-files (SNP + INDEL) which are expected output for pool: {op.basename(p)}"
         warning = warning + "\nWARN: Here are the files I found:\n"
         warning = warning + "\n\t".join(srcfiles)
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
@@ -133,6 +138,8 @@ with open(scpfile, 'w') as o:
 
 
 # print out necessary dirs on remote
-print(Bcolors.BOLD + "\nCreate the following dirs on remote before executing scp commands:" + Bcolors.ENDC)
-for d in newdirs:
+text = "\nCreate the following dirs on remote before executing scp commands:"
+text = text + "\n\t(or use find/replace in scp file above)"
+print(Bcolors.BOLD + text + Bcolors.ENDC)
+for d in sorted(newdirs):
     print('mkdir ', d)
