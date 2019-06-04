@@ -62,7 +62,7 @@ hostname = ''.join([x for x in os.environ['HOSTNAME'].split(".")[0] if x.isalpha
 # get shfiles
 for p in pooldirs:
     shdir = op.join(p, 'shfiles')
-    remotesh = op.join(remote, 'sh_and_outfiles')
+    remotesh = op.join(remote, f'{p}/sh_and_outfiles')
     newdirs.append(remotesh)
     dirs = [d for d in fs(shdir) if op.isdir(d)]
     for d in dirs:
@@ -76,7 +76,7 @@ for p in pooldirs:
 # get realigned bamfiles
 for p in pooldirs:
     bamdir = op.join(p, '04_realign')
-    remotebamdir = op.join(remote, 'realigned_bamfiles')
+    remotebamdir = op.join(remote, f'{p}/realigned_bamfiles')
     newdirs.append(remotebamdir)
     md5files = [f for f in fs(bamdir) if f.endswith('.md5')]
     srcfiles = [f for f in fs(bamdir) if not f.endswith('.md5')]
@@ -103,7 +103,7 @@ cmds.append(f"scp {hostname}:{datatable} {datatabledst}")
 # get varscan output
 for p in pooldirs:
     varscan = op.join(p, 'varscan')
-    remotevarscan = op.join(remote, 'snpsANDindels')
+    remotevarscan = op.join(remote, f'{p}/snpsANDindels')
     newdirs.append(remotevarscan)
     md5files = [f for f in fs(varscan) if f.endswith('.md5') if '_all_' not in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') if '_all_' not in f]
