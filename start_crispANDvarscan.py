@@ -1,16 +1,19 @@
 """Create and sbatch crisp and varscan command files if all realigned bamfiles have been created.
 
-### purpose
-# sbatch crisp and varscan cmds if all realigned bamfiles have been created
-###
+If a single sample per pool_name:
+    - use pileup2cns
+    - set min freq to 0
+If multiple samps per pool_name:
+    - use mpileup2cns
+    - set min freq to 1/(ploidy_per_samp * nsamps)
 
-### usage
+# usage
 # python start_crispANDvarscan.py parentdir pool
-###
+#
 
-### fix
+# fix
 # assumes equal sample size across pools
-###
+#
 """
 
 
@@ -215,9 +218,16 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
     """Create command to call varscan."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     smallbams = ' '.join(smallbams)
+    ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
+    # if single-sample then set minfreq to 0, else use min possible allele freq
+    minfreq = 1/(ploidy*len(bamfiles)) if len(bamfiles) > 1 else 0
+    # if single-sample then use pileup2cns, else use mpileup2snp
+    tool = 'mpileup2cns' if len(bamfiles) > 1 else 'pileup2cns'
+    # --strand-filter not mentioned in docs for pileup2cns
+    strand_filter = '' if tool == 'pileup2cns' else '--strand-filter 1'
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
-$VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
---min-var-freq 0.000625 --strand-filter 1 --min-freq-for-hom 0.80 \
+$VARSCAN_DIR/VarScan.v2.4.3.jar {tool} --min-coverage 8 --p-value 0.05 \
+--min-var-freq {minfreq} {strand_filter} --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
 module unload samtools'''
     cmds = smallcmds + cmd
@@ -367,6 +377,12 @@ def main(parentdir, pool):
         # create .sh file to combine crisp parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)
 
+<<<<<<< HEAD
+=======
+        # balance queue
+        time.sleep(3)
+
+>>>>>>> 14c0161041f832bfd9aaf857f70db6e8a568a2f8
 
 if __name__ == "__main__":
     # args
