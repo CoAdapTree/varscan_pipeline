@@ -22,6 +22,10 @@ if parentdir.endswith("/"):
     parentdir = parendir[:-1]
 if remote.endswith("/"):
     remote = remote[:-1]
+print(Bcolors.BOLD + "input arguments:" + Bcolors.ENDC)
+print('\t', 'parentdir = ', parentdir)
+print('\t', 'remote = ', remote)
+print('\t', 'generate_md5 = ', generate_md5)
 
 
 def check_md5(src, md5files):
@@ -105,12 +109,12 @@ for p in pooldirs:
     varscan = op.join(p, 'varscan')
     remotevarscan = op.join(remote, f'{p}/snpsANDindels')
     newdirs.append(remotevarscan)
-    md5files = [f for f in fs(varscan) if f.endswith('.md5') if '_all_' not in f]
-    srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') if '_all_' not in f]
+    md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' not in f]
+    srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') and '_all_' not in f]
     cmds.extend(get_cmds(srcfiles, md5files, remotevarscan, generate_md5))
     # double check for _all_SNPs and _all_INDELs
-    md5files = [f for f in fs(varscan) if f.endswith('.md5') if '_all_' in f]
-    srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') if '_all_' in f]
+    md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' in f]
+    srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
     if not len(srcfiles) == 2:
         warning = "\nWARN: There are not two all-files (SNP + INDEL) which are expected output"
         warning = warning + "\nWARN: Here are the files I found:\n"
