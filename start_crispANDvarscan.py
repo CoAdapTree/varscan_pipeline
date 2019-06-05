@@ -316,6 +316,11 @@ def create_sh(bamfiles, shdir, pool, pooldir, program):
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program)
+        # only use in case of emergencies:
+        #outs = [out for out in fs(op.dirname(file)) if op.basename(file).replace('.sh', '') in out and out.endswith('.out')]
+        #print('len outs = ', len(outs))
+        #if len(outs) > 0:
+        #    continue
         pids.append(sbatch(file))
     return pids
 
@@ -377,12 +382,6 @@ def main(parentdir, pool):
         # create .sh file to combine crisp parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)
 
-<<<<<<< HEAD
-=======
-        # balance queue
-        time.sleep(3)
-
->>>>>>> 14c0161041f832bfd9aaf857f70db6e8a568a2f8
 
 if __name__ == "__main__":
     # args
