@@ -59,9 +59,8 @@ pools = list(pklload(op.join(parentdir, 'poolref.pkl')).keys())
 pooldirs = [op.join(parentdir, p) for p in pools]
 newdirs = []  # keep track of directories to easily make on remote server
 cmds = []  # keep track of all scp commands
-# get hostname (eg from beluga2.int.ets1.calculquebec.ca)
-hostname = ''.join([x for x in os.environ['HOSTNAME'].split(".")[0] if x.isalpha()])
-
+# get hostname (eg beluga, cedar, graham)
+hostname = os.environ['CC_CLUSTER']
 
 # get shfiles
 for p in pooldirs:
@@ -89,19 +88,18 @@ for p in pooldirs:
 
 # get read info
 readinfo = op.join(parentdir, 'readinfo.txt')
-readinfodst = op.join(remote, 'readinfo.txt')  # no need to add to newdirs
+datatable = op.join(parentdir, 'datatable.txt')
 if not op.exists(readinfo):
     warning = "WARN: readinfo.txt does not exist. (you can run 99_get_read_stats.py and transfer later)"
     print(Bcolors.WARNING + warning + Bcolors.ENDC)
     askforinput()
 else:
-    cmds.append(f"scp {hostname}:{readinfo} {readinfodst}")
-
-
-# get datatable used
-datatable = op.join(parentdir, 'datatable.txt')
-datatabledst = op.join(remote, 'datatable.txt')
-cmds.append(f"scp {hostname}:{datatable} {datatabledst}")
+    for p in pooldirs:
+        remotep = op.join(remote, op.basename(p))
+        readinfodst = op.join(remotep, 'readinfo.txt')
+        datatabledst = op.join(remotep, 'datatable.txt')
+        cmds.append(f"scp {hostname}:{readinfo} {readinfodst}")  # no need to add to newdirs
+        cmds.append(f"scp {hostname}:{datatable} {datatabledst}")  # no need to add to newdirs
 
 
 # get varscan output
