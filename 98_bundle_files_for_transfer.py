@@ -62,6 +62,12 @@ cmds = []  # keep track of all scp commands
 # get hostname (eg beluga, cedar, graham)
 hostname = os.environ['CC_CLUSTER']
 
+# add remote and subdirs to newdirs list
+newdirs.append(remote)
+for p in pooldirs:
+    newdirs.append(op.join(remote, op.basename(p)))
+
+
 # get shfiles
 for p in pooldirs:
     shdir = op.join(p, 'shfiles')
