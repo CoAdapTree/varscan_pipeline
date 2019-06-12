@@ -258,7 +258,7 @@ rm {logfile}
         mem = "2000M"
         time = '1-00:00:00'
         fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
--GF FREQ -GF PVAL '''
+-GF FREQ -GF PVAL -GF AD'''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
     text = f'''#!/bin/bash
