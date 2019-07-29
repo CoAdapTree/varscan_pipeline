@@ -36,7 +36,8 @@ text = '''#!/bin/bash
 
 module load gatk/3.8
 module load java
-java -Djava.io.tmpdir=$SLURM_TMPDIR -Xmx8g -jar $EBROOTGATK/GenomeAnalysisTK.jar \
+export _JAVA_OPTIONS="-Xms256m -Xmx7g"
+java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T IndelRealigner -R %(ref)s -I %(dupfile)s -targetIntervals %(listfile)s -o %(realbam)s
 module unload gatk
 

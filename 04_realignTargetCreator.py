@@ -26,8 +26,8 @@ ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 
 email_text = get_email_info(parentdir, '04')
 text = '''#!/bin/bash
-#SBATCH --time=3-00:00:00
-#SBATCH --mem=8000M
+#SBATCH --time=7-00:00:00
+#SBATCH --mem=30000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
@@ -38,7 +38,8 @@ text = '''#!/bin/bash
 # realign using the GATK
 module load gatk/3.8
 module load java
-java -Djava.io.tmpdir=$SLURM_TMPDIR -Xmx8g -jar $EBROOTGATK/GenomeAnalysisTK.jar \
+export _JAVA_OPTIONS="-Xms256m -Xmx28g"
+java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T RealignerTargetCreator -R %(ref)s --num_threads 32 -I %(dupfile)s -o %(listfile)s
 module unload gatk
 
