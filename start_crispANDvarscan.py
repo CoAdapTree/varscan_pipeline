@@ -1,10 +1,8 @@
 """Create and sbatch crisp and varscan command files if all realigned bamfiles have been created.
 
 If a single sample per pool_name:
-    - use pileup2cns
     - set min freq to 0
 If multiple samps per pool_name:
-    - use mpileup2cns
     - set min freq to 1/(ploidy_per_samp * nsamps)
 
 # usage
@@ -19,6 +17,7 @@ If multiple samps per pool_name:
 
 import sys, os, time, random, subprocess, balance_queue, shutil
 from os import path as op
+from datetime import datetime as dt
 from coadaptree import makedir, fs, pklload, get_email_info
 from balance_queue import getsq
 
@@ -222,7 +221,8 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
     # if single-sample then set minfreq to 0, else use min possible allele freq
     minfreq = 1/(ploidy*len(bamfiles)) if len(bamfiles) > 1 else 0
     # if single-sample then use pileup2cns, else use mpileup2snp
-    tool = 'mpileup2cns' if len(bamfiles) > 1 else 'pileup2cns'
+#     tool = 'mpileup2cns' if len(bamfiles) > 1 else 'pileup2cns'
+    tool = 'mpileup2cns'
     # --strand-filter not mentioned in docs for pileup2cns
     strand_filter = '' if tool == 'pileup2cns' else '--strand-filter 1'
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
@@ -369,7 +369,7 @@ def main(parentdir, pool):
     shdir = create_reservation(op.join(parentdir, pool))
 
     # create .sh files
-    #for program in ['crisp', 'varscan']:
+    #for program in ['crisp', 'varscan']:  # I'll be deprecating crisp soon
     for program in ['varscan']:
         print('starting %s commands' % program)
         # create .sh file and submit to scheduler
