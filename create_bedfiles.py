@@ -12,7 +12,7 @@
 
 import sys, os, math
 from os import path as op
-from coadaptree import fs, makedir
+from coadaptree import fs, makedir, askforinput
 
 
 def openlenfile(lenfile):
@@ -69,16 +69,45 @@ def make_bed_from_intervals(intdir):
     print('\t\tcreated %s bedfiles for %s from interval files' % (len(intfiles), ref))
 
 
-def make_lenfile():
-    """If a ref.fa.length file doesn't exist, make one.
+def make_beds_from_orderfile():
+    """Use ref.order file to create bedfiles for parallelization."""
+    orderfile = ref.replace(".fa", "") + '.order'
+    print('\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length')
+    askforinput()
+    with open(orderfile, 'r') as o:
+        text = o.read().split("\n")
+    thresh = math.ceil(len(text) / 450)
+    lines = []
+    fcount = 0
+    for count, line in enumerate(text):
+        if not line == '':
+            splits = line.split("\t")
+            lines.append(([splits[0], int(splits[2]) - 1, int(splits[3]) - 1]))  # scaff start stop, zero-based
+        if len(lines) == thresh or (count + 1 == len(text)):
+            make_bedfile(lines, fcount, from_orderfile=True)
+            lines = []
+            fcount += 1
+
+
+def find_positions():
+    """Find positions to create bedfiles. First look for an intervals directory,
+    then for a ref.order file. If neither exist, use ref.length file (ie, a lenfile)
+    - if this doesn't exist, create one from the ref.fa.
     A lenfile is a file created from the ref.fa that has lengths of each contig/chromosome.
     """
     refdir = op.dirname(ref)
     intdir = op.join(refdir, 'intervals')
+    # look for intervals directory with .list files
     if op.exists(intdir):
         print('\tusing intervals dir to create bedfiles for %s' % ref)
         make_bed_from_intervals(intdir)
         return
+    # look for a ref.order file (assumed format will print)
+    orderfile = ref.replace(".fa", "") + '.order'
+    if op.exists(orderfile):
+        make_beds_from_orderfile()
+        return
+    # create ref.fa.length if it doesn't exist
     if not op.exists('%(ref)s.length' % globals()):
         print("\tcreating %s.length file (this will take a few minutes)" % op.basename(ref))
         os.system('''cat  %(ref)s | awk '$0 ~ ">" {print c; c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' | sed 1d >  %(ref)s.length''' % globals())
@@ -89,14 +118,14 @@ def make_lenfile():
         print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref, sys.argv[0]))
         exit()
 
-    # spread contigs across 450 bed files
+    # spread contigs across 450 bed files using the ref.fa.length file
     fcount = make_bedfiles()
 
     print('\t\tcreated %s bedfiles for %s' % (fcount, ref))
 
 
-def make_bedfile(lines, fcount):
-    """Use ref.fa.length file to write contig/chorm, start, stop to bedfile.
+def make_bedfile(lines, fcount, from_orderfile=False):
+    """Use ref.fa.length or ref.order file to write contig/chorm, start, stop to bedfile.
     Different than make_bed(): ref.fa.length is 1-based, need to assert zero-based indexing.
 
     Positional arguments:
@@ -104,11 +133,17 @@ def make_bedfile(lines, fcount):
     fcount - the fcount'th bedfile; used for naming file
     """
     f = get_prereqs(fcount)
+    text = []
     with open(f, 'w') as o:
         for line in lines:
-            contig, length = line
-            # length instead of length-1 is fine
-            o.write("%s\t%s\t%s\n" % (contig, 0, length))  # contig \t start \t stop
+            if from_orderfile is False:
+                contig, length = line
+                # length instead of length-1 is fine
+                text.append("%s\t%s\t%s" % (contig, 0, length))  # contig \t start \t stop
+            else:
+                scaff, start, stop = line
+                text.append("%s\t%s\t%s" % (scaff, start, stop))  # scaff \t start \t stop
+        o.write("\n".join(text))
 
 
 def make_bedfiles():
@@ -130,7 +165,7 @@ def make_bedfiles():
 def main(ref):
     globals().update({'ref': ref})
     # get sequence lengths
-    make_lenfile()
+    find_positions()
 
 
 if __name__ == "__main__":
