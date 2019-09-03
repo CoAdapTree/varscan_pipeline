@@ -10,6 +10,9 @@
 # for INDEL - no filter, just combine (output has multiple rows)
 ###
 
+###
+# if number of samples == 1, then no SNPs will be discarded
+
 ### assumes
 # gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ [-GF FREQ] --split-multi-allelic
 ###
@@ -51,7 +54,7 @@ def get_copy(df, cols):
 
 def get_freq_cutoffs(tablefile):
     """
-    Determine MAF using ploidy.
+    Determine MAF using ploidy and the number of samples per pool.
     
     Assumes:
     - equal ploidy across samples/pools
@@ -70,7 +73,7 @@ def get_freq_cutoffs(tablefile):
     poolsamps = pklload(op.join(parentdir, 'poolsamps.pkl'))[pool]
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     lowfreq = 1/(ploidy * len(poolsamps))
-    if lowfreq == 1:
+    if lowfreq == 1 or len(poolsamps) == 1:
         # for megagametophyte data
         lowfreq = 0
     highfreq = 1 - lowfreq
