@@ -425,7 +425,7 @@ def main(tablefile, tipe, ret=False):
         print('filtering for missing data ...')
         df = filter_missing_data(df, tf, tipe)
         print(f'{tf} has {len(df.index)} loci with < 25% missing data')
-        lowfreq, highfreq = get_freq_cutoffs(tablefile)
+        lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
