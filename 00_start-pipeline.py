@@ -18,7 +18,7 @@ from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni, makedir, askforinput, Bcolors
 
 
-def create_sh(pooldirs, poolref):
+def create_sh(pooldirs, poolref, parentdir):
     """
 run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
 
@@ -38,7 +38,7 @@ poolref - dictionary with key = pool, val = /path/to/ref
                          pooldir,
                          ref])
     print("\n")
-    balance_queue.main('balance_queue.py', 'trim')
+    balance_queue.main('balance_queue.py', 'trim', parentdir)
 
 
 def get_datafiles(parentdir, f2pool, data):
@@ -204,7 +204,7 @@ please create these files' +
 
 def check_reqs():
     """Check for assumed exports."""
-    print(Bcolors.BOLD + '\nchecking for exported variables' + Bcolors.ENDC)
+    print(Bcolors.BOLD + '\nChecking for exported variables' + Bcolors.ENDC)
     for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
         try:
@@ -229,7 +229,7 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
             exit()
     # make sure pipeline can be accessed via $HOME/pipeline
     if not op.exists(op.join(os.environ['HOME'], 'pipeline')):
-        print('\tcould not find pipeline via $HOME/pipeline')
+        print('\tcould not find pipeline via $HOME/pipeline\n\texiting 00_start-pipeline.py')
         exit()
 
 
@@ -262,7 +262,7 @@ def get_pars():
                         dest="email",
                         help="the email address you would like to have notifications sent to")
     parser.add_argument("-n",
-                        default=argparse.SUPPRESS,
+                        default=None,
                         nargs='+',
                         required=False,
                         dest="email_options",
@@ -319,6 +319,9 @@ def main():
     # look for exported vars (should be in .bashrc)
     check_reqs()
 
+    # determine which slurm accounts to use
+    balance_queue.get_avail_accounts(args.parentdir, save=True)
+
     # read in the datatable
     data, f2pool, poolref = read_datatable(args.parentdir)
 
@@ -332,7 +335,7 @@ def main():
     get_datafiles(args.parentdir, f2pool, data)
 
     # create and sbatch sh files
-    create_sh(pooldirs, poolref)
+    create_sh(pooldirs, poolref, args.parentdir)
 
 
 if __name__ == '__main__':

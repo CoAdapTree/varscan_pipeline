@@ -10,11 +10,7 @@
 """
 
 
-import os
-import sys
-import time
-import shutil
-import subprocess
+import os, sys, time, shutil, subprocess
 from os import path as op
 from coadaptree import fs, pklload, pkldump, get_email_info
 

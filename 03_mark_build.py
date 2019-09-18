@@ -15,6 +15,7 @@ from coadaptree import makedir, get_email_info, pklload
 
 thisfile, pooldir, samp = sys.argv
 sortfiles = pklload(op.join(pooldir, '%s_sortfiles.pkl' % samp))
+joine = " I=".join(sortfiles)
 
 # MarkDuplicates
 dupdir = op.join(pooldir, '03_dedup_rg_filtered_indexed_sorted_bamfiles')
@@ -38,7 +39,7 @@ module load picard/2.18.9
 module load java
 export _JAVA_OPTIONS="-Xms256m -Xmx27g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \
-I={" I=".join(sortfiles)} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
+I={joined} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
 M={dupstat} REMOVE_DUPLICATES=true
 
 # Build bam index for GATK

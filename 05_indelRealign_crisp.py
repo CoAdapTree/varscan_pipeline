@@ -62,5 +62,5 @@ print('shdir = ', shdir)
 subprocess.call([shutil.which('sbatch'), file])
 
 
-balance_queue.main('balance_queue.py', 'indelRealign')
-balance_queue.main('balance_queue.py', 'realign')
+balance_queue.main('balance_queue.py', 'indelRealign', parentdir)
+balance_queue.main('balance_queue.py', 'realign', parentdir)
