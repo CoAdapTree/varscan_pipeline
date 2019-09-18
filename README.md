@@ -34,7 +34,7 @@ Call SNPs and INDELs across pooled populations using CRISP and VarScan.
         ```export CRISP_DIR=/path/to/crisp/folder```
 1. Download and install VarScan (`VarScan.v2.4.3.jar`): https://github.com/dkoboldt/varscan
     1. In `$HOME/.bashrc` export path to the VarScan folder. eg: `export VARSCAN_DIR=/path/to/varscan/folder`
-1. copy the following into your `$HOME/.bashrc` file so that the `def-someuser` reflects your non-RAC compute canada account
+1. copy the following into your `$HOME/.bashrc` file so that the `def-someuser` reflects your non-RAC compute canada account. If you have multiple accounts available, the pipeline will balance load among them (you choose these accounts during 00_start execution). The following is needed to submit jobs before the pipeline balances load.
     ```
     export SLURM_ACCOUNT=def-someuser
     export SBATCH_ACCOUNT=$SLURM_ACCOUNT
