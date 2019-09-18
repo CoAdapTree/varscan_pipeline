@@ -15,7 +15,7 @@ If multiple samps per pool_name:
 """
 
 
-import sys, os, time, random, subprocess, balance_queue, shutil
+import sys, os, time, random, subprocess, shutil
 from os import path as op
 from datetime import datetime as dt
 from coadaptree import makedir, fs, pklload, get_email_info
@@ -234,7 +234,7 @@ module unload samtools'''
     return (cmds, vcf)
 
 
-def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program):
+def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
     """Create sh file for varscan or crisp command."""
     num, ref, vcf = get_prereqs(bedfile, pooldir, parentdir, pool, program)
     if program == 'crisp':
@@ -285,7 +285,7 @@ gzip {finalvcf}
 # if any other crisp jobs are hanging due to priority, change the account
 source $HOME/.bashrc
 export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-python $HOME/pipeline/balance_queue.py {program}
+python $HOME/pipeline/balance_queue.py {program} {parentdir}
 
 '''
     file = op.join(shdir, f'{pool}-{program}_bedfile_{num}.sh')
@@ -310,12 +310,12 @@ def get_bedfiles(parentdir, pool):
     return [f for f in fs(beddir) if f.endswith('.bed')]
 
 
-def create_sh(bamfiles, shdir, pool, pooldir, program):
+def create_sh(bamfiles, shdir, pool, pooldir, program, parentdir):
     """Create and sbatch shfiles, record pid to use as dependency for combine job."""
     bedfiles = get_bedfiles(parentdir, pool)
     pids = []
     for bedfile in bedfiles:
-        file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program)
+        file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir)
         # only use in case of emergencies:
         #outs = [out for out in fs(op.dirname(file)) if op.basename(file).replace('.sh', '') in out and out.endswith('.out')]
         #print('len outs = ', len(outs))
@@ -377,7 +377,8 @@ def main(parentdir, pool):
                          shdir,
                          pool,
                          op.join(parentdir, pool),
-                         program)
+                         program,
+                         parentdir)
 
         # create .sh file to combine crisp parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)

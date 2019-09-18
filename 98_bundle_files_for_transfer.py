@@ -3,7 +3,7 @@
 
 # usage
 # python 98_bundle_files_for_transfer.py parentdir remote_parentdir <bool>
-# 
+#
 
 # assumes
 # that transfer is done in parallel on remote server
