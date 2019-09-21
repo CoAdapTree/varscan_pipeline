@@ -261,6 +261,7 @@ rm {logfile}
 -GF FREQ -GF PVAL -GF AD'''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
+    bash_variables = op.join(parentdir, 'bash_variables')
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-{program}_bedfile_{num}
@@ -283,8 +284,7 @@ gzip {finalvcf}
 {second_cmd}
 
 # if any other crisp jobs are hanging due to priority, change the account
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
+source {bash_variables}
 python $HOME/pipeline/balance_queue.py {program} {parentdir}
 
 '''
@@ -335,6 +335,7 @@ def create_combine(pids, parentdir, pool, program, shdir):
     pooldir = op.join(parentdir, pool)
     email_text = get_email_info(parentdir, 'final')
     dependencies = '#SBATCH --dependency=afterok:' + ','.join(pids)
+    bash_variables = op.join(parentdir, 'bash_variables')
     text = f'''#!/bin/bash
 #SBATCH --job-name={pool}-combine-{program}
 #SBATCH --time=12:00:00
@@ -345,9 +346,7 @@ def create_combine(pids, parentdir, pool, program, shdir):
 {email_text}
 
 
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+source {bash_variables}
 
 python $HOME/pipeline/combine_crispORvarscan.py {pooldir} {program} {pool}
 

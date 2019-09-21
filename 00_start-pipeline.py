@@ -205,14 +205,43 @@ please create these files' +
 def check_reqs():
     """Check for assumed exports."""
     print(Bcolors.BOLD + '\nChecking for exported variables' + Bcolors.ENDC)
-    for var in ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
-                'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:
+    variables = ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
+                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:            
+            
+    # check to see if bash_variables file has been created
+    if not op.exists(op.join(parentdir, 'bash_variables')):
+        print('\tCould not find bash_variables file in parentdir. Please create this file and add \
+in variables from README (eg SLURM_ACCOUNT, SQUEUE_FORMAT, etc). See example in $HOME/pipeline.')
+    else:
+        with open(op.join(parentdir, 'bash_variables')) as bv:
+            text = bv.read().split("\n")
+        needed = []
+        for var in variables:
+            found = False
+            for line in text:
+                if var in line:
+                    found = True
+                    break
+            if found is False:
+                needed.append(var)
+        if len(needed) > 0:
+            print(Bcolors.FAIL + '\tFAIL: not all bash variables were found in parentdir/bash_variables file.' + Bcolors.ENDC)
+            print(Bcolors.FAIL + '\tFAIL: the following variables must be present' + Bcolors.ENDC)
+            for var in needed:
+                print(Bcolors.FAIL + '\t%s' % var + Bcolors.ENDC)
+            print('exiting pipeline')
+    
+    # check to see if bash_variables file has been sourced
+    for var in variables:
         try:
             print('\t%s = %s' % (var, os.environ[var]))
         except KeyError:
-            print('\tcould not find %s in exported vars\n\texport this var in $HOME/.bashrc so it can be used \
-later in pipeline\n\texiting 00_start-pipeline.py' % var)
+            print(Bcolors.FAIL + '\tCould not find %s in exported vars\n\texport this var in parentdir/bash_variables \
+so it can be used later in pipeline, then source this file before restarting pipeline.' % var + Bcolors.ENDC)
+            print('\texiting 00_start-pipeline.py')
             exit()
+
+    # check for programs
     for program in [op.join(os.environ['VARSCAN_DIR'], 'VarScan.v2.4.3.jar'),
                     op.join(os.environ['CRISP_DIR'], 'CRISP')]:
         if not op.exists(program):
@@ -220,7 +249,8 @@ later in pipeline\n\texiting 00_start-pipeline.py' % var)
                   Bcolors.FAIL +
                   "FAIL: could not find the following program: %s" % program +
                   Bcolors.ENDC)
-    # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
+
+# make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
     for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
             print('\tcould not find %s in $PATH\nexiting 00_start-pipeline.py' % exe)
@@ -357,7 +387,7 @@ if __name__ == '__main__':
                                               |
                                               |
 
-                         VarScan and CRISP pipeline
+                             VarScan pipeline
 
 *****************************************************************************
 

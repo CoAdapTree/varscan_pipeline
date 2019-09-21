@@ -17,45 +17,44 @@ thisfile, pooldir, samp, dupfile = sys.argv
 
 # RealignerTargetCreator
 aligndir = op.join(pooldir, '04_realign')
-listfile = op.join(aligndir, '%s_realingment_targets.list' % samp)
+listfile = op.join(aligndir, f'{samp}_realingment_targets.list')
 
 # get ref
 parentdir = op.dirname(pooldir)
 pool = op.basename(pooldir)
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
+bash_variables = op.join(parentdir, 'bash_variables')
 
 email_text = get_email_info(parentdir, '04')
-text = '''#!/bin/bash
+text = f'''#!/bin/bash
 #SBATCH --time=7-00:00:00
 #SBATCH --mem=30000M
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --job-name=%(pool)s-%(samp)s-realign
-#SBATCH --output=%(pool)s-%(samp)s-realign_%%j.out 
-%(email_text)s
+#SBATCH --job-name={pool}-{samp}-realign
+#SBATCH --output={pool}-{samp}-realign_%j.out 
+{email_text}
 
 # realign using the GATK
 module load gatk/3.8
 module load java
 export _JAVA_OPTIONS="-Xms256m -Xmx28g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
--T RealignerTargetCreator -R %(ref)s --num_threads 32 -I %(dupfile)s -o %(listfile)s
+-T RealignerTargetCreator -R {ref} --num_threads 32 -I {dupfile} -o {listfile}
 module unload gatk
 
 # next step
-source $HOME/.bashrc
-export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
-export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
-python $HOME/pipeline/05_indelRealign_crisp.py %(pooldir)s %(samp)s %(dupfile)s %(ref)s
+source {bash_variables}
+python $HOME/pipeline/05_indelRealign_crisp.py {pooldir} {samp} {dupfile} {ref}
 
-''' % locals()
+'''
 
 # create shdir and shfile
 shdir = op.join(pooldir, 'shfiles/04_realignTarget_shfiles')
 for d in [aligndir, shdir]:
     makedir(d)
-file = op.join(shdir, '%(pool)s-%(samp)s-realign.sh' % locals())
+file = op.join(shdir, f'{pool}-{samp}-realign.sh')
 with open(file, 'w') as o:
     o.write("%s" % text)
 

@@ -22,38 +22,37 @@ thisfile, pooldir, samp, dupfile, ref = sys.argv
 pool = op.basename(pooldir)
 parentdir = op.dirname(pooldir)
 aligndir = op.join(pooldir, '04_realign')
-listfile = op.join(aligndir, '%s_realingment_targets.list' % samp)
-realbam = op.join(aligndir, '%s_realigned_reads.bam' % samp)
+listfile = op.join(aligndir, f'{samp}_realingment_targets.list')
+realbam = op.join(aligndir, f'{samp}_realigned_reads.bam')
+bash_variables = op.join(parentdir, 'bash_variables')
 
 email_text = get_email_info(parentdir, '05')
-text = '''#!/bin/bash
+text = f'''#!/bin/bash
 #SBATCH --time=7-00:00:00
 #SBATCH --mem=8000M
 #SBATCH --ntasks=1
-#SBATCH --job-name=%(pool)s-%(samp)s-indelRealign
-#SBATCH --output=%(pool)s-%(samp)s-indelRealign_%%j.out 
-%(email_text)s
+#SBATCH --job-name={pool}-{samp}-indelRealign
+#SBATCH --output={pool}-{samp}-indelRealign_%j.out 
+{email_text}
 
 module load gatk/3.8
 module load java
 export _JAVA_OPTIONS="-Xms256m -Xmx7g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
--T IndelRealigner -R %(ref)s -I %(dupfile)s -targetIntervals %(listfile)s -o %(realbam)s
+-T IndelRealigner -R {ref} -I {dupfile} -targetIntervals {listfile} -o {realbam}
 module unload gatk
 
 # sbatch CRISP job if all pooled bamfiles have been created
-source $HOME/.bashrc
-export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
-export SQUEUE_FORMAT="%%.8i %%.8u %%.12a %%.68j %%.3t %%16S %%.10L %%.5D %%.4C %%.6b %%.7m %%N (%%r)"
-python $HOME/pipeline/start_crispANDvarscan.py %(parentdir)s %(pool)s
-python $HOME/pipeline/balance_queue.py bedfile %(parentdir)s
+source {bash_variables}
+python $HOME/pipeline/start_crispANDvarscan.py {parentdir} {pool}
+python $HOME/pipeline/balance_queue.py bedfile {parentdir}
 
-''' % locals()
+'''
 
 # create shdir and shfile
 shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
 makedir(shdir)
-file = op.join(shdir, '%(pool)s-%(samp)s-indelRealign.sh' % locals())
+file = op.join(shdir, f'{pool}-{samp}-indelRealign.sh')
 with open(file, 'w') as o:
     o.write("%s" % text)
 

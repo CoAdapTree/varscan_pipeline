@@ -14,6 +14,8 @@ from os import path as op
 from coadaptree import makedir, get_email_info, pklload
 
 thisfile, pooldir, samp = sys.argv
+parentdir = op.dirname(pooldir)
+bash_variables = op.join(parentdir, 'bash_variables')
 sortfiles = pklload(op.join(pooldir, '%s_sortfiles.pkl' % samp))
 joine = " I=".join(sortfiles)
 
@@ -52,9 +54,7 @@ samtools flagstat {dupfile} > {dupflag}
 module unload samtools
 
 # call next step
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+source {bash_variables}
 
 python $HOME/pipeline/04_realignTargetCreator.py {pooldir} {samp} {dupfile}
 

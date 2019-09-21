@@ -26,6 +26,7 @@ pooldir = op.join(parentdir, pool)
 shdir = op.join(pooldir, 'shfiles')
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 r1r2outs = pklload(op.join(pooldir, 'samp2_r1r2out.pkl'))[samp]
+bash_variables = op.join(parentdir, 'bash_variables')
 
 # create dirs
 bwashdir = op.join(shdir, '02_bwa_shfiles')
@@ -99,15 +100,13 @@ text = f'''#!/bin/bash
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name={pool}-{samp}-bwa
-#SBATCH --output={pool}-{samp}-bwa_%j.out 
+#SBATCH --output={pool}-{samp}-bwa_%j.out
 {email_text}
 
 {bwatext}
 
 # mark and build
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+source {bash_variables}
 python $HOME/pipeline/03_mark_build.py {pooldir} {samp}
 '''
 
