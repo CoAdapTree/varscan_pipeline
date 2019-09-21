@@ -101,7 +101,6 @@ def make_pooldirs(data, parentdir):
         DIR = op.join(parentdir, p)
         if op.exists(DIR):
             print("The pooldir already exists, this could overwrite previous data: %s" % DIR)
-            print("Do you want to proceed?")
             askforinput()
         pooldirs.append(makedir(DIR))
     return pooldirs
@@ -202,16 +201,18 @@ please create these files' +
     return data, f2pool, poolref
 
 
-def check_reqs():
+def check_reqs(parentdir):
     """Check for assumed exports."""
     print(Bcolors.BOLD + '\nChecking for exported variables' + Bcolors.ENDC)
     variables = ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
-                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']:            
+                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']        
             
     # check to see if bash_variables file has been created
     if not op.exists(op.join(parentdir, 'bash_variables')):
         print('\tCould not find bash_variables file in parentdir. Please create this file and add \
 in variables from README (eg SLURM_ACCOUNT, SQUEUE_FORMAT, etc). See example in $HOME/pipeline.')
+        print('exiting pipeline')
+        exit()
     else:
         with open(op.join(parentdir, 'bash_variables')) as bv:
             text = bv.read().split("\n")
@@ -354,7 +355,7 @@ def main():
     check_pyversion()
 
     # look for exported vars (should be in .bashrc)
-    check_reqs()
+    check_reqs(args.parentdir)
 
     # determine which slurm accounts to use
     balance_queue.get_avail_accounts(args.parentdir, save=True)

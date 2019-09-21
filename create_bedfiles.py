@@ -72,7 +72,7 @@ def make_bed_from_intervals(intdir):
 def make_beds_from_orderfile():
     """Use ref.order file to create bedfiles for parallelization."""
     orderfile = ref.replace(".fa", "") + '.order'
-    print('\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length')
+    print('\tCreating bedfiles from %s.\n\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length' % orderfile)
     askforinput()
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
