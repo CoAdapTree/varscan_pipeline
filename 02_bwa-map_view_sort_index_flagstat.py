@@ -15,7 +15,7 @@
 ###
 """
 
-import sys, os, balance_queue, subprocess, shutil
+import sys, os, subprocess, shutil
 from os import path as op
 from coadaptree import pklload, pkldump, get_email_info, makedir
 
@@ -121,5 +121,6 @@ os.chdir(bwashdir)
 print('shdir = ', shdir)
 subprocess.call([shutil.which('sbatch'), qsubfile])
 
-balance_queue.main('balance_queue.py', 'bwa', parentdir)
-balance_queue.main('balance_queue.py', 'trim', parentdir)
+balance_queue = op.join(os.environ['HOME'], 'pipeline/balance_queue.py')
+subprocess.call([sys.executable, balance_queue, 'bwa', parentdir])
+subprocess.call([sys.executable, balance_queue, 'trim', parentdir])

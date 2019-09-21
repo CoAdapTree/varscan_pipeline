@@ -9,7 +9,7 @@
 ###
 """
 
-import os, sys, balance_queue, subprocess, shutil
+import os, sys, subprocess, shutil
 from os import path as op
 from coadaptree import makedir, pklload, get_email_info
 
@@ -65,5 +65,6 @@ print('shdir =', shdir)
 subprocess.call([shutil.which('sbatch'), file])
 
 # balance queue
-balance_queue.main('balance_queue.py', 'realign', parentdir)
-balance_queue.main('balance_queue.py', 'mark', parentdir)
+balance_queue = op.join(os.environ['HOME'], 'pipeline/balance_queue.py')
+subprocess.call([sys.executable, balance_queue, 'realign', parentdir])
+subprocess.call([sys.executable, balance_queue, 'mark', parentdir])

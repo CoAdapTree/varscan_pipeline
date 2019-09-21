@@ -269,6 +269,11 @@ def get_pars():
                         help='''the type(s) of email notifications you would like to receive from the pipeline.\
                         Requires --email-address. These options are used to fill out the #SBATCH flags.
 must be one (or multiple) of %s''' % [x for x in choices])
+    parser.add_argument("-maf",
+                        required=False,
+                        default='0.05',
+                        dest="maf",
+                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time.''')
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,
@@ -305,6 +310,8 @@ please check input\n' + Bcolors.ENDC)
         epkl = {'email': args.email,
                 'opts': args.email_options}
         pkldump(epkl, op.join(args.parentdir, 'email_opts.pkl'))
+
+    pkldump(args.maf, op.join(args.parentdir, 'maf.pkl'))
 
     return args
 

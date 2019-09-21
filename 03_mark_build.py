@@ -74,5 +74,6 @@ print('shdir = ', shdir)
 subprocess.call([shutil.which('sbatch'), file])
 
 # balance queue
-balance_queue.main('balance_queue.py', 'mark', parentdir)
-balance_queue.main('balance_queue.py', 'bwa', parentdir)
+balance_queue = op.join(os.environ['HOME'], 'pipeline/balance_queue.py')
+subprocess.call([sys.executable, balance_queue, 'mark', parentdir])
+subprocess.call([sys.executable, balance_queue, 'bwa', parentdir])
