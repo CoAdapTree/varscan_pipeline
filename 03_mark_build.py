@@ -17,7 +17,7 @@ thisfile, pooldir, samp = sys.argv
 parentdir = op.dirname(pooldir)
 bash_variables = op.join(parentdir, 'bash_variables')
 sortfiles = pklload(op.join(pooldir, '%s_sortfiles.pkl' % samp))
-joine = " I=".join(sortfiles)
+joined = " I=".join(sortfiles)
 
 # MarkDuplicates
 dupdir = op.join(pooldir, '03_dedup_rg_filtered_indexed_sorted_bamfiles')
