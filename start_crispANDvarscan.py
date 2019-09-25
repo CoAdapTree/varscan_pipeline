@@ -245,7 +245,8 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
                                                ref,
                                                vcf,
                                                num)
-        second_cmd = f'''gzip {vcf}
+        # force gzip the vcf (overwrite previous .gz), rm logfile
+        second_cmd = f'''gzip -f {vcf}
 rm {logfile}
 '''
         mem = "9000M"
