@@ -281,7 +281,7 @@ module unload gatk
 
 # gzip outfiles to save space
 cd $(dirname {finalvcf})
-gzip {finalvcf}
+gzip -f {finalvcf}
 {second_cmd}
 
 # if any other crisp jobs are hanging due to priority, change the account
