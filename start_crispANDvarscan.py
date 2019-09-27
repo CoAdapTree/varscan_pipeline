@@ -242,10 +242,8 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
                                                vcf,
                                                num)
         # force gzip the vcf (overwrite previous .gz), rm logfile
-        second_cmd = f'''module load htslib
-bgzip -f {vcf}
+        second_cmd = f'''bgzip -f {vcf}
 rm {logfile}
-module unload htslib
 '''
         mem = "9000M"
         time = '3-00:00:00'
@@ -278,11 +276,10 @@ gatk VariantsToTable --variant {finalvcf} -F CHROM -F POS -F REF -F ALT -F AF -F
 module unload gatk
 
 # gzip outfiles to save space
-module load htslib
+module load nixpkgs/16.09  gcc/7.3.0 htslib/1.9
 cd $(dirname {finalvcf})
 bgzip -f {finalvcf}
 {second_cmd}
-module unload htslib
 
 # if any other crisp jobs are hanging due to priority, change the account
 source {bash_variables}
