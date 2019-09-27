@@ -76,7 +76,7 @@ def make_beds_from_orderfile():
     askforinput()
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
-    thresh = math.ceil(len(text) / 450)
+    thresh = math.ceil(len(text) / 1000)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -118,7 +118,7 @@ def find_positions():
         print("something went wrong with creating the ref.length file for %s\nexiting %s" % (ref, sys.argv[0]))
         exit()
 
-    # spread contigs across 450 bed files using the ref.fa.length file
+    # spread contigs across 1000 bed files using the ref.fa.length file
     fcount = make_bedfiles()
 
     print('\t\tcreated %s bedfiles for %s' % (fcount, ref))
@@ -149,7 +149,7 @@ def make_bedfile(lines, fcount, from_orderfile=False):
 def make_bedfiles():
     """Use ref.fa.length file to create bedfiles."""
     text = openlenfile("%s.length" % ref)
-    thresh = math.ceil(len(text) / 450)
+    thresh = math.ceil(len(text) / 1000)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
