@@ -220,10 +220,9 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     # if single-sample then set minfreq to 0, else use min possible allele freq
     minfreq = 1/(ploidy*len(bamfiles)) if len(bamfiles) > 1 else 0
-    strand_filter = '' if tool == 'pileup2cns' else '--strand-filter 1'
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
 $VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
---min-var-freq {minfreq} {strand_filter} --min-freq-for-hom 0.80 \
+--min-var-freq {minfreq} --strand-filter 1 --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
 module unload samtools'''
     cmds = smallcmds + cmd

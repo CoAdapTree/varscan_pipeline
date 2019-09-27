@@ -2,7 +2,9 @@
 
 ### purpose
 # create bedfiles from reference so that we can parallelize CRISP
-# if an intervals directory exists, use that instead of ref.fa.length file (for stitched refs)
+# if an intervals directory exists, use .list files to create bedfiles (for stitched refs)
+#    ELSE: look for .order file, and create bedfiles from this (for stitched refs)
+#    ELSE: look for a .length file (create from ref if none exists) - assumes non-stitched
 #
 
 ### usage
