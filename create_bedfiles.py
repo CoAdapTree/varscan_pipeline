@@ -8,11 +8,15 @@
 ### usage
 # python create_bedfiles.py /path/to/reference.fasta
 ###
+
+### fix
+# put bedfiles in parentdir instead of ref dir, so that all beds are the ones that are wanted
+###
 """
 
 import sys, os, math
 from os import path as op
-from coadaptree import fs, makedir, askforinput
+from coadaptree import fs, makedir, askforinput, Bcolors
 
 
 def openlenfile(lenfile):
@@ -27,14 +31,20 @@ def openlenfile(lenfile):
     return text
 
 
+def make_beddir():
+    """Create dir for bedfiles."""
+    bname = op.basename(ref).split(".fa")[0]
+    beddir = makedir(op.join(op.dirname(ref), 'bedfiles_%s' % bname))
+    return bname, beddir
+
+
 def get_prereqs(num):
     """Create a name for a bedfile based on the ref.fa path name and num.
 
     Positional arguments:
     num - int; the num'th bedfile
     """
-    bname = op.basename(ref).split(".fa")[0]
-    beddir = makedir(op.join(op.dirname(ref), 'bedfiles_%s' % bname))
+    bname, beddir = make_beddir()
     f = op.join(beddir, "%s_bedfile_%s.bed" % (bname, str(num).zfill(4)))
     return f
 
@@ -42,7 +52,7 @@ def get_prereqs(num):
 def make_bed(lines, num):
     """Write contig/chrom, start, stop positions to bedfile.
     Different than make_bedfile(): .list files use zero-based, no need to correct."""
-    f = get_prereqs(num)
+    f = s(num)
     with open(f, 'w') as o:
         for contig, start, stop in lines:
             o.write("%s\t%s\t%s\n" % (contig, start, stop))
@@ -72,11 +82,11 @@ def make_bed_from_intervals(intdir):
 def make_beds_from_orderfile():
     """Use ref.order file to create bedfiles for parallelization."""
     orderfile = ref.replace(".fa", "") + '.order'
-    print('\tCreating bedfiles from %s.\n\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length' % orderfile)
+    print('\tCreating bedfiles from %s. Please confirm:\n\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length' % orderfile)
     askforinput()
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
-    thresh = math.ceil(len(text) / 1000)
+    thresh = math.ceil(len(text) / 1500)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -149,7 +159,7 @@ def make_bedfile(lines, fcount, from_orderfile=False):
 def make_bedfiles():
     """Use ref.fa.length file to create bedfiles."""
     text = openlenfile("%s.length" % ref)
-    thresh = math.ceil(len(text) / 1000)
+    thresh = math.ceil(len(text) / 1500)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -162,8 +172,25 @@ def make_bedfiles():
     return fcount
 
 
+def check_beddir():
+    """Avoid accidentally using incorrect bedfiles by removing any that exist."""
+    bname, beddir = make_beddir()
+    files = [f for f in fs(beddir) if f.endswith('.bed')]
+    if len(files) > 0:
+        text = '\tThere are already existing bedfiles in %s. These will be deleted.' % beddir
+        print(Bcolors.WARN + text + Bcolors.ENDC)
+        askforinput()
+        for f in files:
+            os.remove(f)
+        print('\t\tRemoved %s bedfiles.' % len(files))
+
+
 def main(ref):
     globals().update({'ref': ref})
+    
+    # warn about overwriting
+    check_beddir()
+    
     # get sequence lengths
     find_positions()
 
