@@ -220,13 +220,9 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     # if single-sample then set minfreq to 0, else use min possible allele freq
     minfreq = 1/(ploidy*len(bamfiles)) if len(bamfiles) > 1 else 0
-    # if single-sample then use pileup2cns, else use mpileup2snp
-#     tool = 'mpileup2cns' if len(bamfiles) > 1 else 'pileup2cns'
-    tool = 'mpileup2cns'
-    # --strand-filter not mentioned in docs for pileup2cns
     strand_filter = '' if tool == 'pileup2cns' else '--strand-filter 1'
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
-$VARSCAN_DIR/VarScan.v2.4.3.jar {tool} --min-coverage 8 --p-value 0.05 \
+$VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
 --min-var-freq {minfreq} {strand_filter} --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
 module unload samtools'''
@@ -250,14 +246,14 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
 rm {logfile}
 '''
         mem = "9000M"
-        time = '2-00:00:00'
+        time = '3-00:00:00'
         fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
 -F HP -F MQS -GF GT -GF GQ -GF DP'''
     else:
         cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
         second_cmd = ''''''
         mem = "2000M"
-        time = '1-00:00:00'
+        time = '7-00:00:00'
         fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
 -GF FREQ -GF PVAL -GF AD'''
 
