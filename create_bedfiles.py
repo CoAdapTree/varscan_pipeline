@@ -178,7 +178,7 @@ def check_beddir():
     files = [f for f in fs(beddir) if f.endswith('.bed')]
     if len(files) > 0:
         text = '\tThere are already existing bedfiles in %s. These will be deleted.' % beddir
-        print(Bcolors.WARN + text + Bcolors.ENDC)
+        print(Bcolors.WARNING + text + Bcolors.ENDC)
         askforinput()
         for f in files:
             os.remove(f)
