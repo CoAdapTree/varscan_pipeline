@@ -430,7 +430,6 @@ def main(tablefile, tipe, ret=False):
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
 
-    
     if ret is True:
         return df
     else:

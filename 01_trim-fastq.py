@@ -115,7 +115,7 @@ module load fastp/0.19.5
 python $HOME/pipeline/02_bwa-map_view_sort_index_flagstat.py %(parentdir)s %(samp)s
 
 ''' % locals()
-    
+
     text = header + newtext + suffix
 
     filE = op.join(shtrimDIR, '%(pool)s-%(samp)s-trim.sh' % locals())

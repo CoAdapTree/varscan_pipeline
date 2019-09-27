@@ -205,7 +205,7 @@ def check_reqs(parentdir):
     """Check for assumed exports."""
     print(Bcolors.BOLD + '\nChecking for exported variables' + Bcolors.ENDC)
     variables = ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
-                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']        
+                 'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']
             
     # check to see if bash_variables file has been created
     if not op.exists(op.join(parentdir, 'bash_variables')):
@@ -231,7 +231,7 @@ in variables from README (eg SLURM_ACCOUNT, SQUEUE_FORMAT, etc). See example in 
             for var in needed:
                 print(Bcolors.FAIL + '\t%s' % var + Bcolors.ENDC)
             print('exiting pipeline')
-    
+
     # check to see if bash_variables file has been sourced
     for var in variables:
         try:
