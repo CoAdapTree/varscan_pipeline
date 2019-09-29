@@ -131,10 +131,12 @@ for p in pooldirs:
         continue
     remotevarscan = op.join(remote, f'{op.basename(p)}/snpsANDindels')
     newdirs.append(remotevarscan)
+    remote_unfiltered = op.join(remotevarscan, '01_unfiltered')
+    newdirs.append(remote_unfiltered)
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' not in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') and '_all_' not in f]
-    cmds.extend(get_cmds(srcfiles, md5files, remotevarscan, generate_md5))
-    # double check for _all_SNPs and _all_INDELs
+    cmds.extend(get_cmds(srcfiles, md5files, remote_unfiltered, generate_md5))
+    # double check for _all_SNPs and _all_INDELs (baseline filtered)
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
     if not len(srcfiles) == 2:
@@ -143,7 +145,8 @@ for p in pooldirs:
         warning = warning + "\n\t".join(srcfiles)
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
         askforinput()
-    cmds.extend(get_cmds(srcfiles, md5files, remotevarscan, generate_md5))
+    remote_filtered = op.join(remotevarscan, '02_baseline_filtered')
+    cmds.extend(get_cmds(srcfiles, md5files, remote_filtered, generate_md5))
 
 
 # write commands to file
