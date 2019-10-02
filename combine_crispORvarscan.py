@@ -1,5 +1,8 @@
 """Filter and combine all gatk VariantsToTable .txt outputs from varscan or crisp vcf files.
 
+This file is called only when dependency SLURM_JOBS have completed with exit code 0.
+See start_crispANDvarscan.py::create_combine()s
+
 ### purpose
 # combine output from bedfile output from either CRISP or VarScan
 ###
@@ -108,7 +111,7 @@ def get_tables(files):
 
 
 def main():
-    # make sure all of the crisp jobs have finished
+    # make sure all of the varscan jobs have finished
     files = checkjobs()
 
     # combine table files from output of VariantsToTable
