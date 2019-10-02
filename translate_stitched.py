@@ -53,8 +53,8 @@ def translate_snps(snps, order):
     """Translate between stiched pos and unstitched position.
     
     # arguments:
-    snps = pd.DataFrame read in with chunksize
-    order = pd.DataFrame read in without chunksize
+    snps = pd.DataFrame
+    order = pd.DataFrame
     """
     print('\ttranslating snp positions: stitched -> unstitched')
     new_chroms = []
@@ -102,7 +102,7 @@ def checkfiles(order, snps):
 
 def main(snps, orderfile, outfile=None):
     # read in order
-    order = pd.read_csv(orderfile, sep='\t', header=None, dtype={2: int, 3:int})
+    order = pd.read_csv(orderfile, sep='\t', header=None, dtype={2:int, 3:int})
     
     # check .order file assumptions
     order = checkfiles(order, snps)
