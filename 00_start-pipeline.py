@@ -11,8 +11,8 @@ start the pipeline.
 ###
 """
 
-import os, sys, distutils.spawn, subprocess, shutil, argparse, create_bedfiles, pandas as pd
-import balance_queue
+import os, sys, distutils.spawn, subprocess, shutil, argparse, pandas as pd
+import balance_queue, create_bedfiles
 from os import path as op
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, luni, makedir, askforinput, Bcolors
@@ -118,9 +118,14 @@ def create_all_bedfiles(poolref):
         create_bedfiles.main(ref)
 
 
-def read_datatable(parentdir):
-    """Read in datatable.txt"""
-    # read in the datatable, save rginfo for later
+def read_datatable(parentdir, translate, repeats, paralogs):
+    """
+    Read in datatable.txt, use to create files and dirs for downstream.
+    Also checks some assumptions of datatable.txt.
+    
+    translate, repeats, and paralogs are boolean.
+    parentdir is a path.
+    """
     datatable = op.join(parentdir, 'datatable.txt')
     if not op.exists(datatable):
         print(Bcolors.FAIL + '''FAIL: the datatable is not in the necessary path: %s
@@ -167,9 +172,31 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         else:
             ref = data.loc[row, 'ref']
             if not op.exists(ref):
-                print('ref for %s does not exist in path: %s' % (samp, ref))
-                print('exiting %s' % '00_start-pipeline.py')
+                text = 'FAIL: ref for %s does not exist in path: %s' % (samp, ref)
+                print(Bcolors.FAIL + text + Bcolors.ENDC)
+                print('exiting 00_start-pipeline.py')
                 exit()
+            if translate is True:
+                orderfile = ref.split(".fa")[0] + '.order'
+                if not op.exists(orderfile):
+                    text = 'FAIL: You have indicated that you would like stitched regions translated. But the pipeline cannot find the .order file: %s' % orderfile
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                else:
+                    pkldump(orderfile, op.join(parentdir, 'orderfile.pkl'))
+            if repeats is True:
+                repeatfile = ref.split(".fa")[0] + '_softmasked.bed'
+                if not op.exists(repeatfile):
+                    text = 'FAIL: You have indicated that you would like repeat regions removed. But the pipeline cannot find the file for repeat regions: %s' % repeatfile
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                else:
+                    pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
+            if paralogs is True:
+                parafile = op.join(op.dirname(ref), 'paralog_snps.txt')
+                if not op.exists(parafile):
+                    text = 'FAIL: You have indicated that you would like paralog sites removed from final SNPs. But the pipeline cannot find the file for repeat regions: %s' % parafile
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                else:
+                    pkldump(parafile, op.join(parentdir, 'paralog_snps.pkl'))
             needed = []
             for suffix in ['.dict', '.amb', '.ann', '.bwt', '.fai', '.pac', '.sa']:
                 refext = ref + suffix if suffix != '.dict' else ref.split('.fa')[0] + suffix
@@ -305,6 +332,22 @@ must be one (or multiple) of %s''' % [x for x in choices])
                         default='0.05',
                         dest="maf",
                         help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time.''')
+    parser.add_argument('--translate',
+                        required=False,
+                        action='store_true',
+                        dest="translate",
+                        help='''Boolean: true if used, false otherwise. If a stitched genome is used for mapping, this option will look for a .order file in the same directory as the ref.fasta. The pipeline will use this .order file to translate mapped positions to unstitched positions at the end of the pipeline while filtering. Assumes .order file has no header, and is of the format (contig name from unstitched genome, start/stop are positions in the stitched genome):
+ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
+    parser.add_argument('--rm_repeats',
+                        required=False,
+                        action='store_true',
+                        dest='repeats',
+                        help="Boolean: true if used, false otherwise. If repeat regions are available, remove SNPs that fall within these regions. This option will look for a .bed file in the same directory as the ref.fasta. Assumes the name is of the form: ref_softmasked.bed - where ref is the basename of the ref.fasta (without the .fasta).")
+    parser.add_argument('--rm_paralogs',
+                        required=False,
+                        action='store_true',
+                        dest='paralogs',
+                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the same directory as ref.fasta, and is called 'paralog_snps.txt'. The content format of this file is that described by the --exclude-positions flag of vcftools/0.1.14 manual.")
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,
@@ -361,7 +404,10 @@ def main():
     balance_queue.get_avail_accounts(args.parentdir, save=True)
 
     # read in the datatable
-    data, f2pool, poolref = read_datatable(args.parentdir)
+    data, f2pool, poolref = read_datatable(args.parentdir,
+                                           args.translate,
+                                           args.repeats,
+                                           args.paralogs)
 
     # create bedfiles to parallelize crisp and varscan later on
     create_all_bedfiles(poolref)

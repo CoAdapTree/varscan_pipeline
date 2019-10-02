@@ -150,8 +150,7 @@ def make_bedfile(lines, fcount, from_orderfile=False):
         for line in lines:
             if from_orderfile is False:
                 contig, length = line
-                # length instead of length-1 is fine
-                text.append("%s\t%s\t%s" % (contig, 0, length))  # contig \t start \t stop
+                text.append("%s\t%s\t%s" % (contig, 0, length-1))  # contig \t start \t stop
             else:
                 scaff, start, stop = line
                 text.append("%s\t%s\t%s" % (scaff, start, stop))  # scaff \t start \t stop

@@ -72,7 +72,8 @@ def get_types(tablefiles, tipe, program, pooldir, grep):
     program - str; either "varscan" or "crisp" - used to find and name files
     """
     print(f'starting to filter {len(tablefiles)} tablefiles')
-    dfs = [filtvtt(tablefile, tipe, ret=True) for tablefile in tablefiles]
+    dfs = [filtvtt(tablefile, tipe, ret=True, parentdir=op.dirname(pooldir))
+           for tablefile in tablefiles]
     df = pd.concat(dfs)
 
     if program == 'varscan':
@@ -98,7 +99,8 @@ def get_tables(files):
                   and 'all_bedfiles' not in f
                   and 'SNP' not in f
                   and 'INDEL' not in f
-                  and grep in f]
+                  and grep in op.basename(f)
+                  and 'paralog' not in f]
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()

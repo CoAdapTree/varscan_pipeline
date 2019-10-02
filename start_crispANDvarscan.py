@@ -77,7 +77,7 @@ def check_seff(outs):
     """
     print('checking seff')
     jobid = os.environ['SLURM_JOB_ID']
-    for f in outs:
+    for i,f in enumerate(outs):
         pid = f.split("_")[-1].replace(".out", "")
         if not pid == jobid:
             seff, seffcount = '', 0
@@ -96,6 +96,8 @@ def check_seff(outs):
                 print('job %s (%s) for %s' % (status, state, f))
                 print('exiting %s' % sys.argv[0])
                 exit()
+        if (i+1) % 10 == 0:
+            print('\t%s/%s' % (i+1, len(outs)))
 
 
 def checkpids(outs, queue):
@@ -166,17 +168,18 @@ def create_reservation(pooldir, exitneeded=False):
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
-        print('another job has already created crispANDvarscan_reservation.sh for %s' % pool)
+        print('\tanother job has already created crispANDvarscan_reservation.sh for %s' % pool)
         exit()
     return shdir
 
 
-def get_prereqs(bedfile, pooldir, parentdir, pool, program):
+def get_prereqs(bedfile, parentdir, pool, program):
     """Get object names."""
     num = bedfile.split("_")[-1].split(".bed")[0]
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-    outdir = makedir(op.join(pooldir, program))
-    vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
+#     outdir = makedir(op.join(pooldir, program))
+#     vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
+    vcf = f'$SLURM_TMPDIR/{pool}_{program}_bedfile_{num}.vcf'
     return (num, ref, vcf)
 
 
@@ -213,7 +216,53 @@ module unload python
     return (cmds, convertfile, logfile)
 
 
-def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
+def check_filtering_options(pooldir, vcf, finalvcf, filtering_cmd=''):
+    """
+    See if the user specified any additional filtering during 00_start.py.
+    
+    Assumes varscan as program.
+    """
+    nextvcf = vcf # will be overwritten if filtered; vcf is in SLURM_TMPDIR anway
+    parentdir = op.dirname(pooldir)
+    # check for paralog filtering
+    parafile = op.join(parentdir, 'paralog_snps.pkl')
+    if op.exists(parafile):
+        paralogs = pklload(parafile)
+        nextvcf = vcf.replace('.vcf', '_paralog-filtered.vcf')
+        paralogsnps = finalvcf.replace(".vcf", "_paralogs.vcf.gz")
+        filtering_cmd = filtering_cmd + f'''# Remove paralog sites
+vcftools --vcf {vcf} --out {nextvcf} --exclude-positions {paralogs}
+# put paralog SNPs into file for later use
+vcftools --vcf {vcf} --positions {paralogs} --stdout | gzip -c > {paralogsnps}
+'''
+        vcf = nextvcf
+    # check for repeat masking
+    repeatfile = op.join(parentdir, 'repeat_regions.pkl')
+    if op.exists(repeatfile):
+        repeats = pklload(repeatfile)
+        nextvcf = vcf.replace('.vcf', '_repeat-filtered.vcf')
+        filtering_cmd = filtering_cmd + f'''# Remove repeat-masked regions
+vcftools --vcf {vcf} --out {nextvcf} --exclude-bed {repeats}
+'''
+    # create final fintering_cmd
+    if filtering_cmd == '':
+        # if no filters were applied, move the varscan output from tmp to parentsubdir
+        filtering_cmd = f'''
+# move file
+mv {nextvcf} {finalvcf}
+'''
+    else:
+        filtering_cmd = f'''
+# begin filtering vcf files
+module load vcftools/0.1.14
+{filtering_cmd}
+module unload vcftools
+# move file
+mv {nextvcf} {finalvcf}
+'''
+    return filtering_cmd
+
+def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref, pooldir, program):
     """Create command to call varscan."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     smallbams = ' '.join(smallbams)
@@ -224,14 +273,19 @@ def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref):
 $VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
 --min-var-freq {minfreq} --strand-filter 1 --min-freq-for-hom 0.80 \
 --min-avg-qual 20 --output-vcf 1 > {vcf}
-module unload samtools'''
-    cmds = smallcmds + cmd
-    return (cmds, vcf)
+module unload samtools
+'''
+    # final vcf
+    outdir = makedir(op.join(pooldir, program))
+    finalvcf = op.join(outdir, op.basename(vcf))
+    filtering_cmd = check_filtering_options(pooldir, vcf, finalvcf)
+    cmds = smallcmds + cmd + filtering_cmd
+    return (cmds, finalvcf)
 
 
 def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
     """Create sh file for varscan or crisp command."""
-    num, ref, vcf = get_prereqs(bedfile, pooldir, parentdir, pool, program)
+    num, ref, vcf = get_prereqs(bedfile, parentdir, pool, program)
     if program == 'crisp':
         cmd, finalvcf, logfile = get_crisp_cmd(bamfiles,
                                                bedfile,
@@ -249,7 +303,8 @@ rm {logfile}
         fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
 -F HP -F MQS -GF GT -GF GQ -GF DP'''
     else:
-        cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num, vcf, ref)
+        cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num,
+                                        vcf, ref, pooldir, program)
         second_cmd = ''''''
         mem = "2000M"
         time = '7-00:00:00'
@@ -268,7 +323,7 @@ rm {logfile}
 # run CRISP (commit 60966e7) or VarScan (v.2.4.2)
 {cmd}
 
-# vcf -> table (multiallelic to multiple lines, filtered in combine_crispORlofreq.py
+# vcf -> table (multiallelic to multiple lines, filtered in combine_crispORvarscan.py
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {finalvcf} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F TYPE -F FILTER {fields} -O {tablefile} --split-multi-allelic
@@ -280,7 +335,7 @@ cd $(dirname {finalvcf})
 bgzip -f {finalvcf}
 {second_cmd}
 
-# if any other crisp jobs are hanging due to priority, change the account
+# if any other varscan jobs are hanging due to priority, change the account
 source {bash_variables}
 python $HOME/pipeline/balance_queue.py {program} {parentdir}
 
@@ -313,11 +368,6 @@ def create_sh(bamfiles, shdir, pool, pooldir, program, parentdir):
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir)
-        # only use in case of emergencies:
-        #outs = [out for out in fs(op.dirname(file)) if op.basename(file).replace('.sh', '') in out and out.endswith('.out')]
-        #print('len outs = ', len(outs))
-        #if len(outs) > 0:
-        #    continue
         pids.append(sbatch(file))
     return pids
 

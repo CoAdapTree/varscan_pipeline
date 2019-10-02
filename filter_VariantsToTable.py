@@ -8,23 +8,21 @@
 # for crisp SNP:
 # = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, < 25% missing data
 # for INDEL - no filter, just combine (output has multiple rows)
-###
 
 ###
 # if number of samples == 1, then no SNPs will be discarded
 
 ### assumes
 # gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ [-GF FREQ] --split-multi-allelic
-###
 
 ### usage
 # python filter_VariantsToTable.py SNPorINDEL
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
-###
 """
 
 import sys, pandas as pd, numpy as np, math
+import translate_stitched
 from tqdm import tqdm
 from coadaptree import uni, pklload
 from os import path as op
@@ -386,7 +384,26 @@ def filter_type(df, tf, tipe):
     return df
 
 
-def main(tablefile, tipe, ret=False):
+def translate_rmrepeats_rmparalogs(df, parentdir):
+    # see if regions need to be translated
+    orderpkl = op.join(parentdir, 'orderfile.pkl')
+    if op.exists(orderpkl):
+        orderfile = pklload(orderpkl)
+        df = translate_stitched.main(df, orderfile)
+    # see if repeat regions need to be removed
+    repeatpkl = op.join(parentdir, 'repeat_regions.pkl')
+    if op.exists(repeatpkl):
+        repeatfile = pklload(repeatpkl)
+        
+    # see if paralogs should be removed
+    parapkl = op.join(parentdir, 'paralog_snps.pkl')
+    if op.exists(parapkl):
+        paralogs = pklload(parapkl)
+        
+    return df
+
+
+def main(tablefile, tipe, ret=False, parentdir=None):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
 
     # load the data
@@ -429,6 +446,10 @@ def main(tablefile, tipe, ret=False):
         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
+    
+    # translate stitched if necessary, rm SNPs from repeat regions, rm paralog sites
+    if parentdir is not None:
+        df = translate_rmrepeats_rmparalogs(df, parentdir)
 
     if ret is True:
         return df
@@ -438,6 +459,10 @@ def main(tablefile, tipe, ret=False):
 
 
 if __name__ == '__main__':
-    thisfile, tablefile, tipe = sys.argv
+    if len(sys.argv) == 3:
+        thisfile, tablefile, tipe = sys.argv
+        parentdir=None
+    elif len(sys.argv) == 4:
+        thisfile, tablefile, tipe, parentdir = sys.argv
 
-    main(tablefile, tipe)
+    main(tablefile, tipe, parentdir)
