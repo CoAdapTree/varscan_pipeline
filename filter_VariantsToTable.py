@@ -384,22 +384,12 @@ def filter_type(df, tf, tipe):
     return df
 
 
-def translate_rmrepeats_rmparalogs(df, parentdir):
+def translate_stitched_to_unstitched(df, parentdir):
     # see if regions need to be translated
     orderpkl = op.join(parentdir, 'orderfile.pkl')
     if op.exists(orderpkl):
         orderfile = pklload(orderpkl)
-        df = translate_stitched.main(df, orderfile)
-    # see if repeat regions need to be removed
-    repeatpkl = op.join(parentdir, 'repeat_regions.pkl')
-    if op.exists(repeatpkl):
-        repeatfile = pklload(repeatpkl)
-        
-    # see if paralogs should be removed
-    parapkl = op.join(parentdir, 'paralog_snps.pkl')
-    if op.exists(parapkl):
-        paralogs = pklload(parapkl)
-        
+        df = translate_stitched.main(df.copy(), orderfile)        
     return df
 
 
@@ -447,9 +437,9 @@ def main(tablefile, tipe, ret=False, parentdir=None):
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
     
-    # translate stitched if necessary, rm SNPs from repeat regions, rm paralog sites
+    # translate stitched if necessary
     if parentdir is not None:
-        df = translate_rmrepeats_rmparalogs(df, parentdir)
+        df = translate_stitched_to_unstitched(df, parentdir)
 
     if ret is True:
         return df
