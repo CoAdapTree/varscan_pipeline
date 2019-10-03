@@ -439,7 +439,7 @@ def main(tablefile, tipe, ret=False, parentdir=None):
     
     # translate stitched if necessary
     if parentdir is not None:
-        df = translate_stitched_to_unstitched(df, parentdir)
+        df = translate_stitched_to_unstitched(df.copy(), parentdir)
 
     if ret is True:
         return df

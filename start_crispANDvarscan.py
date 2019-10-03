@@ -213,7 +213,7 @@ $CRISP_DIR/scripts/convert_pooled_vcf.py {vcf} $SLURM_TMPDIR/bam_file_list.txt \
 {poolsize} > {convertfile}
 module unload python
 '''
-    return (cmds, convertfile, logfile)
+    return cmds, convertfile, logfile
 
 
 def check_filtering_options(pooldir, vcf, finalvcf, filtering_cmd=''):
@@ -231,9 +231,9 @@ def check_filtering_options(pooldir, vcf, finalvcf, filtering_cmd=''):
         nextvcf = vcf.replace('.vcf', '_paralog-filtered.vcf')
         paralogsnps = finalvcf.replace(".vcf", "_paralogs.vcf.gz")
         filtering_cmd = filtering_cmd + f'''# Remove paralog sites
-vcftools --vcf {vcf} --out {nextvcf} --exclude-positions {paralogs}
+vcftools --vcf {vcf} --out {nextvcf} --exclude-positions {paralogs} --recode --recode-INFO-all
 # put paralog SNPs into file for later use
-vcftools --vcf {vcf} --positions {paralogs} --stdout | gzip -c > {paralogsnps}
+vcftools --vcf {vcf} --positions {paralogs} --stdout --recode --recode-INFO-all | gzip -c > {paralogsnps}
 '''
         vcf = nextvcf
     # check for repeat masking
@@ -242,7 +242,7 @@ vcftools --vcf {vcf} --positions {paralogs} --stdout | gzip -c > {paralogsnps}
         repeats = pklload(repeatfile)
         nextvcf = vcf.replace('.vcf', '_repeat-filtered.vcf')
         filtering_cmd = filtering_cmd + f'''# Remove repeat-masked regions
-vcftools --vcf {vcf} --out {nextvcf} --exclude-bed {repeats}
+vcftools --vcf {vcf} --out {nextvcf} --exclude-bed {repeats} --recode --recode-INFO-all
 '''
     # create final fintering_cmd
     if filtering_cmd == '':
