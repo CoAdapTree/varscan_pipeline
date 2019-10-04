@@ -191,7 +191,7 @@ def main(ref):
     
     # warn about overwriting
     check_beddir()
-    
+
     # get sequence lengths
     find_positions()
 

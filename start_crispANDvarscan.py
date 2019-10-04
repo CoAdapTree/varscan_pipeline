@@ -219,7 +219,7 @@ module unload python
 def check_filtering_options(pooldir, vcf, finalvcf, filtering_cmd=''):
     """
     See if the user specified any additional filtering during 00_start.py.
-    
+
     Assumes varscan as program.
     """
     nextvcf = vcf # will be overwritten if filtered; vcf is in SLURM_TMPDIR anway

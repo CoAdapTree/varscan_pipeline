@@ -233,7 +233,7 @@ def check_reqs(parentdir):
     print(Bcolors.BOLD + '\nChecking for exported variables' + Bcolors.ENDC)
     variables = ['SLURM_ACCOUNT', 'SBATCH_ACCOUNT', 'SALLOC_ACCOUNT',
                  'CRISP_DIR', 'VARSCAN_DIR', 'PYTHONPATH', 'SQUEUE_FORMAT']
-            
+
     # check to see if bash_variables file has been created
     if not op.exists(op.join(parentdir, 'bash_variables')):
         print('\tCould not find bash_variables file in parentdir. Please create this file and add \

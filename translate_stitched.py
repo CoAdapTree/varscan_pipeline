@@ -11,17 +11,16 @@ Translate snps.txt file SNP positions from stitched pos to unstitched pos.
 # args
 # snpsfile = .txt file to be translated
 #        - assuming "locus" column (entries for hyphen-separated CHROM-POS)
-# ordersfile = ref.order file (no header) with data = 
+# ordersfile = ref.order file (no header) with data = (next line)
 #        stitched_scaff<tab>unstitched_contig<tab>stitched_start<tab>stitched_stop<tab>contig_length
 #        for stitched references, file to translate between ...
 #            stitched reference CHROM and unstitched reference CHROM
 # outfile = .txt file path to save updated snpstable
 """
 
-import sys, os, pandas as pd
+import sys, pandas as pd
 from tqdm import tqdm
-from os import path as op
-from coadaptree import Bcolors, uni
+from coadaptree import Bcolors
 
 
 def translate(chrom, pos, order):
@@ -39,7 +38,7 @@ def translate(chrom, pos, order):
         exit()
     order.index = range(len(order.index))
     # get true position
-    start,stop,length = order.loc[0, ['stitched_start', 'stitched_stop', 'contig_length']]
+    start,stop = order.loc[0, ['stitched_start', 'stitched_stop']]
     newpos = pos - int(start) + 1
     if not int(start) <= pos <= int(stop):
         text = "\tFAIL: position doesn't make sense"
@@ -128,8 +127,7 @@ if __name__ == '__main__':
     
     # read in snpstable, assumes snpstable doesn't need to be read in with chunksize
     snps = pd.read_csv(snpstable, sep='\t')
-    
+
     text = 'Starting to translate from stitched to unstitched positions'
     print(Bcolors.BOLD + text + Bcolors.ENDC)
     main(snps, orderfile, outfile)
-s

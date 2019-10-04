@@ -389,7 +389,7 @@ def translate_stitched_to_unstitched(df, parentdir):
     orderpkl = op.join(parentdir, 'orderfile.pkl')
     if op.exists(orderpkl):
         orderfile = pklload(orderpkl)
-        df = translate_stitched.main(df.copy(), orderfile)        
+        df = translate_stitched.main(df.copy(), orderfile)
     return df
 
 
