@@ -146,6 +146,7 @@ for p in pooldirs:
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
         askforinput()
     remote_filtered = op.join(remotevarscan, '02_baseline_filtered')
+    newdirs.append(remote_filtered)
     cmds.extend(get_cmds(srcfiles, md5files, remote_filtered, generate_md5))
 
 
