@@ -329,9 +329,8 @@ def get_pars():
 must be one (or multiple) of %s''' % [x for x in choices])
     parser.add_argument("-maf",
                         required=False,
-                        default='0.05',
                         dest="maf",
-                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time.''')
+                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (default: 1/(ploidy-per-pop * npops)''')
     parser.add_argument('--translate',
                         required=False,
                         action='store_true',
@@ -385,7 +384,8 @@ please check input\n' + Bcolors.ENDC)
                 'opts': args.email_options}
         pkldump(epkl, op.join(args.parentdir, 'email_opts.pkl'))
 
-    pkldump(args.maf, op.join(args.parentdir, 'maf.pkl'))
+    if args.maf:
+        pkldump(args.maf, op.join(args.parentdir, 'maf.pkl'))
 
     return args
 
