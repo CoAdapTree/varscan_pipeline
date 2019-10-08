@@ -148,7 +148,7 @@ def checkfiles(pooldir):
     shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
     files = getfiles(samps, shdir, 'indelRealign')
     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
-    check_seff(files.values())  # make sure the jobs didn't die
+    #check_seff(files.values())  # make sure the jobs didn't die
     return get_bamfiles(samps, pooldir)
 
 
@@ -177,9 +177,9 @@ def get_prereqs(bedfile, parentdir, pool, program):
     """Get object names."""
     num = bedfile.split("_")[-1].split(".bed")[0]
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
-#     outdir = makedir(op.join(pooldir, program))
-#     vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
-    vcf = f'$SLURM_TMPDIR/{pool}_{program}_bedfile_{num}.vcf'
+    pooldir = op.join(parentdir, pool)
+    outdir = makedir(op.join(pooldir, program))
+    vcf = op.join(outdir, f'{pool}_{program}_bedfile_{num}.vcf')
     return (num, ref, vcf)
 
 
@@ -216,52 +216,6 @@ module unload python
     return cmds, convertfile, logfile
 
 
-def check_filtering_options(pooldir, vcf, finalvcf, filtering_cmd=''):
-    """
-    See if the user specified any additional filtering during 00_start.py.
-
-    Assumes varscan as program.
-    """
-    nextvcf = vcf # will be overwritten if filtered; vcf is in SLURM_TMPDIR anway
-    parentdir = op.dirname(pooldir)
-    # check for paralog filtering
-    parafile = op.join(parentdir, 'paralog_snps.pkl')
-    if op.exists(parafile):
-        paralogs = pklload(parafile)
-        nextvcf = vcf.replace('.vcf', '_paralog-filtered.vcf')
-        paralogsnps = finalvcf.replace(".vcf", "_paralogs.vcf.gz")
-        filtering_cmd = filtering_cmd + f'''# Remove paralog sites
-vcftools --vcf {vcf} --out {nextvcf} --exclude-positions {paralogs} --recode --recode-INFO-all
-# put paralog SNPs into file for later use
-vcftools --vcf {vcf} --positions {paralogs} --stdout --recode --recode-INFO-all | gzip -c > {paralogsnps}
-'''
-        vcf = nextvcf
-    # check for repeat masking
-    repeatfile = op.join(parentdir, 'repeat_regions.pkl')
-    if op.exists(repeatfile):
-        repeats = pklload(repeatfile)
-        nextvcf = vcf.replace('.vcf', '_repeat-filtered.vcf')
-        filtering_cmd = filtering_cmd + f'''# Remove repeat-masked regions
-vcftools --vcf {vcf} --out {nextvcf} --exclude-bed {repeats} --recode --recode-INFO-all
-'''
-    # create final fintering_cmd
-    if filtering_cmd == '':
-        # if no filters were applied, move the varscan output from tmp to parentsubdir
-        filtering_cmd = f'''
-# move file
-mv {nextvcf} {finalvcf}
-'''
-    else:
-        filtering_cmd = f'''
-# begin filtering vcf files
-module load vcftools/0.1.14
-{filtering_cmd}
-module unload vcftools
-# move file
-mv {nextvcf} {finalvcf}
-'''
-    return filtering_cmd
-
 def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref, pooldir, program):
     """Create command to call varscan."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
@@ -278,8 +232,7 @@ module unload samtools
     # final vcf
     outdir = makedir(op.join(pooldir, program))
     finalvcf = op.join(outdir, op.basename(vcf))
-    filtering_cmd = check_filtering_options(pooldir, vcf, finalvcf)
-    cmds = smallcmds + cmd + filtering_cmd
+    cmds = smallcmds + cmd
     return (cmds, finalvcf)
 
 
@@ -336,7 +289,6 @@ bgzip -f {finalvcf}
 {second_cmd}
 
 # if any other varscan jobs are hanging due to priority, change the account
-source {bash_variables}
 python $HOME/pipeline/balance_queue.py {program} {parentdir}
 
 '''
@@ -368,7 +320,7 @@ def create_sh(bamfiles, shdir, pool, pooldir, program, parentdir):
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir)
-        pids.append(sbatch(file))
+        #pids.append(sbatch(file))
     return pids
 
 
@@ -401,7 +353,7 @@ python $HOME/pipeline/combine_crispORvarscan.py {pooldir} {program} {pool}
     combfile = op.join(shdir, f'{pool}-combine-{program}.sh')
     with open(combfile, 'w') as o:
         o.write("%s" % text)
-    sbatch(combfile)
+    #sbatch(combfile)
     print(f'sbatched {program} combinefile with dependencies: ' + ','.join(pids))
 
 

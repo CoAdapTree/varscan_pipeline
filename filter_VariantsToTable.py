@@ -384,8 +384,104 @@ def filter_type(df, tf, tipe):
     return df
 
 
+def remove_paralogs(snps, parentdir, snpspath):
+    """
+    Remove sites from snptable that are thought to have multiple gene copies align to this position.
+    
+    # assumes
+    # paralog file has 'CHROM' and 'locus' in the header (best if this is the only data, reads in quicker)
+    #   where CHROM is the reference chromosome/scaffold
+    #   where locus is hyphen-separated CHROM-POS
+    
+    # paralog file is created from calling SNPs on haplotype data as diploid
+    #   no need to worry about translating stiched -> unstitched if SNPs called on same reference.
+    """
+    parpkl = op.join(parentdir, 'paralog_snps.pkl')
+    if op.exists(parpkl):
+        print('Removing paralogs sites ...')
+        # read in paralogfile
+        paralogs = pd.read_csv(pklload(parpkl), sep='\t')
+        paralogs = paralogs[['CHROM', 'locus']]
+
+        # remove and isolate paralogs from snps
+        truths = snps['locus'].isin(paralogs['locus'])
+        found_paralogs = snps[truths].copy()
+        snps = snps[~truths].copy()
+        snps.index = range(len(snps.index))
+
+        # write paralogs to a file
+        parafile = snpspath.replace(".txt", "_PARALOGS.txt")
+        found_paralogs.to_csv(parafile, sep='\t', index=False)
+        print(f'{op.basename(snpspath)} has {len(snps.index)} non-paralog SNPs')
+    return snps
+
+
+def remove_repeats(snps, parentdir, snpspath):
+    """
+    Remove SNPs that are found to be in repeat-masked regions.
+    
+    # assumes
+    # that the positions have been translated BEFORE removing repeats
+        # took forever to create unstitched repeat regions, don't want to translate repeat file
+        # this way I can just use unstitched chrom if reference is stitched
+    # repeat file has a header ('CHROM', 'start', 'stop')
+    # start and stop positions of repeat regions are 1-based
+    """
+    reppkl = op.join(parentdir, 'repeat_regions.pkl')
+    if op.exists(reppkl):
+        print('Removing repeat regions ...')
+        # read in repeat regions
+        repeats = pd.read_csv(pklload(reppkl), sep='\t')
+        # figure out if data is from stitched or not
+        if 'unstitched_chrom' in snps.columns:
+            # then the snps have been translated: stitched -> unstitched
+            chromcol = 'unstitched_chrom'
+            locuscol = 'unstitched_locus'
+            poscol = 'unstitched_pos'
+            print('\tsnps have been translated')
+        else:
+            # otherwise SNPs were called on unstitched reference
+            chromcol = 'CHROM'
+            locuscol = 'locus'
+            poscol = 'POS'
+            print('\tsnps have not been translated')
+        # reduce repeats to the chroms that matter (helps speed up lookups)
+        repeats = repeats[repeats['CHROM'].isin(snps[chromcol].tolist())].copy()
+
+        # isolate SNPs in repeat regions
+        repeat_snps = []
+        for chrom in tqdm(uni(snps[chromcol])):
+            reps = repeats[repeats['CHROM'] == chrom].copy()
+            mysnps = snps[snps[chromcol] == chrom].copy()
+            if len(reps.index) > 0 and len(mysnps.index) > 0:
+                for row in mysnps.index:
+                    pos = snps.loc[row, poscol]
+                    df = reps[reps['stop'].astype(int) >= int(pos)].copy()
+                    df = df[df['start'].astype(int) <= int(pos)].copy()
+                    if len(df.index) > 0:
+                        assert len(df.index) == 1
+                        repeat_snps.append(row)
+
+        # save repeats
+        print(f'\tSaving {len(repeat_snps)} repeat regions')
+        repeat_path = snpspath.replace(".txt", "_REPEATS.txt")
+        myrepeats = snps[snps.index.isin(repeat_snps)].copy()
+        myrepeats.to_csv(repeat_path, sep='\t', index=False)
+
+        # remove SNPs in repeat regions
+        snps = snps[~snps.index.isin(repeat_snps)].copy()
+        snps.index = range(len(snps.index))
+
+        print(f'{op.basename(snpspath)} has {len(snps.index)} SNPs outside of repeat regions')
+
+    return snps
+
 def translate_stitched_to_unstitched(df, parentdir):
-    # see if regions need to be translated
+    """See if user asked regions to be translated from stitched genome to unstitched.
+    
+    # assumes
+    # that this is run BEFORE removing repeats
+    """
     orderpkl = op.join(parentdir, 'orderfile.pkl')
     if op.exists(orderpkl):
         orderfile = pklload(orderpkl)
@@ -393,7 +489,7 @@ def translate_stitched_to_unstitched(df, parentdir):
     return df
 
 
-def main(tablefile, tipe, ret=False, parentdir=None):
+def main(tablefile, tipe, parentdir=None, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
 
     # load the data
@@ -437,9 +533,16 @@ def main(tablefile, tipe, ret=False, parentdir=None):
         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
         df.index = range(len(df.index))
     
-    # translate stitched if necessary
-    if parentdir is not None:
+    # look for filtering options called at 00_start.py
+    if parentdir is not None and tipe == 'SNP':
+        # translate stitched (if called at 00_start)
         df = translate_stitched_to_unstitched(df.copy(), parentdir)
+
+        # remove paralog SNPs (if called at 00_start)
+        df = remove_paralogs(df.copy(), parentdir, tablefile)
+                 
+        # remove repeats (if called at 00_start)
+        df = remove_repeats(df.copy(), parentdir, tablefile)
 
     if ret is True:
         return df

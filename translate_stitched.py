@@ -2,11 +2,11 @@
 Translate snps.txt file SNP positions from stitched pos to unstitched pos.
 
 # usage
-# python translate_stitched.py snpstable, orderfile, outfile
+# python translate_stitched.py snpstable orderfile outfile
 #
 # if called from command line, args are paths to .txt files
-# if imported and called from another script, the snpstable ...
-#    and orderfile are each passed as a spandas.DataFrame.ss
+# if imported and main() is called from another script, the snpstable ...
+#    and orderfile are each passed as a pandas.DataFrame.ss
 
 # args
 # snpsfile = .txt file to be translated
@@ -16,6 +16,11 @@ Translate snps.txt file SNP positions from stitched pos to unstitched pos.
 #        for stitched references, file to translate between ...
 #            stitched reference CHROM and unstitched reference CHROM
 # outfile = .txt file path to save updated snpstable
+
+# assumes
+# .order file has no header
+# .order file is of the form ref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length
+#     positions refer to position of contig within ref_scaff.
 """
 
 import sys, pandas as pd
@@ -59,6 +64,8 @@ def translate_snps(snps, order):
     new_chroms = []
     new_poss = []
     new_loci = []
+    if 'locus' not in snps.columns:
+        snps['locus'] = ["%s-%s" % (chrom,pos) for (chrom,pos) in zip(snps['CHROM'],snps['POS'])]
     loci = snps['locus'].tolist()
     for locus in tqdm(loci):
         chrom, pos = locus.split("-")
@@ -86,10 +93,6 @@ def checkfiles(order, snps):
     if len(order.columns) != 5:
         text = '\tFAIL: there are not 5 columns, as assumed\n\texiting translate_stitched.py'
         print(Bcolors.FAIL + text + Bcolors.ENDC)
-    if 'locus' not in snps.columns:
-        text = '\tFAIL: there should be a column called "locus" in snpstable ...'
-        text = text + '\tFAIL: where elements are hyphen-separated CHROM-POS'
-        print(Bcolors.FAIL + text + Bcolors.ENDC)
         
     order.columns = ['stitched_scaff',
                      'unstitched_contig',
@@ -100,6 +103,9 @@ def checkfiles(order, snps):
 
 
 def main(snps, orderfile, outfile=None):
+    text = 'Starting to translate from stitched to unstitched positions'
+    print(Bcolors.BOLD + text + Bcolors.ENDC)
+    
     # read in order
     order = pd.read_csv(orderfile, sep='\t', header=None, dtype={2:int, 3:int})
     
@@ -114,7 +120,7 @@ def main(snps, orderfile, outfile=None):
     translated = translate_snps(snps, order)
 
     # if called from another script, return the translated dataframe
-    if __name__ != '__main__':
+    if outfile is None:
         return translated
     
     # otherwise, write to table
@@ -128,6 +134,4 @@ if __name__ == '__main__':
     # read in snpstable, assumes snpstable doesn't need to be read in with chunksize
     snps = pd.read_csv(snpstable, sep='\t')
 
-    text = 'Starting to translate from stitched to unstitched positions'
-    print(Bcolors.BOLD + text + Bcolors.ENDC)
     main(snps, orderfile, outfile)

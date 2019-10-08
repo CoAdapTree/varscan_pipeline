@@ -184,14 +184,14 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 else:
                     pkldump(orderfile, op.join(parentdir, 'orderfile.pkl'))
             if repeats is True:
-                repeatfile = ref.split(".fa")[0] + '_softmasked.bed'
+                repeatfile = ref.split(".fa")[0] + '_repeats.txt'
                 if not op.exists(repeatfile):
                     text = 'FAIL: You have indicated that you would like repeat regions removed. But the pipeline cannot find the file for repeat regions: %s' % repeatfile
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                 else:
                     pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
             if paralogs is True:
-                parafile = op.join(op.dirname(ref), 'paralog_snps.txt')
+                parafile = ref.split(".fa")[0] + '_paralog_snps.txt'
                 if not op.exists(parafile):
                     text = 'FAIL: You have indicated that you would like paralog sites removed from final SNPs. But the pipeline cannot find the file for repeat regions: %s' % parafile
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
@@ -335,18 +335,18 @@ must be one (or multiple) of %s''' % [x for x in choices])
                         required=False,
                         action='store_true',
                         dest="translate",
-                        help='''Boolean: true if used, false otherwise. If a stitched genome is used for mapping, this option will look for a .order file in the same directory as the ref.fasta. The pipeline will use this .order file to translate mapped positions to unstitched positions at the end of the pipeline while filtering. Assumes .order file has no header, and is of the format (contig name from unstitched genome, start/stop are positions in the stitched genome):
+                        help='''Boolean: true if used, false otherwise. If a stitched genome is used for mapping, this option will look for a ref.order file in the same directory as the ref.fasta - where ref is the basename of the ref.fasta (without the .fasta). The pipeline will use this .order file to translate mapped positions to unstitched positions at the end of the pipeline while filtering. Positions in .order file are assumed to be 1-based indexing. Assumes .order file has no header, and is of the format (contig name from unstitched genome, start/stop are positions in the stitched genome):
 ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
     parser.add_argument('--rm_repeats',
                         required=False,
                         action='store_true',
                         dest='repeats',
-                        help="Boolean: true if used, false otherwise. If repeat regions are available, remove SNPs that fall within these regions. This option will look for a .bed file in the same directory as the ref.fasta. Assumes the name is of the form: ref_softmasked.bed - where ref is the basename of the ref.fasta (without the .fasta).")
+                        help="Boolean: true if used, false otherwise. If repeat regions are available, remove SNPs that fall within these regions. This option will look for a .txt file in the same directory as the ref.fasta. Assumes the filename is of the form: ref_repeats.txt - where ref is the basename of the ref.fasta (without the .fasta). This file should have 1-based indexing and should be located in the same directory as the reference. The file should have a header ('CHROM', 'start', 'stop'). The CHROM column can be names in the reference (if using unstitched reference), or names of contigs that were stitched to form the reference. If using a stitched genome, --translate is required.")
     parser.add_argument('--rm_paralogs',
                         required=False,
                         action='store_true',
                         dest='paralogs',
-                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the same directory as ref.fasta, and is called 'paralog_snps.txt'. The content format of this file is that described by the --exclude-positions flag of vcftools/0.1.14 manual.")
+                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the same directory as ref.fasta, and is called ref_paralog_snps.txt  - where ref is the basename of the ref.fasta (without the .fasta). The content format of this file is that described by the --exclude-positions flag of vcftools/0.1.14 manual.")
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,
@@ -386,6 +386,18 @@ please check input\n' + Bcolors.ENDC)
 
     if args.maf:
         pkldump(args.maf, op.join(args.parentdir, 'maf.pkl'))
+
+    if args.repeats:
+        text = 'WARN: You have indicated that you want to remove repeats.\n'
+        text = text + 'WARN: Make sure --translate is used if using a stitched reference.\n'
+        text = text + 'WARN: Otherwise this will cause an error.\n'
+        text = text + 'WARN: --repeats assumes that the first column in the repeats file ...\n'
+        text = text + 'WARN: ... are the exact chromosome names found in the ref.fasta, ...\n'
+        text = text + 'WARN: ... or if used with --translate this assumes that the first ...\n'
+        text = text + 'WARN: ... column of the repeats file are names found in the second ...\n'
+        text = text + 'WARN: ... column of the ref.order file used to translate positions.'
+        print(Bcolors.WARNING + text + Bcolors.ENDC)
+        askforinput()
 
     return args
 

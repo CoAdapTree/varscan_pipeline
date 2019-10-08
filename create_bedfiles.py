@@ -13,6 +13,8 @@
 
 ### fix
 # put bedfiles in parentdir instead of ref dir, so that all beds are the ones that are wanted
+# make sure befile name str().zfill() matches digits of number used to define thresh
+    # reduce duplicate text for calling thresh
 ###
 """
 

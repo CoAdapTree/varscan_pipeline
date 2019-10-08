@@ -1,14 +1,10 @@
-"""Filter and combine all gatk VariantsToTable .txt outputs from varscan or crisp vcf files.
+"""Filter and combine all gatk VariantsToTable .txt outputs from varscan vcf files.
 
 This file is called only when dependency SLURM_JOBS have completed with exit code 0.
-See start_crispANDvarscan.py::create_combine()s
-
-### purpose
-# combine output from bedfile output from either CRISP or VarScan
-###
+See start_crispANDvarscan.py::create_combine()
 
 ### usage
-# python combine_crispORvarscan.py pooldir crispORvarscan poolORsamp
+# python combine_crispORvarscan.py pooldir varscan poolORsamp
 ###
 
 ### assumes
@@ -102,8 +98,9 @@ def get_tables(files):
                   and 'all_bedfiles' not in f
                   and 'SNP' not in f
                   and 'INDEL' not in f
-                  and grep in op.basename(f)
-                  and 'paralog' not in f]
+                  and 'REPEATS' not in f
+                  and 'PARALOGS' not in f
+                  and grep in op.basename(f)]
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         exit()
