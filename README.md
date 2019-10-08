@@ -63,7 +63,7 @@ Call SNPs and INDELs across pooled populations using VarScan.
 	- RG info, file paths, etc should of course be different between sequenced files of single samps
 - Once the environment is set up, put `datatable.txt` and the fastq files (symlinks work too) into a folder. This is the folder I call `PARENTDIR`.
 
-- To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, export pipeline to pythonpath `export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"`, and run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_varscan.py`).
+- To kick off the pipeline, source your bash_variables file in parentdir (source bash_variables) to activate the python env, export the pythonpath to the pipeline and other slurm variables. Then run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs up through SNP calling and filtering. If the user has chosed `pipeline-finish` as an email option, the pipeline will email the user once the pipeline is complete. If `fail` is chosen as an email option, the user will be emailed if any jobs die.
 
 `(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
                             [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
