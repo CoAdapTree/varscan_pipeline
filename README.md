@@ -14,32 +14,41 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/559e9dd133a04f838a87582e79f0587b)](https://www.codacy.com/app/brandonlind/poolseq_pipline?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CoAdaptree/poolseq_pipline&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/CoAdaptree/poolseq_pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/CoAdaptree/poolseq_pipeline)
 
-# VarScan and CRISP poolseq pipeline
+# VarScan poolseq pipeline
 
-Call SNPs and INDELs across pooled populations using CRISP and VarScan.
+Call SNPs and INDELs across pooled populations using VarScan.
 
 ---
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
-1. Ability to install a virtual environment with python 3.7 (eg: `virtualenv --no-download ~/py3`)
-    1. source env within `$HOME/.bashrc` on the last line of the file (eg `source ~/py3/bin/activate` for virutalenv)
 1. Ability to load the following modules via:
     1. `module load bwa/0.7.17`
+    1. `module load fastp/0.19.5`
+    1. `module load java`
     1. `module load samtools/1.9`
     1. `module load picard/2.18.9`
     1. `module load gatk/3.8` and `module load gatk/4.1.0.0`
     1. `module load bcftools/1.9`
-1. Download and install CRISP (commit `60966e7`): https://sites.google.com/site/vibansal/software/crisp
-    1. In `$HOME/.bashrc` export the path to the CRISP folder.
-        ```export CRISP_DIR=/path/to/crisp/folder```
-1. Download and install VarScan (`VarScan.v2.4.3.jar`): https://github.com/dkoboldt/varscan
-    1. In `$HOME/.bashrc` export path to the VarScan folder. eg: `export VARSCAN_DIR=/path/to/varscan/folder`
-1. copy the following into your `$HOME/.bashrc` file so that the `def-someuser` reflects your non-RAC compute canada account. If you have multiple accounts available, the pipeline will balance load among them (you choose these accounts during 00_start execution). The following is needed to submit jobs before the pipeline balances load.
+1. Download and install VarScan (`VarScan.v2.4.3.jar`). The path to the jar executable will be exported in `bash_variables` below. Download VarScan from here: https://github.com/dkoboldt/varscan
+1. In the `parentdir` folder that contains the fastq files, copy the following into a file called `bash_variables`. The `def-someuser` reflects your compute canada account that you would like to use to submit jobs. If you have multiple accounts available, the pipeline will balance load among them (you choose these accounts during 00_start execution). The following is needed to submit jobs before the pipeline balances load. See example file in GitHub repository.
     ```
     export SLURM_ACCOUNT=def-someuser
     export SBATCH_ACCOUNT=$SLURM_ACCOUNT
     export SALLOC_ACCOUNT=$SLURM_ACCOUNT
+    export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
+    export SQUEUE_FORMAT="%.8i %.8u %.15a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+    export VARSCAN_DIR=/project/def-yeaman/CoAdepTree/apps
+    # placeholder for python environment activation (see below)
     ```
+    1. The following is assumed regarding the name of slurm accounts found by `sshare -U --user $USER --format=Account`:
+        1. The total character length of the account name is less than 15 - the full slurm account name will need to appear in the ACCOUNT column output from `squeue -u $USER` (using exported `SQUEUE_FORMAT` above); if not, increase the digits in `SQUEUE_FORMAT` from `%0.15a` to eg `%0.20a`.
+        1. The characters in the account name that come before an underscore are sufficient to distinguish unique accounts - if the account name does not have an underscore then this is fine.
+        1. The accounts that the user would like to use end in `_cpu` (as opposed to eg `_gpu`). The pipeline will skip over non-`_cpu` accounts.
+1. Ability to install virtual environment with python 3.7 (e.g., virtualenv --no-download ~/py3`)
+    1. Add the appropriate activation command to the `bash_variables` file (eg `source ~/py3/bin/activate` for virutalenv)
+1. The reference fasta file should be uncompressed (eg. ref.fa not ref.fa.gz), and the following commands should be executed before starting pipeline:
+    1. `bwa index ref.fa`
+    1. `samtools faidx ref.fa`
 1. clone the pipeline repo's master branch to the server and create a symlink in `$HOME` so that it can be accessed via `$HOME/pipeline`
 
 
@@ -56,8 +65,13 @@ Call SNPs and INDELs across pooled populations using CRISP and VarScan.
 
 - To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, export pipeline to pythonpath `export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"`, and run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_varscan.py`).
 
-`(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]] [-h]`
+`(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
+                            [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
+                            [--translate] [--rm_repeats] [--rm_paralogs] [-h]`
 ```
+required arguments:
+  -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
+
 optional arguments:
   -e EMAIL              the email address you would like to have notifications
                         sent to (default: None)
@@ -65,12 +79,54 @@ optional arguments:
                         the type(s) of email notifications you would like to
                         receive from the pipeline. Requires --email-address.
                         These options are used to fill out the #SBATCH flags.
-                        must be one (or multiple) of ['all', 'none', 'fail',
-                        'begin', 'end', 'pipeline-finish']
+                        must be one (or multiple) of ['all', 'fail', 'begin',
+                        'end', 'pipeline-finish'] (default: None)
+  -maf MAF              At the end of the pipeline, VCF files will be filtered
+                        for MAF. If the pipeline is run on a single
+                        population/pool, the user can set MAF to 0.0 so as to
+                        filter variants based on global allele frequency
+                        across populations/pools at a later time. (default:
+                        1/(ploidy-per-pop * npops)
+  --translate           Boolean: true if used, false otherwise. If a stitched
+                        genome is used for mapping, this option will look for
+                        a ref.order file in the same directory as the
+                        ref.fasta - where ref is the basename of the ref.fasta
+                        (without the .fasta). The pipeline will use this
+                        .order file to translate mapped positions to
+                        unstitched positions at the end of the pipeline while
+                        filtering. Positions in .order file are assumed to be
+                        1-based indexing. Assumes .order file has no header,
+                        and is of the format (contig name from unstitched
+                        genome, start/stop are positions in the stitched
+                        genome): ref_scaffold<tab>contig_name<tab>start_pos<ta
+                        b>stop_pos<tab>contig_length (default: False)
+  --rm_repeats          Boolean: true if used, false otherwise. If repeat
+                        regions are available, remove SNPs that fall within
+                        these regions. This option will look for a .txt file
+                        in the same directory as the ref.fasta. Assumes the
+                        filename is of the form: ref_repeats.txt - where ref
+                        is the basename of the ref.fasta (without the .fasta).
+                        This file should have 1-based indexing and should be
+                        located in the same directory as the reference. The
+                        file should have a header ('CHROM', 'start', 'stop').
+                        The CHROM column can be names in the reference (if
+                        using unstitched reference), or names of contigs that
+                        were stitched to form the reference. If using a
+                        stitched genome, --translate is required. (default:
+                        False)
+  --rm_paralogs         Boolean: true if used, false otherwise. If candidate
+                        sites have been isolated within the reference where
+                        distinct gene copies (paralogs) map to the same
+                        position (and thus create erroneous SNPs), remove any
+                        SNPs that fall on these exact sites. The pipeline
+                        assumes this file is located in the same directory as
+                        ref.fasta, and is called ref_paralog_snps.txt - where
+                        ref is the basename of the ref.fasta (without the
+                        .fasta). The content format of this file is that
+                        described by the --exclude-positions flag of
+                        vcftools/0.1.14 manual. (default: False)
   -h, --help            Show this help message and exit.
 
-required arguments:
-  -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
 ```
 
 
