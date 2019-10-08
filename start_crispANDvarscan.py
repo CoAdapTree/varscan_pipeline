@@ -148,7 +148,7 @@ def checkfiles(pooldir):
     shdir = op.join(pooldir, 'shfiles/05_indelRealign_shfiles')
     files = getfiles(samps, shdir, 'indelRealign')
     check_queue(files.values(), pooldir)  # make sure job isn't in the queue (running or pending)
-    #check_seff(files.values())  # make sure the jobs didn't die
+    check_seff(files.values())  # make sure the jobs didn't die
     return get_bamfiles(samps, pooldir)
 
 
@@ -320,7 +320,7 @@ def create_sh(bamfiles, shdir, pool, pooldir, program, parentdir):
     pids = []
     for bedfile in bedfiles:
         file = make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir)
-        #pids.append(sbatch(file))
+        pids.append(sbatch(file))
     return pids
 
 
@@ -353,7 +353,7 @@ python $HOME/pipeline/combine_crispORvarscan.py {pooldir} {program} {pool}
     combfile = op.join(shdir, f'{pool}-combine-{program}.sh')
     with open(combfile, 'w') as o:
         o.write("%s" % text)
-    #sbatch(combfile)
+    sbatch(combfile)
     print(f'sbatched {program} combinefile with dependencies: ' + ','.join(pids))
 
 
