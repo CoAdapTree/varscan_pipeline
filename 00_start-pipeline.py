@@ -191,9 +191,19 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 else:
                     pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
             if paralogs is True:
-                parafile = ref.split(".fa")[0] + '_paralog_snps.txt'
+                parafiles = [f for f in fs(parentdir) if f.endswith('_paralog_snps.txt')]
+                if len(parafiles) > 1:
+                    text = f'FAIL: There are multiple files in {parentdir} with "_paralog_snps.txt" in the name.\n'
+                    text = text + 'FAIL: Please remove all but one of these files.'
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    print('exiting 00_start.py')
+                    exit()
+                elif len(parafiles) == 0:
+                    parafile = ''
+                elif len(parafiles) == 1:
+                    parafile = parafiles[0]
                 if not op.exists(parafile):
-                    text = 'FAIL: You have indicated that you would like paralog sites removed from final SNPs. But the pipeline cannot find the file for repeat regions: %s' % parafile
+                    text = 'FAIL: You have indicated that you would like paralog sites removed from final SNPs. But the pipeline cannot find the file for repeat regions. This file must end with "_paralog_snps.txt".'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                 else:
                     pkldump(parafile, op.join(parentdir, 'paralog_snps.pkl'))
@@ -346,7 +356,7 @@ ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
                         required=False,
                         action='store_true',
                         dest='paralogs',
-                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the same directory as ref.fasta, and is called ref_paralog_snps.txt  - where ref is the basename of the ref.fasta (without the .fasta). The content format of this file is that described by the --exclude-positions flag of vcftools/0.1.14 manual.")
+                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the parentdir, and ends with '_paralog_snps.txt'. This file is tab-delimited, and must have a column called 'locus' that contains hyphen-separated CHROM-POS sites for paralogs. These sites should be found in the current ref.fa being used to call SNPs (otherwise SNPs cannot be filtered by these sites).")
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,

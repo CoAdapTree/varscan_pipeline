@@ -401,7 +401,6 @@ def remove_paralogs(snps, parentdir, snpspath):
         print('Removing paralogs sites ...')
         # read in paralogfile
         paralogs = pd.read_csv(pklload(parpkl), sep='\t')
-        paralogs = paralogs[['CHROM', 'locus']]
 
         # remove and isolate paralogs from snps
         truths = snps['locus'].isin(paralogs['locus'])
