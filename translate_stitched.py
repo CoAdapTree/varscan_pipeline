@@ -21,6 +21,9 @@ Translate snps.txt file SNP positions from stitched pos to unstitched pos.
 # .order file has no header
 # .order file is of the form ref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length
 #     positions refer to position of contig within ref_scaff.
+
+# fix
+# remove int(pos)-1 from translate() - this was due to the way bedfiles were created.
 """
 
 import sys, pandas as pd
@@ -30,9 +33,8 @@ from coadaptree import Bcolors
 
 def translate(chrom, pos, order):
     # reduce order to only the contig and range of stitched position
-    pos = pos - 1 ############### REMOVE AFTER DEBUGGING!!!!!!!!!!!!!!
     order = order[(order['stitched_scaff'] == chrom) &
-                  (order['stitched_stop'] >= int(pos)) &
+                  (order['stitched_stop'] >= int(pos)-1) &
                   (order['stitched_start'] <= int(pos))
                  ].copy()
     if len(order.index) != 1:
