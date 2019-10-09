@@ -123,7 +123,7 @@ def main():
     # combine repeats and paralogs
     tabledir = op.dirname(tablefiles[0])
     for tipe in ['PARALOGS', 'REPEATS']:
-        tablefiles = [f for f in fs(tabledir) if tipe in f]
+        tablefiles = [f for f in fs(tabledir) if tipe in f and 'all' not in f]
         dfs = []
         for t in tablefiles:
             dfs.append(pd.read_csv(t, sep='\t'))
