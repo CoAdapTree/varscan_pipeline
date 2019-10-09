@@ -124,12 +124,13 @@ def main():
     tabledir = op.dirname(tablefiles[0])
     for tipe in ['PARALOGS', 'REPEATS']:
         tablefiles = [f for f in fs(tabledir) if tipe in f and 'all' not in f]
-        dfs = []
-        for t in tablefiles:
-            dfs.append(pd.read_csv(t, sep='\t'))
-        df = pd.concat(dfs)
-        df = get_varscan_names(df, pooldir)
-        df.to_csv(op.join(tabledir, f'{op.basename(pooldir)}-{program}_all_bedfiles_{tipe}.txt'), sep='\t', index=False)
+        if len(tablefiles) > 0:
+            dfs = []
+            for t in tablefiles:
+                dfs.append(pd.read_csv(t, sep='\t'))
+            df = pd.concat(dfs)
+            df = get_varscan_names(df, pooldir)
+            df.to_csv(op.join(tabledir, f'{op.basename(pooldir)}-{program}_all_bedfiles_{tipe}.txt'), sep='\t', index=False)
 
 if __name__ == '__main__':
     # for crisp grep = pool, for varscan grep = pool
