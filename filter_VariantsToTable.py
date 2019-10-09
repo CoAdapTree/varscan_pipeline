@@ -454,7 +454,7 @@ def remove_repeats(snps, parentdir, snpspath):
             mysnps = snps[snps[chromcol] == chrom].copy()
             if len(reps.index) > 0 and len(mysnps.index) > 0:
                 for row in mysnps.index:
-                    pos = snps.loc[row, poscol]
+                    pos = snps.loc[row, poscol]  # index is maintained from snps to mysnsps
                     df = reps[reps['stop'].astype(int) >= int(pos)].copy()
                     df = df[df['start'].astype(int) <= int(pos)].copy()
                     if len(df.index) > 0:
@@ -522,20 +522,22 @@ def main(tablefile, tipe, parentdir=None, ret=False):
     if 'varscan' in tf and tipe == 'SNP':
         # if we allow to continue for INDEL, each line is treated as a locus (not true for INDEL)
         df = filter_qual(df, tf, tipe, tablefile)
-    if 'crisp' in tf:
-        df = add_freq_cols(df, tf, tipe, tablefile)
-        print('filtering for missing data ...')
-        df = filter_missing_data(df, tf, tipe)
-        print(f'{tf} has {len(df.index)} loci with < 25% missing data')
-        lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
-        df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
-        print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
-        df.index = range(len(df.index))
+#     if 'crisp' in tf:
+#         df = add_freq_cols(df, tf, tipe, tablefile)
+#         print('filtering for missing data ...')
+#         df = filter_missing_data(df, tf, tipe)
+#         print(f'{tf} has {len(df.index)} loci with < 25% missing data')
+#         lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
+#         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
+#         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
+#         df.index = range(len(df.index))
     
     # look for filtering options called at 00_start.py
     if parentdir is not None and tipe == 'SNP':
         # translate stitched (if called at 00_start)
-        df = translate_stitched_to_unstitched(df.copy(), parentdir)
+        # translate before filtering so that REPEAT and PARALOG files are translated
+        # (takes longer than if translating after filtering, obv)
+        df = translate_stitched_to_unstitched(df.copy(), parentdir)  # not coded to translate INDELs
 
         # remove paralog SNPs (if called at 00_start)
         df = remove_paralogs(df.copy(), parentdir, tablefile)
