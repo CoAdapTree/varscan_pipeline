@@ -19,6 +19,9 @@
 # python filter_VariantsToTable.py SNPorINDEL
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
+
+### fix
+# if a tablefile has zero rows, it will not output a PARALOGS or REPEATS file
 """
 
 import sys, pandas as pd, numpy as np, math
