@@ -340,7 +340,7 @@ must be one (or multiple) of %s''' % [x for x in choices])
     parser.add_argument("-maf",
                         required=False,
                         dest="maf",
-                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (default: 1/(ploidy-per-pop * npops)''')
+                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (if the number of populations/samples in a pool == 1 then default maf=0. if the number of populations/samples are > 1 then maf = 1/(ploidy-per-pop * npops)''')
     parser.add_argument('--translate',
                         required=False,
                         action='store_true',
