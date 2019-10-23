@@ -262,7 +262,7 @@ rm {logfile}
         mem = "2000M"
         time = '7-00:00:00'
         fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
--GF FREQ -GF PVAL -GF AD'''
+-GF FREQ -GF PVAL -GF AD -GF RD'''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
     bash_variables = op.join(parentdir, 'bash_variables')
@@ -289,6 +289,7 @@ bgzip -f {finalvcf}
 {second_cmd}
 
 # if any other varscan jobs are hanging due to priority, change the account
+source {bash_variables}
 python $HOME/pipeline/balance_queue.py {program} {parentdir}
 
 '''
