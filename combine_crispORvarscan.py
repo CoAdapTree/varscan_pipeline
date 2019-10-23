@@ -10,6 +10,12 @@ See start_crispANDvarscan.py::create_combine()
 ### assumes
 # that all bamfiles were given to samtools in the same order for each bedfile
 ###
+
+### FYI
+# filter_VariantsToTable is serially below, as opposed to in parallel after each
+# VarScan command, because of the memory requirements. By keeping VarScan .sh files
+# at low memory, Priority is affected less and the VarScan jobs are more likely to
+# schedule faster than at higher memory requests.
 """
 
 import sys, pandas as pd
@@ -123,14 +129,15 @@ def main():
     # combine repeats and paralogs
     tabledir = op.dirname(tablefiles[0])
     for tipe in ['PARALOGS', 'REPEATS']:
-        tablefiles = [f for f in fs(tabledir) if tipe in f and 'all' not in f]
+        tablefiles = [f for f in fs(tabledir) if tipe in f and 'all' not in f and f.endswith('.txt')]
         if len(tablefiles) > 0:
             dfs = []
             for t in tablefiles:
                 dfs.append(pd.read_csv(t, sep='\t'))
             df = pd.concat(dfs)
             df = get_varscan_names(df, pooldir)
-            df.to_csv(op.join(tabledir, f'{op.basename(pooldir)}-{program}_all_bedfiles_{tipe}.txt'), sep='\t', index=False)
+            df.to_csv(op.join(tabledir, f'{op.basename(pooldir)}-{program}_all_bedfiles_{tipe}.txt'),
+                      sep='\t', index=False)
 
 if __name__ == '__main__':
     # for crisp grep = pool, for varscan grep = pool
