@@ -304,7 +304,7 @@ def sbatch(file):
     os.chdir(op.dirname(file))
     pid = subprocess.check_output([shutil.which('sbatch'), file]).decode('utf-8').replace("\n", "").split()[-1]
     print("sbatched %s" % file)
-    time.sleep(0.25)
+    time.sleep(5)
     return pid
 
 
