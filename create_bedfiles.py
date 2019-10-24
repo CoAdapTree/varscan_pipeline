@@ -56,7 +56,7 @@ def get_prereqs(num):
 def make_bed(lines, num):
     """Write contig/chrom, start, stop positions to bedfile.
     Different than make_bedfile(): .list files use zero-based, no need to correct."""
-    f = s(num)
+    f = get_prereqs(num)
     with open(f, 'w') as o:
         for contig, start, stop in lines:
             o.write("%s\t%s\t%s\n" % (contig, start, stop))
