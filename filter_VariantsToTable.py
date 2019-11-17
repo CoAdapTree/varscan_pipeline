@@ -56,6 +56,7 @@ def get_copy(df, cols):
 def get_freq_cutoffs(tablefile):
     """
     Determine MAF using ploidy and the number of samples per pool.
+    Sums across ploidy values for a given pool to determin MAF.
     
     Assumes:
     - equal ploidy across samples/pools
@@ -66,24 +67,23 @@ def get_freq_cutoffs(tablefile):
     Returns:
     lowfreq - minimum allele freq to keep (MAF)
     highfreq - maximum allele freq to keep (1-MAF)
-    ploidy - count of haploid genomes in pool/sample
     """
     pooldir = op.dirname(op.dirname(tablefile))
     parentdir = op.dirname(pooldir)
     pool = op.basename(pooldir)
     poolsamps = pklload(op.join(parentdir, 'poolsamps.pkl'))[pool]
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
-    lowfreq = 1/(ploidy * len(poolsamps))
+    lowfreq = 1/sum(ploidy.values())
     if lowfreq == 1 or len(poolsamps) == 1:
         # for megagametophyte data
         lowfreq = 0
     highfreq = 1 - lowfreq
-    return lowfreq, highfreq, ploidy
+    return lowfreq, highfreq
 
 
 def filter_freq(df, tf, tipe, tablefile):
     """
-    Filter out loci with global MAF < 1/(ploidyPerPop * nPops).
+    Filter out loci with global MAF < 1/(total_ploidy_across_pools).
     Right now this is unnecessary for varscan when setting pool-level freq to 1/ploidy.
     
     Positional arguments:
@@ -96,7 +96,7 @@ def filter_freq(df, tf, tipe, tablefile):
     df - pandas.dataframe; freq-filtered VariantsToTable output
     """
     # believe it or not, it's faster to do qual and freq filtering in two steps vs an 'and' statement
-    lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
+    lowfreq, highfreq = get_freq_cutoffs(tablefile)
     print(f'filtering for global frequency ({lowfreq}, {highfreq})...')
     df.reset_index(drop=True, inplace=True)
     
@@ -525,15 +525,6 @@ def main(tablefile, tipe, parentdir=None, ret=False):
     if 'varscan' in tf and tipe == 'SNP':
         # if we allow to continue for INDEL, each line is treated as a locus (not true for INDEL)
         df = filter_qual(df, tf, tipe, tablefile)
-#     if 'crisp' in tf:
-#         df = add_freq_cols(df, tf, tipe, tablefile)
-#         print('filtering for missing data ...')
-#         df = filter_missing_data(df, tf, tipe)
-#         print(f'{tf} has {len(df.index)} loci with < 25% missing data')
-#         lowfreq, highfreq, ploidy = get_freq_cutoffs(tablefile)
-#         df = df[(df['AF'] <= highfreq) & (df['AF'] >= lowfreq)].copy()
-#         print(f'{tf} has {len(df.index)} loci with MAF > {lowfreq}')
-#         df.index = range(len(df.index))
     
     # look for filtering options called at 00_start.py
     if parentdir is not None and tipe == 'SNP':

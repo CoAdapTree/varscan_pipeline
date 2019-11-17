@@ -1,12 +1,12 @@
-"""Create and sbatch crisp and varscan command files if all realigned bamfiles have been created.
+"""Create and sbatch varscan command files if all realigned bamfiles have been created.
 
 If a single sample per pool_name:
     - set min freq to 0
 If multiple samps per pool_name:
-    - set min freq to 1/(ploidy_per_samp * nsamps)
+    - set min freq to 1/(total_ploidy_across_samples_in_a_pool)
 
 # usage
-# python start_crispANDvarscan.py parentdir pool
+# python start_varscan.py parentdir pool
 #
 
 # fix
@@ -101,7 +101,7 @@ def check_seff(outs):
 
 
 def checkpids(outs, queue):
-    """If any of the other crisp jobs are pending or running, exit."""
+    """If any of the other varscan jobs are pending or running, exit."""
     print('checking pids')
     pids = [q[0] for q in queue]
     jobid = os.environ['SLURM_JOB_ID']
@@ -116,7 +116,7 @@ def checkpids(outs, queue):
 def check_queue(outs, pooldir):
     """Get jobs from the queue, except those that are closing (assumes jobs haven't failed)."""
     print('checking queue')
-    sq = getsq(grepping=['crisp_bedfile', op.basename(pooldir)])
+    sq = getsq(grepping=['bedfile', op.basename(pooldir)])
     if len(sq) > 0:
         checkpids(outs, sq)
     # no need for an else statement here, if len(sq) == 0: no need to check the pids
@@ -153,10 +153,10 @@ def checkfiles(pooldir):
 
 
 def create_reservation(pooldir, exitneeded=False):
-    """Create a file so that other realign jobs can't start crisp and varscan too."""
+    """Create a file so that other realign jobs can't start varscan too."""
     print('creating reservation')
-    shdir = makedir(op.join(pooldir, 'shfiles/crispANDvarscan'))
-    file = op.join(shdir, '%s_crispANDvarscan_reservation.sh' % pool)
+    shdir = makedir(op.join(pooldir, 'shfiles/varscan'))
+    file = op.join(shdir, '%s_varscan_reservation.sh' % pool)
     jobid = os.environ['SLURM_JOB_ID']
     if not op.exists(file):
         with open(file, 'w') as o:
@@ -168,7 +168,7 @@ def create_reservation(pooldir, exitneeded=False):
         fjobid = o.read().split()[0]
     if not fjobid == jobid or exitneeded is True:
         # just in case two jobs try at nearly the same time
-        print('\tanother job has already created crispANDvarscan_reservation.sh for %s' % pool)
+        print('\tanother job has already created varscan_reservation.sh for %s' % pool)
         exit()
     return shdir
 
@@ -196,33 +196,13 @@ def get_small_bam_cmds(bamfiles, bednum, bedfile):
     return (smallbams, cmds)
 
 
-def get_crisp_cmd(bamfiles, bedfile, pool, parentdir, ref, vcf, bednum):
-    """Create command to call crisp."""
-    smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
-    bams = ' --bam '.join(smallbams)
-    poolsize = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
-    logfile = vcf.replace(".vcf", ".log")
-    convertfile = vcf.replace(".vcf", "_converted.vcf")
-    cmds = smallcmds + f'''module load python/2.7.14
-$CRISP_DIR/CRISP --bam {bams} --ref {ref} --VCF {vcf} \
---poolsize {poolsize} --mbq 20 --minc 5 --bed {bedfile} > {logfile}
-
-touch $SLURM_TMPDIR/bam_file_list.txt # assumes equal pool sizes
-
-$CRISP_DIR/scripts/convert_pooled_vcf.py {vcf} $SLURM_TMPDIR/bam_file_list.txt \
-{poolsize} > {convertfile}
-module unload python
-'''
-    return cmds, convertfile, logfile
-
-
 def get_varscan_cmd(bamfiles, bedfile, bednum, vcf, ref, pooldir, program):
     """Create command to call varscan."""
     smallbams, smallcmds = get_small_bam_cmds(bamfiles, bednum, bedfile)
     smallbams = ' '.join(smallbams)
     ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     # if single-sample then set minfreq to 0, else use min possible allele freq
-    minfreq = 1/(ploidy*len(bamfiles)) if len(bamfiles) > 1 else 0
+    minfreq = 1/sum(ploidy.values()) if len(ploidy.keys()) > 1 else 0
     cmd = f'''samtools mpileup -B -f {ref} {smallbams} | java -Xmx15g -jar \
 $VARSCAN_DIR/VarScan.v2.4.3.jar mpileup2cns --min-coverage 8 --p-value 0.05 \
 --min-var-freq {minfreq} --strand-filter 1 --min-freq-for-hom 0.80 \
@@ -237,31 +217,16 @@ module unload samtools
 
 
 def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
-    """Create sh file for varscan or crisp command."""
+    """Create sh file for varscan command."""
+    
     num, ref, vcf = get_prereqs(bedfile, parentdir, pool, program)
-    if program == 'crisp':
-        cmd, finalvcf, logfile = get_crisp_cmd(bamfiles,
-                                               bedfile,
-                                               pool,
-                                               parentdir,
-                                               ref,
-                                               vcf,
-                                               num)
-        # force gzip the vcf (overwrite previous .gz), rm logfile
-        second_cmd = f'''bgzip -f {vcf}
-rm {logfile}
-'''
-        mem = "9000M"
-        time = '3-00:00:00'
-        fields = '''-F DP -F CT -F AC -F VT -F EMstats -F HWEstats -F VF -F VP \
--F HP -F MQS -GF GT -GF GQ -GF DP'''
-    else:
-        cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num,
-                                        vcf, ref, pooldir, program)
-        second_cmd = ''''''
-        mem = "2000M"
-        time = '7-00:00:00'
-        fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
+
+    cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num,
+                                    vcf, ref, pooldir, program)
+    second_cmd = ''''''
+    mem = "2000M"
+    time = '7-00:00:00'
+    fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
 -GF FREQ -GF PVAL -GF AD -GF RD'''
 
     tablefile = finalvcf.replace(".vcf", "_table.txt")
@@ -273,10 +238,10 @@ rm {logfile}
 #SBATCH --mem={mem}
 #SBATCH --output={pool}-{program}_bedfile_{num}_%j.out
 
-# run CRISP (commit 60966e7) or VarScan (v.2.4.2)
+# run VarScan (v.2.4.2)
 {cmd}
 
-# vcf -> table (multiallelic to multiple lines, filtered in combine_crispORvarscan.py
+# vcf -> table (multiallelic to multiple lines, filtered in combine_varscan.py
 module load gatk/4.1.0.0
 gatk VariantsToTable --variant {finalvcf} -F CHROM -F POS -F REF -F ALT -F AF -F QUAL \
 -F TYPE -F FILTER {fields} -O {tablefile} --split-multi-allelic
@@ -326,7 +291,7 @@ def create_sh(bamfiles, shdir, pool, pooldir, program, parentdir):
 
 
 def create_combine(pids, parentdir, pool, program, shdir):
-    """Create command file to combine crisp or varscan jobs once they're finished.
+    """Create command file to combine varscan jobs once they're finished.
 
     Positional arguments:
     pids = list of slurm job id dependencies (the jobs that need to finish first)
@@ -348,7 +313,7 @@ def create_combine(pids, parentdir, pool, program, shdir):
 
 source {bash_variables}
 
-python $HOME/pipeline/combine_crispORvarscan.py {pooldir} {program} {pool}
+python $HOME/pipeline/combine_varscan.py {pooldir} {program} {pool}
 
 '''
     combfile = op.join(shdir, f'{pool}-combine-{program}.sh')
@@ -368,7 +333,6 @@ def main(parentdir, pool):
     shdir = create_reservation(op.join(parentdir, pool))
 
     # create .sh files
-    #for program in ['crisp', 'varscan']:  # I'll be deprecating crisp soon
     for program in ['varscan']:
         print('starting %s commands' % program)
         # create .sh file and submit to scheduler
@@ -379,7 +343,7 @@ def main(parentdir, pool):
                          program,
                          parentdir)
 
-        # create .sh file to combine crisp parallels using jobIDs as dependencies
+        # create .sh file to combine varscan parallels using jobIDs as dependencies
         create_combine(pids, parentdir, pool, program, shdir)
 
 

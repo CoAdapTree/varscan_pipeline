@@ -1,12 +1,12 @@
 """Create and sbatch gatk indelRealign command files.
-Start varscan and crisp if all realigned bamfiles have been made.
+Start varscan if all realigned bamfiles have been made.
 
 ### purpose
 # use the GATK to realign around indels
 ###
 
 ### usage
-# python 05_indelRealign_crisp.py /path/to/pooldir/ sampID
+# python 05_indelRealign.py /path/to/pooldir/ sampID
 ###
 """
 
@@ -42,9 +42,9 @@ java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T IndelRealigner -R {ref} -I {dupfile} -targetIntervals {listfile} -o {realbam}
 module unload gatk
 
-# sbatch CRISP job if all pooled bamfiles have been created
+# sbatch varscan jobs if all pooled bamfiles have been created
 source {bash_variables}
-python $HOME/pipeline/start_crispANDvarscan.py {parentdir} {pool}
+python $HOME/pipeline/start_varscan.py {parentdir} {pool}
 python $HOME/pipeline/balance_queue.py bedfile {parentdir}
 
 '''

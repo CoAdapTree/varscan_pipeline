@@ -46,7 +46,7 @@ module unload gatk
 
 # next step
 source {bash_variables}
-python $HOME/pipeline/05_indelRealign_crisp.py {pooldir} {samp} {dupfile} {ref}
+python $HOME/pipeline/05_indelRealign.py {pooldir} {samp} {dupfile} {ref}
 
 '''
 

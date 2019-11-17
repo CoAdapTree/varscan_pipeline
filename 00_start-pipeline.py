@@ -7,7 +7,7 @@ start the pipeline.
 
 ### assumes
 # that samples duplicated in the 'sample_name' column have the same rglb, rgsm, and rgpl read groups
-# that ploidy is the same across samples in a pool
+# that ploidy is the same (ie uses the exact same pop members) across resquencing of individual pools (all resequencing must have same ploidy for any given sample)
 ###
 """
 
@@ -136,7 +136,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
     rginfo = {}     # key=samp vals=rginfo
     samp2pool = {}  # key=samp val=pool
     poolref = {}    # key=pool val=ref.fa
-    ploidy = {}     # key=pool val=ploidy
+    ploidy = {}     # key=pool val=dict(key=sample: val=sample_ploidy)
     poolsamps = {}  # key=pool val=sampnames
     f2samp = {}     # key=f val=samp
     f2pool = {}     # key=f val=pool
@@ -160,11 +160,14 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 exit()
         samp2pool[samp] = pool
         df = data[data['pool_name'] == pool].copy()
-        if not luni(df['ploidy']) == 1:
-            print("the ploidy values for some elements with pool name '%s' are not the same" % pool)
-            sys.exit(1)
         if pool not in ploidy:
-            ploidy[pool] = data.loc[row, 'ploidy']
+            ploidy[pool] = {}
+        if samp in pool.keys():
+            if ploidy[pool][samp] != int(data.loc[row, 'ploidy']):
+                text = "FAIL: the ploidy values for sample_name '%s' are not the same" % samp
+                print(Bcolors.FAIL + text + Bcolors.ENDC)
+                exit()
+        ploidy[pool][samp] = int(data.loc[row, 'ploidy'])
         if pool in poolref:
             if not poolref[pool] == data.loc[row, 'ref']:
                 print("ref genome for samples in %s pool seems to have different paths in datatable.txt" % pool)
@@ -340,7 +343,7 @@ must be one (or multiple) of %s''' % [x for x in choices])
     parser.add_argument("-maf",
                         required=False,
                         dest="maf",
-                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (if the number of populations/samples in a pool == 1 then default maf=0. if the number of populations/samples are > 1 then maf = 1/(ploidy-per-pop * npops)''')
+                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (if the number of sample_names in a pool == 1 then default maf=0; Otherwise maf = 1/sum(ploidy column)''')
     parser.add_argument('--translate',
                         required=False,
                         action='store_true',
