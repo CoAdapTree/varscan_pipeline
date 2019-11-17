@@ -109,12 +109,12 @@ def make_pooldirs(data, parentdir):
 
 
 def create_all_bedfiles(poolref):
-    """For each unique ref.fa in datatable.txt, create bedfiles for varscan/crisp.
+    """For each unique ref.fa in datatable.txt, create bedfiles for varscan.
 
     Positional arguments:
     poolref - dictionary with key = pool, val = /path/to/ref
     """
-    # create bedfiles for crisp and varscan
+    # create bedfiles for varscan
     print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
         create_bedfiles.main(ref)
@@ -164,7 +164,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         df = data[data['pool_name'] == pool].copy()
         if pool not in ploidy:
             ploidy[pool] = {}
-        if samp in pool.keys():
+        if samp in ploidy[pool].keys():
             if ploidy[pool][samp] != int(data.loc[row, 'ploidy']):
                 text = "FAIL: the ploidy values for sample_name '%s' are not the same" % samp
                 print(Bcolors.FAIL + text + Bcolors.ENDC)
@@ -286,8 +286,7 @@ so it can be used later in pipeline, then source this file before restarting pip
             exit()
 
     # check for programs
-    for program in [op.join(os.environ['VARSCAN_DIR'], 'VarScan.v2.4.3.jar'),
-                    op.join(os.environ['CRISP_DIR'], 'CRISP')]:
+    for program in [op.join(os.environ['VARSCAN_DIR'], 'VarScan.v2.4.3.jar')]:
         if not op.exists(program):
             print(Bcolors.BOLD +
                   Bcolors.FAIL +
@@ -437,7 +436,7 @@ def main():
                                            args.repeats,
                                            args.paralogs)
 
-    # create bedfiles to parallelize crisp and varscan later on
+    # create bedfiles to parallelize varscan later on
     create_all_bedfiles(poolref)
 
     # create directories for each group of pools to be combined
