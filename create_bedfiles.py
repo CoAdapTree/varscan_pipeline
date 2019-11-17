@@ -90,7 +90,7 @@ def make_beds_from_orderfile():
     askforinput()
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
-    thresh = math.ceil(len(text) / 1500)
+    thresh = math.ceil(len(text) / 500)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -152,7 +152,7 @@ def make_bedfile(lines, fcount, from_orderfile=False):
         for line in lines:
             if from_orderfile is False:
                 contig, length = line
-                text.append("%s\t%s\t%s" % (contig, 0, length-1))  # contig \t start \t stop
+                text.append("%s\t%s\t%s" % (contig, 0, int(length)-1))  # contig \t start \t stop
             else:
                 scaff, start, stop = line
                 text.append("%s\t%s\t%s" % (scaff, start, stop))  # scaff \t start \t stop
@@ -162,7 +162,7 @@ def make_bedfile(lines, fcount, from_orderfile=False):
 def make_bedfiles():
     """Use ref.fa.length file to create bedfiles."""
     text = openlenfile("%s.length" % ref)
-    thresh = math.ceil(len(text) / 1500)
+    thresh = math.ceil(len(text) / 500)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
