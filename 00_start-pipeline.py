@@ -64,9 +64,11 @@ def get_datafiles(parentdir, f2pool, data):
               'WARN: there are %s fastq files in %s than in datatable.txt' % (desc, parentdir) +
               Bcolors.ENDC)
         print(Bcolors.BOLD + 'Here are the files in %s' % parentdir + Bcolors.ENDC)
-        [print(op.basename(x)) for x in files]
+        for x in files:
+            print(op.basename(x))
         print(Bcolors.BOLD + 'Here are the files in datatable.txt' + Bcolors.ENDC)
-        [print(x) for x in datafiles]
+        for x in datafiles:
+            print(x)
         askforinput()
 
     except NameError:
@@ -182,8 +184,9 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
             if translate is True:
                 orderfile = ref.split(".fa")[0] + '.order'
                 if not op.exists(orderfile):
-                    text = 'FAIL: You have indicated that you would like stitched regions translated. But the pipeline cannot find the .order file: %s' % orderfile
+                    text = 'FAIL: You have indicated that you would like stitched regions translated. But the pipeline cannot find the .order file: %s' % orderfile + '\nexiting 00_start-pipeline.py'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    exit()
                 else:
                     pkldump(orderfile, op.join(parentdir, 'orderfile.pkl'))
             if repeats is True:
