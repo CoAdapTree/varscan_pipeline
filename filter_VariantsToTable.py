@@ -479,11 +479,11 @@ def main(tablefile, tipe, parentdir=None, ret=False):
         # (takes longer than if translating after filtering, obv)
         df = translate_stitched_to_unstitched(df.copy(), parentdir)  # not coded to translate INDELs
 
+        # remove repeats (if called at 00_start) - want to remove repeats before paralogs
+        df = remove_repeats(df.copy(), parentdir, tablefile)
+
         # remove paralog SNPs (if called at 00_start)
         df = remove_paralogs(df.copy(), parentdir, tablefile)
-                 
-        # remove repeats (if called at 00_start)
-        df = remove_repeats(df.copy(), parentdir, tablefile)
 
     if ret is True:
         return df
