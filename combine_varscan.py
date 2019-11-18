@@ -22,7 +22,7 @@ import sys, pandas as pd
 from os import path as op
 from coadaptree import fs, pklload
 from filter_VariantsToTable import main as filtvtt
-from start_crispANDvarscan import getfiles
+from start_varscan import getfiles
 
 
 def checkjobs():
