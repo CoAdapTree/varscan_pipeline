@@ -223,9 +223,6 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
 
     cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num,
                                     vcf, ref, pooldir, program)
-    second_cmd = ''''''
-    mem = "2000M"
-    time = '7-00:00:00'
     fields = '''-F ADP -F WT -F HET -F HOM -F NC -GF GT -GF GQ -GF SDP -GF DP \
 -GF FREQ -GF PVAL -GF AD -GF RD'''
 
@@ -234,8 +231,8 @@ def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
     text = f'''#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --job-name={pool}-{program}_bedfile_{num}
-#SBATCH --time={time}
-#SBATCH --mem={mem}
+#SBATCH --time='7-00:00:00'
+#SBATCH --mem=2000M
 #SBATCH --output={pool}-{program}_bedfile_{num}_%j.out
 
 # run VarScan (v.2.4.2)
@@ -251,7 +248,6 @@ module unload gatk
 module load nixpkgs/16.09  gcc/7.3.0 htslib/1.9
 cd $(dirname {finalvcf})
 bgzip -f {finalvcf}
-{second_cmd}
 
 # if any other varscan jobs are hanging due to priority, change the account
 source {bash_variables}
@@ -269,7 +265,7 @@ def sbatch(file):
     os.chdir(op.dirname(file))
     pid = subprocess.check_output([shutil.which('sbatch'), file]).decode('utf-8').replace("\n", "").split()[-1]
     print("sbatched %s" % file)
-    time.sleep(5)
+    time.sleep(10)
     return pid
 
 
