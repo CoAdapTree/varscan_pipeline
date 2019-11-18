@@ -7,7 +7,8 @@ start the pipeline.
 
 ### assumes
 # that samples duplicated in the 'sample_name' column have the same rglb, rgsm, and rgpl read groups
-# that ploidy is the same (ie uses the exact same pop members) across resquencing of individual pools (all resequencing must have same ploidy for any given sample)
+# that ploidy is the same (ie uses the exact same pop members) across resquencing of ...
+#     individual pools (all resequencing must have same ploidy for any given sample)
 ###
 """
 
@@ -124,7 +125,7 @@ def read_datatable(parentdir, translate, repeats, paralogs):
     """
     Read in datatable.txt, use to create files and dirs for downstream.
     Also checks some assumptions of datatable.txt.
-    
+
     translate, repeats, and paralogs are boolean.
     parentdir is a path.
     """
@@ -184,7 +185,9 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
             if translate is True:
                 orderfile = ref.split(".fa")[0] + '.order'
                 if not op.exists(orderfile):
-                    text = 'FAIL: You have indicated that you would like stitched regions translated. But the pipeline cannot find the .order file: %s' % orderfile + '\nexiting 00_start-pipeline.py'
+                    text = 'FAIL: You have indicated that you would like stitched regions translated.'
+                    text = text + 'But the pipeline cannot find the .order file: %s' % orderfile 
+                    text = text + '\nexiting 00_start-pipeline.py'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                     exit()
                 else:
@@ -192,7 +195,8 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
             if repeats is True:
                 repeatfile = ref.split(".fa")[0] + '_repeats.txt'
                 if not op.exists(repeatfile):
-                    text = 'FAIL: You have indicated that you would like repeat regions removed. But the pipeline cannot find the file for repeat regions: %s' % repeatfile
+                    text = 'FAIL: You have indicated that you would like repeat regions removed. '
+                    text = text + 'But the pipeline cannot find the file for repeat regions: %s' % repeatfile
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                 else:
                     pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
@@ -209,7 +213,9 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 elif len(parafiles) == 1:
                     parafile = parafiles[0]
                 if not op.exists(parafile):
-                    text = 'FAIL: You have indicated that you would like paralog sites removed from final SNPs. But the pipeline cannot find the file for repeat regions. This file must end with "_paralog_snps.txt".'
+                    text = 'FAIL: You have indicated that you would like paralog sites removed '
+                    text = text + 'from final SNPs. But the pipeline cannot find the file for repeat '
+                    text = text + 'regions. This file must end with "_paralog_snps.txt".'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                 else:
                     pkldump(parafile, op.join(parentdir, 'paralog_snps.pkl'))
