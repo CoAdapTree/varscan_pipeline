@@ -5,12 +5,9 @@
 # will also keep biallelic SNPs when REF = N (two ALT alleles) that pass filters
 # for varscan SNP:
 # = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, GQ >= 20, < 25% missing data
-# for crisp SNP:
-# = filter for non-multiallelic, global MAF >= 1/ploidy_total_across_pops, < 25% missing data
-# for INDEL - no filter, just combine (output has multiple rows)
 
 ###
-# if number of samples == 1, then no SNPs will be discarded
+# if number of samples == 1, then no SNPs will be filtered for MAF
 
 ### assumes
 # gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ [-GF FREQ] --split-multi-allelic
@@ -102,20 +99,25 @@ def filter_freq(df, tf, tipe, tablefile):
     
     # prep for filtering
     freqcols = [col for col in df.columns if '.FREQ' in col]
+    pool = op.basename(op.dirname(op.dirname(tablefile)))
+    parentdir = op.dirname(op.dirname(op.dirname(tablefile)))
+    ploidy = pklload(op.join(parentdir, 'ploidy.pkl'))[pool]
     
     # carry on with poolseq datas
     filtloci = []
     afs = []
     copy = get_copy(df, freqcols)
     for locus in tqdm(copy.columns):
-        freqs = [x for x
-                 in copy[locus].str.rstrip('%').astype('float')
-                 if not math.isnan(x)]  # faster than ...str.rstrip('%').astype('float').dropna()
+        freqs = dict((samp.replace(".FREQ",""),freq) for (samp,freq)
+                     in copy[locus].str.rstrip('%').astype('float').items()
+                     if not math.isnan(freq))  # faster than .str.rstrip('%').astype('float').dropna()
         if len(freqs) > 0:  # avoid loci with all freqs masked (avoid ZeroDivisionError)
-            globfreq = sum(freqs)/(100*len(freqs))
+            # get the samps that are present for this locus
+            globfreq = sum([ploidy[samp]*(freq/100)
+                            for (samp,freq) in freqs.items()]) / sum(ploidy.values())
             if lowfreq <= globfreq <= highfreq:
                 filtloci.append(locus)
-                afs.append(globfreq)  # since we're going in order of rows in df, we can use afs to replace AF col later
+                afs.append(globfreq)  # since we're going in order of rows in df, we can use afs to replace AF col later since we reduce df to filtloci
                 # which is about 40x faster than: df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
@@ -233,7 +235,6 @@ def get_refn_snps(df, tipe, ndfs=None):
     dfs - list of loci (pandas.dataframes) with REF=N and two ALT alleles, counts with respect to second ALT
     ndfs - return from pd.conat(dfs)
     """
-    # as far as I can tell, crisp output from convert_pooled_vcf.py will not output REF = N
     ndf = df[df['REF'] == 'N'].copy()
     ndf = ndf[ndf['TYPE'] == tipe].copy()
     ncount = table(ndf['locus'])
@@ -252,91 +253,33 @@ def get_refn_snps(df, tipe, ndfs=None):
     return (dfs, ndfs)
 
 
-def recalc_global_freq(df, tf, freqcols):
-    """
-    For some reason AF reported by crisp is a little off. Recalc.
-    Moves crisp AF column to 'crisp_AF'.
-    Recalulates global AF (alt), save as AF column.
-    
-    Positional arguments:
-    df - pandas.dataframe; current filtered VariantsToTable output
-    tf - basename of file path of df
-    freqcols - columns in VariantsToTable output pandas.dataframe with ".FREQ" in them
-    
-    Returns:
-    df - pandas.dataframe; global freq-filtered VariantsToTable output
-    """
-    print('Recalculating global freq ... ')
-    df.index = range(len(df.index))
-    df['crisp_AF'] = df['AF']
-    copy = get_copy(df, freqcols)
-    for locus in tqdm(copy):
-        denom = sum(~copy[locus].isnull())  # num of non-NA
-        if denom > 0:
-            num = np.nansum(copy[locus])
-            res = round(num/denom, 6)
-            df.loc[locus,'AF'] = res
-        else:
-            # all pops have NaN for .FREQ
-            # will get filtered later when looking @ missing data
-            pass
-    return df
-
-def add_freq_cols(df, tf, tipe, tablefile):
-    """
-    Adding in .FREQ columns for crisp file.
-    
-    Positional arguments:
-    df - pandas.dataframe; current filtered VariantsToTable output
-    tablefile - path to VariantsToTable output - used to find ploidy etc
-    tf - basename of tablefile
-    tipe - one of either "SNP" or "INDEL"
-    
-    Returns:
-    df - pandas.dataframe; current filtered VariantsToTable output + freqcols
-    """
-    print('Adding in .FREQ columns for crisp file ...')
-    # remove bednum from column names so we can pd.concat() later
-    bednum = tf.split("file_")[-1].split("_converted")[0]
-    df.columns = [col.replace("_" + bednum, "") for col in df.columns]
-    # add in a .FREQ column for pool-level freqs
-    gtcols = [col for col in df.columns if '.GT' in col]
-    print('len(gtcols) = ', len(gtcols))
-    freqcols = []
-    for col in tqdm(gtcols):
-        refcol  = col.replace(".GT", ".REFCOUNT")
-        altcol  = col.replace(".GT", ".ALTCOUNT")
-        freqcol = col.replace(".GT", ".FREQ")
-        freqcols.append(freqcol)
-        for alt in uni(df['ALT']):
-            df.loc[df['ALT'] == alt, altcol] = df[col].str.count(alt)
-        for ref in uni(df['REF']):
-            df.loc[df['REF'] == ref, refcol] = df[col].str.count(ref)
-        df[freqcol] = df[altcol] / (df[altcol] + df[refcol])
-    # remove count cols
-    print('Removing unnecessary cols ...')
-    df = df[[col for col in df.columns
-             if '.REFCOUNT' not in col
-             and '.ALTCOUNT' not in col]].copy()
-    # recalculate global AF
-    df = recalc_global_freq(df, tf, freqcols)
-    # sort columns to group data together for each pool
-    datacols = sorted([col for col in df.columns if '.' in col])
-    othercols = [col for col in df.columns
-                 if '.' not in col
-                 and col != 'locus'
-                 and 'crisp' not in col]
-    othercols.insert(othercols.index('AF') + 1, 'crisp_AF')
-    df = df[['locus'] + othercols + datacols].copy()
-    df.index = range(len(df.index))
-    return df
-
-
 def write_file(tablefile, df, tipe):
     """Write filtered pandas.dataframe to file using args to create file name."""
     newfile = tablefile.replace(".txt", f"_{tipe}.txt")
     df.to_csv(newfile, index=False, sep='\t')
     print('finished filtering VariantsToTable file: %s' % newfile)
+
+
+def get_varscan_names(df, pooldir):
+    """Convert generic sample/pool names from varscan to something meaningful."""
+    print('renaming varscan columns ...')
+    # get order of samps used to create varscan cmds (same order as datatable)
+    pool = op.basename(pooldir)
+    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
+    # create a list of names that varscan gives by default
+    generic = ['Sample%s' % (i+1) for i in range(len(samps))]
+    # create a map between generic and true samp names
+    dic = dict((gen, samp) for (gen, samp) in zip(generic, samps))
+    # rename the columns in df
+    cols = []
+    for col in df:
+        if '.' in col:
+            gen, rest = col.split(".")
+            samp = dic[gen]
+            col = '.'.join([samp, rest])
+        cols.append(col)
+    df.columns = cols
+    return df
 
 
 def load_data(tablefile):
@@ -351,11 +294,14 @@ def load_data(tablefile):
     tf - basename of tablefile
     """
     tf = op.basename(tablefile)
+    pooldir = op.dirname(op.dirname(tablefile))
 
     # load the data, create a column with CHROM-POS for locusID
     df = pd.read_csv(tablefile, sep='\t')
     print(f'{tf} has {len(df.index)} rows (includes multiallelic)')
     df['locus'] = ["%s-%s" % (contig, pos) for (contig, pos) in zip(df['CHROM'].tolist(), df['POS'].tolist())]
+    df = get_varscan_names(df, pooldir)
+
     return df, tf
 
 
