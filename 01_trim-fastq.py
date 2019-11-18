@@ -96,6 +96,10 @@ module load fastp/0.19.5
     newtext = ''''''
     for r1, r2 in pairs:
         r1adaptor, r2adaptor = list(adaptors[samp].values())
+        if r1adaptor != r1adaptor:  # check for npnan
+            adaptor_cmd = ''
+        else:
+            adaptor_cmd = '--adapter_sequence %(r1adaptor)s --adapter_sequence_r2 %(r2adaptor)s' % locals()
         r1out = op.join(trimDIR, op.basename(r1).split(".fastq")[0] + "_trimmed.fastq.gz")
         r2out = op.join(trimDIR, op.basename(r2).split(".fastq")[0] + "_trimmed.fastq.gz")
         html = r1out.replace("R1", "").replace(".fastq.gz", "_R1_R2_stats")
@@ -106,7 +110,7 @@ module load fastp/0.19.5
         text = '''fastp -i %(r1)s -o %(r1out)s -I %(r2)s -O %(r2out)s \
 -g --cut_window_size 5 --cut_mean_quality 30 --n_base_limit 20 --length_required 75 \
 -h %(html)s.html --cut_by_quality3 --thread 16 --json %(json)s.json \
---adapter_sequence %(r1adaptor)s --adapter_sequence_r2 %(r2adaptor)s > %(logfile)s
+%(adaptor_cmd)s > %(logfile)s
 
 ''' % locals()
         newtext = newtext + text
