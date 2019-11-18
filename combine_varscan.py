@@ -25,28 +25,6 @@ from filter_VariantsToTable import main as filtvtt
 from start_crispANDvarscan import getfiles
 
 
-def get_varscan_names(df, pooldir):
-    """Convert generic sample/pool names from varscan to something meaningful."""
-    print('renaming varscan columns ...')
-    # get order of samps used to create varscan cmds (same order as datatable)
-    pool = op.basename(pooldir)
-    samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
-    # create a list of names that varscan gives by default
-    generic = ['Sample%s' % (i+1) for i in range(len(samps))]
-    # create a map between generic and true samp names
-    dic = dict((gen, samp) for (gen, samp) in zip(generic, samps))
-    # rename the columns in df
-    cols = []
-    for col in df:
-        if '.' in col:
-            gen, rest = col.split(".")
-            samp = dic[gen]
-            col = '.'.join([samp, rest])
-        cols.append(col)
-    df.columns = cols
-    return df
-
-
 def checkjobs():
     """
     Make sure previous realigned bamfiles were created without error.
