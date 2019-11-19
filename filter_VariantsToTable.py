@@ -112,12 +112,14 @@ def filter_freq(df, tf, tipe, tablefile):
                      in copy[locus].str.rstrip('%').astype('float').items()
                      if not math.isnan(freq))  # faster than .str.rstrip('%').astype('float').dropna()
         if len(freqs) > 0:  # avoid loci with all freqs masked (avoid ZeroDivisionError)
-            # get the samps that are present for this locus
+            # calc globfreq using the samps/ploidy that are present for this locus
             globfreq = sum([ploidy[samp]*(freq/100)
-                            for (samp,freq) in freqs.items()]) / sum(ploidy.values())
+                            for (samp,freq) in freqs.items()]) / sum([ploidy[samp] for samp in freqs])
             if lowfreq <= globfreq <= highfreq:
                 filtloci.append(locus)
-                afs.append(globfreq)  # since we're going in order of rows in df, we can use afs to replace AF col later since we reduce df to filtloci
+                # since we're going in order of rows in df ...
+                # ... we can use afs to replace AF col later since we reduce df to filtloci
+                afs.append(globfreq)
                 # which is about 40x faster than: df.loc[locus, 'AF'] = globfreq
     print(f'{tf} has {len(filtloci)} {tipe}s that have global MAF > {lowfreq*100}%')
     df = df[df.index.isin(filtloci)].copy()
