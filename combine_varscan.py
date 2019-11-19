@@ -1,10 +1,10 @@
 """Filter and combine all gatk VariantsToTable .txt outputs from varscan vcf files.
 
 This file is called only when dependency SLURM_JOBS have completed with exit code 0.
-See start_crispANDvarscan.py::create_combine()
+See start_varscan.py::create_combine()
 
 ### usage
-# python combine_crispORvarscan.py pooldir varscan poolORsamp
+# python combine_varscan.py pooldir varscan poolORsamp
 ###
 
 ### assumes
@@ -31,7 +31,7 @@ def checkjobs():
     Avoids unintentionally combining a subset of all final expected files.
 
     Calls:
-    getfiles from start_crispANDvarscan
+    getfiles from start_varscan
     """
     print('checking jobs')
     parentdir = op.dirname(pooldir)
@@ -39,7 +39,7 @@ def checkjobs():
     ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
     samps = fs(op.join(op.dirname(ref),
                        'bedfiles_%s' % op.basename(ref).split(".fa")[0]))
-    shdir = op.join(pooldir, 'shfiles/crispANDvarscan')
+    shdir = op.join(pooldir, 'shfiles/varscan')
     # files = {f.sh: f.out, ...}
     files = getfiles(samps, shdir, f"{grep}-{program}")
     return files
@@ -50,17 +50,14 @@ def get_types(tablefiles, tipe, program, pooldir, grep):
     Use filter_VariantsToTable to filter based on tipe {SNP, INDEL}.
 
     Positional arguments:
-    tablefiles - list of paths pointing to the gatk VariantsToTable .txt outputs from varscan or crisp vcf files
+    tablefiles - list of paths pointing to the gatk VariantsToTable .txt outputs from varscan vcf files
     tipe - str; either "SNP" or "INDEL"
-    program - str; either "varscan" or "crisp" - used to find and name files
+    program - str; either "varscan" - used to find and name files
     """
     print(f'starting to filter {len(tablefiles)} tablefiles')
     dfs = [filtvtt(tablefile, tipe, parentdir=op.dirname(pooldir), ret=True)
            for tablefile in tablefiles]
     df = pd.concat(dfs)
-
-    if program == 'varscan':
-        df = get_varscan_names(df, pooldir)
 
     print('writing df to file ...')
     filename = op.join(pooldir, f'{program}/{grep}-{program}_all_bedfiles_{tipe}.txt')
@@ -113,12 +110,11 @@ def main():
             for t in tablefiles:
                 dfs.append(pd.read_csv(t, sep='\t'))
             df = pd.concat(dfs)
-            df = get_varscan_names(df, pooldir)
             df.to_csv(op.join(tabledir, f'{op.basename(pooldir)}-{program}_all_bedfiles_{tipe}.txt'),
                       sep='\t', index=False)
 
 if __name__ == '__main__':
-    # for crisp grep = pool, for varscan grep = pool
+    # for varscan grep = pool
     thisfile, pooldir, program, grep = sys.argv
 
     main()
