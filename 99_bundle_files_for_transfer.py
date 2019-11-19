@@ -95,6 +95,17 @@ for p in pooldirs:
         cmds.extend(get_cmds(srcfiles, md5files, remoted, False))
 
 
+# get bedtools coords and samtools flagstat
+for p in pooldirs:
+    bwadir = op.join(p, '02c_sorted_bamfiles')
+    remotebwadir = op.join(remote, f'{op.basename(p)}/bedcoords_samflagstats')
+    newdirs.append(remotebwadir)
+    coords = [f for f in fs(bwadir) if 'coord' in f]
+    flags = [f for f in fs(bwadir) if 'flagstat' in f]
+    cmds.extend(get_cmds(coords, [], remotebwadir, False))
+    cmds.extend(get_cmds(flags, [], remotebwadir, False))
+
+
 # get realigned bamfiles
 for p in pooldirs:
     bamdir = op.join(p, '04_realign')
