@@ -10,10 +10,10 @@
 # if number of samples == 1, then no SNPs will be filtered for MAF
 
 ### assumes
-# gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ [-GF FREQ] --split-multi-allelic
+# gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ -GF FREQ --split-multi-allelic
 
 ### usage
-# python filter_VariantsToTable.py SNPorINDEL
+# python filter_VariantsToTable.py VariantsToTable_output.txt SNPorINDEL
 # OR
 # from filter_VariantsToTable import main as remove_multiallelic
 
