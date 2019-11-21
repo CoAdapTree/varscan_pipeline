@@ -38,7 +38,7 @@ text = f'''#!/bin/bash
 
 # realign using the GATK
 module load gatk/3.8
-module load java
+module load java/1.8.0_192
 export _JAVA_OPTIONS="-Xms256m -Xmx28g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
 -T RealignerTargetCreator -R {ref} --num_threads 32 -I {dupfile} -o {listfile}
