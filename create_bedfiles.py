@@ -84,7 +84,10 @@ def make_bed_from_intervals(intdir):
 
 
 def make_beds_from_orderfile():
-    """Use ref.order file to create bedfiles for parallelization."""
+    """Use ref.order file to create bedfiles for parallelization.
+    
+    Evenly distributes contigs across X number of files specified to calculate thresh.
+    """
     orderfile = ref.replace(".fa", "") + '.order'
     print('\n\tCreating bedfiles from %s. Please confirm:\n\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length' % orderfile)
     askforinput()
@@ -176,10 +179,12 @@ def make_bedfile(lines, fcount, from_orderfile=False):
 
 
 def make_bedfiles():
-    """Use ref.fa.length file to create bedfiles."""
+    """Use ref.fa.length file to create bedfiles.
+    
+    Evenly distributes base-pairs across X number of files specified to calculate thresh.
+    """
     df = pd.read_csv("%s.length" % ref, sep='\t', header=None)
     thresh = math.ceil(sum(df[1]) / 950)
-    print('thresh = ', thresh, '(%s)' % sum(df[1]))
     lines = []
     fcount = 0
     fsum = 0
