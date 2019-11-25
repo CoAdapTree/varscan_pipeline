@@ -18,7 +18,7 @@
 ###
 """
 
-import sys, os, math
+import sys, os, math, pandas as pd
 from os import path as op
 from coadaptree import fs, makedir, askforinput, Bcolors
 
@@ -90,7 +90,7 @@ def make_beds_from_orderfile():
     askforinput()
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
-    thresh = math.ceil(len(text) / 500)
+    thresh = math.ceil(len(text) / 950)
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -159,19 +159,39 @@ def make_bedfile(lines, fcount, from_orderfile=False):
         o.write("\n".join(text))
 
 
+# def make_bedfiles():
+#     """Use ref.fa.length file to create bedfiles."""
+#     text = openlenfile("%s.length" % ref)
+#     thresh = math.ceil(len(text) / 950)
+#     lines = []
+#     fcount = 0
+#     for count, line in enumerate(text):
+#         if not line == '':
+#             lines.append(line.split("\t"))
+#         if len(lines) == thresh or (count + 1 == len(text)):
+#             make_bedfile(lines, fcount)
+#             lines = []
+#             fcount += 1
+#     return fcount
+
+
 def make_bedfiles():
     """Use ref.fa.length file to create bedfiles."""
-    text = openlenfile("%s.length" % ref)
-    thresh = math.ceil(len(text) / 500)
+    df = pd.read_csv("%s.length" % ref, sep='\t', header=None)
+    thresh = math.ceil(sum(df[1]) / 950)
+    print('thresh = ', thresh, '(%s)' % sum(df[1]))
     lines = []
     fcount = 0
-    for count, line in enumerate(text):
-        if not line == '':
-            lines.append(line.split("\t"))
-        if len(lines) == thresh or (count + 1 == len(text)):
+    fsum = 0
+    for count,row in enumerate(df.index):
+        contig, length = list(df.loc[row, :])
+        fsum += length
+        lines.append([contig, str(length)])
+        if fsum >= thresh or count + 1 == len(df.index):
             make_bedfile(lines, fcount)
             lines = []
             fcount += 1
+            fsum = 0
     return fcount
 
 
