@@ -38,7 +38,6 @@ text = f'''#!/bin/bash
 
 # remove dups
 module load picard/2.18.9
-module load java
 export _JAVA_OPTIONS="-Xms256m -Xmx27g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \
 I={joined} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
