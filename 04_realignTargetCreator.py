@@ -37,6 +37,7 @@ text = f'''#!/bin/bash
 {email_text}
 
 # realign using the GATK
+module load java
 module load gatk/3.8
 export _JAVA_OPTIONS="-Xms256m -Xmx28g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \

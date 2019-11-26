@@ -37,6 +37,7 @@ text = f'''#!/bin/bash
 {email_text}
 
 # remove dups
+module load java
 module load picard/2.18.9
 export _JAVA_OPTIONS="-Xms256m -Xmx27g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \

@@ -35,6 +35,7 @@ text = f'''#!/bin/bash
 #SBATCH --output={pool}-{samp}-indelRealign_%j.out 
 {email_text}
 
+module load java
 module load gatk/3.8
 export _JAVA_OPTIONS="-Xms256m -Xmx7g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTGATK/GenomeAnalysisTK.jar \
