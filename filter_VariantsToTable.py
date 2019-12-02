@@ -74,6 +74,9 @@ def get_freq_cutoffs(tablefile):
     if lowfreq == 1 or len(poolsamps) == 1:
         # for megagametophyte data
         lowfreq = 0
+    pklfile = op.join(parentdir, 'maf.pkl')
+    if op.exists(pklfile):
+        lowfreq = float(pklload(pklfile))
     highfreq = 1 - lowfreq
     return lowfreq, highfreq
 
