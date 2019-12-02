@@ -74,14 +74,15 @@ def get_tables(files):
     files - list of shfiles, should be same length as tablefiles (if all jobs are sbatched and done).
     """
     print('getting tablefiles')
+    print(op.join(pooldir, program))
     tablefiles = [f for f in fs(op.join(pooldir, program))
                   if f.endswith('.txt')
-                  and 'all_bedfiles' not in f
-                  and 'SNP' not in f
-                  and 'INDEL' not in f
-                  and 'REPEATS' not in f
-                  and 'PARALOGS' not in f
-                  and grep in op.basename(f)]
+                  and 'all_bedfiles' not in op.basename(f)
+                  and 'SNP' not in op.basename(f)
+                  and 'INDEL' not in op.basename(f)
+                  and 'REPEATS' not in op.basename(f)
+                  and 'PARALOGS' not in op.basename(f)
+                  and 'DF_mega' in op.basename(f)]
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         print('len(tablefiles) = ', len(tablefiles))
