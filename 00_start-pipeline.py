@@ -373,6 +373,7 @@ ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
                         default=argparse.SUPPRESS,
                         help='Show this help message and exit.\n')
     args = parser.parse_args()
+    pkldump(args, op.join(parentdir, 'pipeline_start_command.pkl'))  # save command
     if args.parentdir.endswith('/'):
         args.parentdir = args.parentdir[:-1]
     if args.email and args.email_options is None:
