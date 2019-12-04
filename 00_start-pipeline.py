@@ -373,9 +373,12 @@ ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
                         default=argparse.SUPPRESS,
                         help='Show this help message and exit.\n')
     args = parser.parse_args()
-    pkldump(args, op.join(parentdir, 'pipeline_start_command.pkl'))  # save command
+    # trim path
     if args.parentdir.endswith('/'):
         args.parentdir = args.parentdir[:-1]
+    # save command
+    pkldump(args, op.join(args.parentdir, 'pipeline_start_command.pkl'))
+    # assess arguments
     if args.email and args.email_options is None:
         print(Bcolors.FAIL + 'FAIL: --notification-types are required when specifying email' + Bcolors.ENDC)
         print(Bcolors.FAIL + 'FAIL: choices = {%s}\n' % [x for x in choices] + Bcolors.ENDC)
