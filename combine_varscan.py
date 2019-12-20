@@ -81,8 +81,7 @@ def get_tables(files):
                   and 'SNP' not in op.basename(f)
                   and 'INDEL' not in op.basename(f)
                   and 'REPEATS' not in op.basename(f)
-                  and 'PARALOGS' not in op.basename(f)
-                  and 'DF_mega' in op.basename(f)]
+                  and 'PARALOGS' not in op.basename(f)]
     if not len(tablefiles) == len(files):
         print('for some reason tablefiles != files. exiting.')
         print('len(tablefiles) = ', len(tablefiles))
