@@ -215,7 +215,7 @@ def check_beddir():
 
 def main(ref):
     globals().update({'ref': ref})
-    
+
     # warn about overwriting
     check_beddir()
 

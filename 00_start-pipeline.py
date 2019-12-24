@@ -16,7 +16,7 @@ import os, sys, distutils.spawn, subprocess, shutil, argparse, pandas as pd
 import balance_queue, create_bedfiles
 from os import path as op
 from collections import OrderedDict
-from coadaptree import fs, pkldump, uni, luni, makedir, askforinput, Bcolors
+from coadaptree import fs, pkldump, uni, makedir, askforinput, Bcolors
 
 
 def create_sh(pooldirs, poolref, parentdir):
@@ -162,7 +162,6 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 print('exiting')
                 exit()
         samp2pool[samp] = pool
-        df = data[data['pool_name'] == pool].copy()
         if pool not in ploidy:
             ploidy[pool] = {}
         if samp in ploidy[pool].keys():
@@ -186,7 +185,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 orderfile = ref.split(".fa")[0] + '.order'
                 if not op.exists(orderfile):
                     text = 'FAIL: You have indicated that you would like stitched regions translated.'
-                    text = text + 'But the pipeline cannot find the .order file: %s' % orderfile 
+                    text = text + 'But the pipeline cannot find the .order file: %s' % orderfile
                     text = text + '\nexiting 00_start-pipeline.py'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
                     exit()

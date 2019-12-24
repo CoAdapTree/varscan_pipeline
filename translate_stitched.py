@@ -132,7 +132,7 @@ def main(snps, orderfile, outfile=None):
 
 if __name__ == '__main__':
     thisfile, snpstable, orderfile, outfile = sys.argv
-    
+
     # read in snpstable, assumes snpstable doesn't need to be read in with chunksize
     snps = pd.read_csv(snpstable, sep='\t')
 

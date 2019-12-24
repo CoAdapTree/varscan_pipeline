@@ -218,7 +218,7 @@ module unload samtools
 
 def make_sh(bamfiles, bedfile, shdir, pool, pooldir, program, parentdir):
     """Create sh file for varscan command."""
-    
+
     num, ref, vcf = get_prereqs(bedfile, parentdir, pool, program)
 
     cmd, finalvcf = get_varscan_cmd(bamfiles, bedfile, num,

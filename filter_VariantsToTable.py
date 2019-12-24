@@ -389,13 +389,11 @@ def remove_repeats(snps, parentdir, snpspath):
         if 'unstitched_chrom' in snps.columns:
             # then the snps have been translated: stitched -> unstitched
             chromcol = 'unstitched_chrom'
-            locuscol = 'unstitched_locus'
             poscol = 'unstitched_pos'
             print('\tsnps have been translated')
         else:
             # otherwise SNPs were called on unstitched reference
             chromcol = 'CHROM'
-            locuscol = 'locus'
             poscol = 'POS'
             print('\tsnps have not been translated')
         # reduce repeats to the chroms that matter (helps speed up lookups)
