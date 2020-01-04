@@ -15,17 +15,24 @@ start the pipeline.
 import os, sys, distutils.spawn, subprocess, shutil, argparse, pandas as pd
 import balance_queue, create_bedfiles
 from os import path as op
+from subprocess import PIPE
+from subprocess import Popen
 from collections import OrderedDict
 from coadaptree import fs, pkldump, uni, makedir, askforinput, Bcolors
 
+def get_rgid(r1):
+    """If RGID is blank, print out the output that the pipeline would otherwise use."""
+    p1 = Popen(['zcat',r1], stdout=PIPE)
+    p2 = Popen(['head', '-n1'], stdin=p1.stdout, stdout=PIPE)
+    return '_'.join(p2.communicate()[0].split()[0].decode('utf-8').split('\n')[0].split(":")[:4])
+
 
 def create_sh(pooldirs, poolref, parentdir):
-    """
-run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
+    """Run 01_trim-fastq.py to sbatch trimming jobs, then balance queue.
 
-Positional arguments:
-pooldirs - a list of subdirectories in parentdir for groups of pools
-poolref - dictionary with key = pool, val = /path/to/ref
+    Positional arguments:
+    pooldirs - a list of subdirectories in parentdir for gsroups of pools
+    poolref - dictionary with key = pool, val = /path/to/ref
     """
     # create sh files
     print(Bcolors.BOLD + '\nwriting sh files' + Bcolors.ENDC)
@@ -75,6 +82,7 @@ def get_datafiles(parentdir, f2pool, data):
     except NameError:
         pass
 
+    # create symlinks in pooldirs for visualization
     for f in datafiles:
         src = op.join(parentdir, f)
         if not op.exists(src):
@@ -87,6 +95,8 @@ def get_datafiles(parentdir, f2pool, data):
         if not op.exists(dst):
             # easy to visualize in cmdline if script is finding correct group of files by ls-ing pooldir
             os.symlink(src, dst)
+
+    # print out RGID if RGID is none
 
 
 def make_pooldirs(data, parentdir):
@@ -144,6 +154,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
     f2samp = {}     # key=f val=samp
     f2pool = {}     # key=f val=pool
     adaptors = OrderedDict()  # key=samp val={'r1','r2'} val=adaptor
+    warning = [] # whether to print out warning about RGID
     for row in data.index:
         samp = data.loc[row, 'sample_name']
         adaptors[samp] = {'r1': data.loc[row, 'adaptor_1'],
@@ -236,9 +247,34 @@ please create these files' +
         rginfo[samp] = {}
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
             rginfo[samp][col] = data.loc[row, col]
+        for col in ['rgid', 'rgpu']:
+            if data.loc[row, col] != data.loc[row, col]:
+                # if nan
+                rginfo[samp][col] = None
+                if samp not in warning:
+                    warning.append(samp)
+            else:
+                rginfo[samp][col] = data.loc[row, col]
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
             f2pool[f] = pool
             f2samp[op.join(pooldir, f)] = samp
+    if len(warning) > 0:
+        outputs = []
+        for row in data.index:
+            samp = data.loc[row, 'sample_name']
+            if samp in warning:
+                r1 = op.join(parentdir, data.loc[row, 'file_name_r1'])
+                outputs.append("%s\t%s" % (samp, get_rgid(r1)))
+        print(Bcolors.WARNING + 'WARN: at least one of the samples has a blank RGID.\n' +
+              'WARN: The pipeline will automatically assign the following RGIDs.\n' +
+              Bcolors.ENDC)
+        for output in outputs:
+            print(Bcolors.WARNING + output + Bcolors.ENDC)
+        print('\n', Bcolors.WARNING + 'WARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB' +
+              Bcolors.ENDC)
+        askforinput()
+                            
+                               
     pkldump(rginfo, op.join(parentdir, 'rginfo.pkl'))
     pkldump(ploidy, op.join(parentdir, 'ploidy.pkl'))
     pkldump(f2samp, op.join(parentdir, 'f2samp.pkl'))

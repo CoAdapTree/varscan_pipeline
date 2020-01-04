@@ -43,6 +43,8 @@ print("RG = ", rginfo[samp])
 rglb = rginfo[samp]['rglb']
 rgpl = rginfo[samp]['rgpl']
 rgsm = rginfo[samp]['rgsm']
+rgid = rginfo[samp]['rgid']
+rgpu = rginfo[samp]['rgpu']
 
 
 def getbwatext(r1out, r2out):
@@ -57,10 +59,19 @@ def getbwatext(r1out, r2out):
     sortfile = op.join(sortdir, sort)
     flagfile = sortfile.replace('.bam', '.bam.flagstats')
     coordfile = sortfile.replace('.bam', 'bam.coord')
+    
+    if rgid is None:
+        rgidcmd = f'''RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)'''
+    else:
+        rgidcmd = f'''RGID={rgid}'''
+    if rgpu is None:
+        rgpucmd = f'''RGPU=$RGID.{rglb}'''
+    else:
+        rgpucmd = f'''RGPU={rgid}'''
 
     return (sortfile, f'''# get RGID and RGPU
-RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)
-RGPU=$RGID.{rglb}
+{rgidcmd}
+{rgpucmd}
 
 # map, sam to bam, sort by coordinate, index
 module load bwa/0.7.17
