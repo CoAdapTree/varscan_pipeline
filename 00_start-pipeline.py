@@ -208,6 +208,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                     text = 'FAIL: You have indicated that you would like repeat regions removed. '
                     text = text + 'But the pipeline cannot find the file for repeat regions: %s' % repeatfile
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    exit()
                 else:
                     pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
             if paralogs is True:
@@ -227,6 +228,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                     text = text + 'from final SNPs. But the pipeline cannot find the file for repeat '
                     text = text + 'regions. This file must end with "_paralog_snps.txt".'
                     print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    exit()
                 else:
                     pkldump(parafile, op.join(parentdir, 'paralog_snps.pkl'))
             needed = []
