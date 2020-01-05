@@ -154,7 +154,8 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
     f2samp = {}     # key=f val=samp
     f2pool = {}     # key=f val=pool
     adaptors = OrderedDict()  # key=samp val={'r1','r2'} val=adaptor
-    warning = [] # whether to print out warning about RGID
+    warning = [] # whether to print out warning about optional RG info
+    failing = [] # whether to print out failing about required RG info
     for row in data.index:
         samp = data.loc[row, 'sample_name']
         adaptors[samp] = {'r1': data.loc[row, 'adaptor_1'],
@@ -246,9 +247,15 @@ please create these files' +
                 print('exiting')
                 exit()
             poolref[pool] = ref
+
+        # get RG info
         rginfo[samp] = {}
+        # required RG info
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
+            if not data.loc[row, col] == data.loc[row, col]:
+                failing.append('%s\t%s' % (samp, col))
             rginfo[samp][col] = data.loc[row, col]
+        # optional RG info
         for col in ['rgid', 'rgpu']:
             if data.loc[row, col] != data.loc[row, col]:
                 # if nan
@@ -260,6 +267,14 @@ please create these files' +
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
             f2pool[f] = pool
             f2samp[op.join(pooldir, f)] = samp
+
+    # RG info failing/warnings
+    if len(failing) > 0:
+        print(Bcolors.FAIL + 'FAIL: The following samples have blank RG info.' + Bcolors.ENDC)
+        for fail in failing:
+            print(Bcolors.FAIL + "FAIL: %s" % fail + Bcolors.ENDC)
+        print('exiting 00_start-pipeline.py')
+        exit()
     if len(warning) > 0:
         outputs = []
         for row in data.index:
