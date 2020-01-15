@@ -147,10 +147,17 @@ for p in pooldirs:
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' not in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.gz') or f.endswith('.txt') and '_all_' not in f]
     cmds.extend(get_cmds(srcfiles, md5files, remote_unfiltered, generate_md5))
-    # double check for _all_SNPs and _all_INDELs (baseline filtered)
+    # double check for _all_SNPs and _all_INDELs +/- _all_PARALOGS _all_REPEATS (baseline filtered)
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
-    if not len(srcfiles) == 2:
+    # determine the number of srcfiles that should be expected
+    expected = 2
+    poolseqcmd = vars(pklload(op.join(parentdir, ' pipeline_start_command.pkl')))
+    if poolseqcmd['repeats'] is True:
+        expected += 1
+    if poolseqcmd['paralogs'] is True:
+        expected += 1
+    if not len(srcfiles) == expected:
         warning = f"\nWARN: There are not two all-files (SNP + INDEL) which are expected output for pool: {op.basename(p)}"
         warning = warning + "\nWARN: Here are the files I found:\n"
         warning = warning + "\n\t".join(srcfiles)
