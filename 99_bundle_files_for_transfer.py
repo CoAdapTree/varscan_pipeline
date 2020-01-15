@@ -151,16 +151,16 @@ for p in pooldirs:
     md5files = [f for f in fs(varscan) if f.endswith('.md5') and '_all_' in f]
     srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
     # determine the number of srcfiles that should be expected
-    expected = 2
-    poolseqcmd = vars(pklload(op.join(parentdir, ' pipeline_start_command.pkl')))
+    expected = ['SNP','INDEL']
+    poolseqcmd = vars(pklload(op.join(parentdir, 'pipeline_start_command.pkl')))
     if poolseqcmd['repeats'] is True:
-        expected += 1
+        expected.append('REPEATS')
     if poolseqcmd['paralogs'] is True:
-        expected += 1
-    if not len(srcfiles) == expected:
-        warning = f"\nWARN: There are not two all-files (SNP + INDEL) which are expected output for pool: {op.basename(p)}"
-        warning = warning + "\nWARN: Here are the files I found:\n"
-        warning = warning + "\n\t".join(srcfiles)
+        expected.append('PARALOGS')
+    if not len(srcfiles) == len(expected):        
+        warning = f"\nWARN: There are not {len(expected)} all-files ({' + '.join(expected)}) which are expected output for pool: {op.basename(p)}"
+        warning = warning + f"\nWARN: Here are the {len(srcfiles)} files I found:\n"
+        warning = warning + "\t" + "\n\t".join(srcfiles)
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
         askforinput()
     remote_filtered = op.join(remotevarscan, '02_baseline_filtered')
