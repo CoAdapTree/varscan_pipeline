@@ -11,7 +11,7 @@ If multiple samps per pool_name:
 
 # fix
 # assumes equal sample size across pools
-#
+# check_seff does not handle slurm timeouts
 """
 
 
