@@ -1,14 +1,19 @@
-"""Convert json file from fastp into data table.
+"""
+Convert json file from fastp into data table.
 Count reads in bamfiles from throughout pipeline.
 
-### usage
+# usage
 # module load samtools/1.9
 # python 99_get_read_stats.py parentdir 32
-###
+#
 
-### purpose
+# purpose
 # get counts for trimmed, bams
-###
+#
+
+# TODO
+# add pool_name column to readinfo.txt
+#
 """
 
 # imports
@@ -16,7 +21,7 @@ import os, sys, json, pandas as pd
 from tqdm import tqdm
 from os import path as op
 from collections import OrderedDict
-from coadaptree import fs, uni, pklload
+from coadaptree import fs, uni, pklload, Bcolors
 
 
 # args
@@ -26,7 +31,7 @@ if parentdir.endswith("/"):
 
 
 # reqs
-print('getting reqs')
+print(Bcolors.BOLD + '\nGetting reqs ...' + Bcolors.ENDC)
 samp2pool = pklload(op.join(parentdir, 'samp2pool.pkl'))
 pools = uni(list(samp2pool.values()))
 
@@ -41,7 +46,7 @@ for p in pools:
 
 # TRIMMING DATA
 # get the json data from trimming
-print('getting trim data')
+print(Bcolors.BOLD + '\nGetting trim data ...' + Bcolors.ENDC)
 data = {}
 count = 0
 for p in pooldirs:
@@ -54,7 +59,7 @@ for p in pooldirs:
 
 
 # put data into a dataframe, and sort columns
-print('reading data')
+print(Bcolors.BOLD + '\nReading data ...' + Bcolors.ENDC)
 readinfo = OrderedDict()
 samps = []
 for j in sorted(data):
@@ -75,7 +80,7 @@ for j in sorted(data):
 
 # BAM DATA
 # get counts from downstream
-print('getting bam counts')
+print(Bcolors.BOLD + '\nGetting bam counts ...' + Bcolors.ENDC)
 key = ['mapped_bamfile', 'dedup_bamfile', 'realigned_bamfile']
 for k in key:
     readinfo[k] = OrderedDict()
@@ -100,7 +105,7 @@ for p in pooldirs:
 
 
 # make the dataframe
-print('creating dataframe')
+print(Bcolors.BOLD + '\nCreating dataframe ...' + Bcolors.ENDC)
 df = pd.DataFrame(readinfo)
 df['samp'] = list(df.index)
 df.index = range(len(df.index))
@@ -120,4 +125,4 @@ order = ['samp',
 df = df[[x for x in order]].copy()
 file = op.join(parentdir, 'readinfo.txt')
 df.to_csv(file, sep='\t', index=False)
-print('created file:', file)
+print(Bcolors.BOLD + 'Created file: %s' % file + Bcolors.ENDC)
