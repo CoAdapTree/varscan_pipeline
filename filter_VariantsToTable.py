@@ -13,8 +13,13 @@
 # gatk VariantsToTable [...] -F TYPE -GF GT -GF GQ -GF FREQ --split-multi-allelic
 
 ### usage
-# python filter_VariantsToTable.py VariantsToTable_output.txt SNPorINDEL
-# OR
+## to filter VariantsToTable output file:
+# python filter_VariantsToTable.py VariantsToTable_output.txt SNP
+# python filter_VariantsToTable.py VariantsToTable_output.txt INDEL
+## to remove paralogs and/or remove repeats and/or translate stitched positions:
+## (parentdir is used to find .pkl files to determine if apporpriate for pool)
+# python filter_VariantsToTable.py VariantsToTable_output.txt SNP parentdir
+## OR within another module
 # from filter_VariantsToTable import main as remove_multiallelic
 
 ### fix
@@ -270,7 +275,9 @@ def get_varscan_names(df, pooldir):
     print('renaming varscan columns ...')
     # get order of samps used to create varscan cmds (same order as datatable)
     pool = op.basename(pooldir)
+    print('pklfile = ', op.join(op.dirname(pooldir), 'poolsamps.pkl'))
     samps = pklload(op.join(op.dirname(pooldir), 'poolsamps.pkl'))[pool]
+    print('len(samps) for %s = ' % pool, len(samps))
     # create a list of names that varscan gives by default
     generic = ['Sample%s' % (i+1) for i in range(len(samps))]
     # create a map between generic and true samp names
@@ -307,7 +314,7 @@ def load_data(tablefile):
     df['locus'] = ["%s-%s" % (contig, pos) for (contig, pos) in zip(df['CHROM'].tolist(), df['POS'].tolist())]
     df = get_varscan_names(df, pooldir)
 
-    return df, tf
+    return df, tf, pooldir
 
 
 def keep_snps(df, tf):
@@ -338,7 +345,7 @@ def filter_type(df, tf, tipe):
     return df
 
 
-def remove_paralogs(snps, parentdir, snpspath):
+def remove_paralogs(snps, parentdir, snpspath, pool):
     """
     Remove sites from snptable that are thought to have multiple gene copies align to this position.
     
@@ -352,24 +359,25 @@ def remove_paralogs(snps, parentdir, snpspath):
     """
     parpkl = op.join(parentdir, 'paralog_snps.pkl')
     if op.exists(parpkl):
-        print('Removing paralogs sites ...')
         # read in paralogfile
-        paralogs = pd.read_csv(pklload(parpkl), sep='\t')
+        paralogdict = pklload(parpkl)
+        if paralogdict[pool] is not None:
+            print('Removing paralogs sites ...')
+            paralogs = pd.read_csv(paralogdict[pool], sep='\t')
+            # remove and isolate paralogs from snps
+            truths = snps['locus'].isin(paralogs['locus'])
+            found_paralogs = snps[truths].copy()
+            snps = snps[~truths].copy()
+            snps.index = range(len(snps.index))
 
-        # remove and isolate paralogs from snps
-        truths = snps['locus'].isin(paralogs['locus'])
-        found_paralogs = snps[truths].copy()
-        snps = snps[~truths].copy()
-        snps.index = range(len(snps.index))
-
-        # write paralogs to a file
-        parafile = snpspath.replace(".txt", "_PARALOGS.txt")
-        found_paralogs.to_csv(parafile, sep='\t', index=False)
-        print(f'{op.basename(snpspath)} has {len(snps.index)} non-paralog SNPs')
+            # write paralogs to a file
+            parafile = snpspath.replace(".txt", "_PARALOGS.txt")
+            found_paralogs.to_csv(parafile, sep='\t', index=False)
+            print(f'{op.basename(snpspath)} has {len(snps.index)} non-paralog SNPs')
     return snps
 
 
-def remove_repeats(snps, parentdir, snpspath):
+def remove_repeats(snps, parentdir, snpspath, pool):
     """
     Remove SNPs that are found to be in repeat-masked regions.
     
@@ -382,52 +390,55 @@ def remove_repeats(snps, parentdir, snpspath):
     """
     reppkl = op.join(parentdir, 'repeat_regions.pkl')
     if op.exists(reppkl):
-        print('Removing repeat regions ...')
         # read in repeat regions
-        repeats = pd.read_csv(pklload(reppkl), sep='\t')
-        # figure out if data is from stitched or not
-        if 'unstitched_chrom' in snps.columns:
-            # then the snps have been translated: stitched -> unstitched
-            chromcol = 'unstitched_chrom'
-            poscol = 'unstitched_pos'
-            print('\tsnps have been translated')
-        else:
-            # otherwise SNPs were called on unstitched reference
-            chromcol = 'CHROM'
-            poscol = 'POS'
-            print('\tsnps have not been translated')
-        # reduce repeats to the chroms that matter (helps speed up lookups)
-        repeats = repeats[repeats['CHROM'].isin(snps[chromcol].tolist())].copy()
+        repeatdict = pklload(reppkl)
+        if repeatdict[pool] is not None:
+            print('Removing repeat regions ...')
+            # if user selected translation be applied to this pool
+            repeats = pd.read_csv(repeatdict[pool], sep='\t')
+            # figure out if data is from stitched or not
+            if 'unstitched_chrom' in snps.columns:
+                # then the snps have been translated: stitched -> unstitched
+                chromcol = 'unstitched_chrom'
+                poscol = 'unstitched_pos'
+                print('\tsnps have been translated')
+            else:
+                # otherwise SNPs were called on unstitched reference
+                chromcol = 'CHROM'
+                poscol = 'POS'
+                print('\tsnps have not been translated')
+            # reduce repeats to the chroms that matter (helps speed up lookups)
+            repeats = repeats[repeats['CHROM'].isin(snps[chromcol].tolist())].copy()
 
-        # isolate SNPs in repeat regions
-        repeat_snps = []
-        for chrom in tqdm(uni(snps[chromcol])):
-            reps = repeats[repeats['CHROM'] == chrom].copy()
-            mysnps = snps[snps[chromcol] == chrom].copy()
-            if len(reps.index) > 0 and len(mysnps.index) > 0:
-                for row in mysnps.index:
-                    pos = snps.loc[row, poscol]  # index is maintained from snps to mysnsps
-                    df = reps[reps['stop'].astype(int) >= int(pos)].copy()
-                    df = df[df['start'].astype(int) <= int(pos)].copy()
-                    if len(df.index) > 0:
-                        assert len(df.index) == 1
-                        repeat_snps.append(row)
+            # isolate SNPs in repeat regions
+            repeat_snps = []
+            for chrom in tqdm(uni(snps[chromcol])):
+                reps = repeats[repeats['CHROM'] == chrom].copy()
+                mysnps = snps[snps[chromcol] == chrom].copy()
+                if len(reps.index) > 0 and len(mysnps.index) > 0:
+                    for row in mysnps.index:
+                        pos = snps.loc[row, poscol]  # index is maintained from snps to mysnsps
+                        df = reps[reps['stop'].astype(int) >= int(pos)].copy()
+                        df = df[df['start'].astype(int) <= int(pos)].copy()
+                        if len(df.index) > 0:
+                            assert len(df.index) == 1
+                            repeat_snps.append(row)
 
-        # save repeats
-        print(f'\tSaving {len(repeat_snps)} repeat regions')
-        repeat_path = snpspath.replace(".txt", "_REPEATS.txt")
-        myrepeats = snps[snps.index.isin(repeat_snps)].copy()
-        myrepeats.to_csv(repeat_path, sep='\t', index=False)
+            # save repeats
+            print(f'\tSaving {len(repeat_snps)} repeat regions')
+            repeat_path = snpspath.replace(".txt", "_REPEATS.txt")
+            myrepeats = snps[snps.index.isin(repeat_snps)].copy()
+            myrepeats.to_csv(repeat_path, sep='\t', index=False)
 
-        # remove SNPs in repeat regions
-        snps = snps[~snps.index.isin(repeat_snps)].copy()
-        snps.index = range(len(snps.index))
+            # remove SNPs in repeat regions
+            snps = snps[~snps.index.isin(repeat_snps)].copy()
+            snps.index = range(len(snps.index))
 
-        print(f'{op.basename(snpspath)} has {len(snps.index)} SNPs outside of repeat regions')
+            print(f'{op.basename(snpspath)} has {len(snps.index)} SNPs outside of repeat regions')
 
     return snps
 
-def translate_stitched_to_unstitched(df, parentdir):
+def translate_stitched_to_unstitched(df, parentdir, pool):
     """See if user asked regions to be translated from stitched genome to unstitched.
     
     # assumes
@@ -435,8 +446,11 @@ def translate_stitched_to_unstitched(df, parentdir):
     """
     orderpkl = op.join(parentdir, 'orderfile.pkl')
     if op.exists(orderpkl):
-        orderfile = pklload(orderpkl)
-        df = translate_stitched.main(df.copy(), orderfile)
+        orderdict = pklload(orderpkl)
+        if oderdict[pool] is not None:
+            # if user selected translation be applied to this pool
+            orderfile = orderdict[pool]
+            df = translate_stitched.main(df.copy(), orderfile)
     return df
 
 
@@ -444,7 +458,7 @@ def main(tablefile, tipe, parentdir=None, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
 
     # load the data
-    df, tf = load_data(tablefile)
+    df, tf, pooldir = load_data(tablefile)
 
     # determine loci with REF=N but biallelic otherwise
     if tipe == 'SNP':
@@ -480,13 +494,18 @@ def main(tablefile, tipe, parentdir=None, ret=False):
         # translate stitched (if called at 00_start)
         # translate before filtering so that REPEAT and PARALOG files are translated
         # (takes longer than if translating after filtering, obv)
-        df = translate_stitched_to_unstitched(df.copy(), parentdir)  # not coded to translate INDELs
+        df = translate_stitched_to_unstitched(df.copy(),
+                                              parentdir,
+                                              op.basename(pooldir))  # not coded to translate INDELs
 
         # remove repeats (if called at 00_start) - want to remove repeats before paralogs
-        df = remove_repeats(df.copy(), parentdir, tablefile)
+        df = remove_repeats(df.copy(),
+                            parentdir,
+                            tablefile,
+                            op.basename(pooldir))
 
         # remove paralog SNPs (if called at 00_start)
-        df = remove_paralogs(df.copy(), parentdir, tablefile)
+        df = remove_paralogs(df.copy(), parentdir, tablefile, op.basename(pooldir))
 
     if ret is True:
         return df

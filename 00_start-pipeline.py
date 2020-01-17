@@ -2,7 +2,12 @@
 start the pipeline.
 
 ### usage
-# 00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]]
+# 00_start-pipeline.py -p PARENTDIR
+#                     [-e EMAIL [-n EMAIL_OPTIONS ...]]
+#                     [-maf MAF]
+#                     [--rm_paralogs]
+#                     [--rm_repeats]
+#                     [--translate]
 ###
 
 ### assumes
@@ -10,6 +15,9 @@ start the pipeline.
 # that ploidy is the same (ie uses the exact same pop members) across resquencing of ...
 #     individual pools (all resequencing must have same ploidy for any given sample)
 ###
+
+### TODO
+# use @functools.wraps(function) for handling --rm_repeats/paralogs, --translate to simplify code
 """
 
 import os, sys, distutils.spawn, subprocess, shutil, argparse, pandas as pd
@@ -18,7 +26,7 @@ from os import path as op
 from subprocess import PIPE
 from subprocess import Popen
 from collections import OrderedDict
-from coadaptree import fs, pkldump, uni, makedir, askforinput, Bcolors
+from coadaptree import fs, pkldump, uni, makedir, askforinput, Bcolors, luni
 
 def get_rgid(r1):
     """If RGID is blank, print out the output that the pipeline would otherwise use."""
@@ -77,7 +85,7 @@ def get_datafiles(parentdir, f2pool, data):
         print(Bcolors.BOLD + 'Here are the files in datatable.txt' + Bcolors.ENDC)
         for x in datafiles:
             print(x)
-        askforinput()
+        askforinput(newline='')
 
     except NameError:
         pass
@@ -111,15 +119,22 @@ def make_pooldirs(data, parentdir):
     pools = uni(data['pool_name'].tolist())
     pooldirs = []
     for p in pools:
-        DIR = op.join(parentdir, p)
-        if op.exists(DIR):
-            print("The pooldir already exists, this could overwrite previous data: %s" % DIR)
-            askforinput()
-        pooldirs.append(makedir(DIR))
+        pooldir = op.join(parentdir, p)
+        if op.exists(pooldir):
+            text = "\tWARN: The pooldir already exists, this WILL overwrite and/or delete previous data: %s" % pooldir
+            print(Bcolors.WARNING + text + Bcolors.ENDC)
+            askforinput(tab='\t', newline='')
+            # first unlink fastq files
+            for f in fs(pooldir):
+                if f.endswith('.gz'):
+                    os.unlink(f)
+            # then just delete the directory
+            shutil.rmtree(pooldir)
+        pooldirs.append(makedir(pooldir))
     return pooldirs
 
 
-def create_all_bedfiles(poolref):
+def create_all_bedfiles(poolref, numpools):
     """For each unique ref.fa in datatable.txt, create bedfiles for varscan.
 
     Positional arguments:
@@ -128,35 +143,176 @@ def create_all_bedfiles(poolref):
     # create bedfiles for varscan
     print(Bcolors.BOLD + "\ncreating bedfiles" + Bcolors.ENDC)
     for ref in uni(poolref.values()):
-        create_bedfiles.main(ref)
+        create_bedfiles.main(ref, numpools)
+
+def choose_file(files, pool, purpose, keep=None):
+    """Choose which repeat/paralog file to use if multiple exist."""
+    print(Bcolors.BOLD + '\n\n\tWhich file would you like to use for pool (%s) to %s?' % (pool,purpose) + Bcolors.ENDC)
+    nums = []
+    for i,f in enumerate(files):
+        print('\t\t%s %s' % (i,op.basename(f)))
+        nums.append(i)
+    while True:
+        inp = input(Bcolors.WARNING + "\tINPUT NEEDED: Choose file by number: " + Bcolors.ENDC).lower()
+        if inp in nums:
+            keep = files[inp]
+            break
+        else:
+            print(Bcolors.FAIL + "Please respond with a number from above." + Bcolors.ENDC)
+    # make sure they've chosen at least one account
+    while keep is None:
+        print(Bcolors.FAIL + "FAIL: You need to specify at least file. Revisiting files..." + Bcolors.ENDC)
+        keep = choose_file(files, pool, purpose, keep=None)
+    return keep
 
 
-def read_datatable(parentdir, translate, repeats, paralogs):
-    """
-    Read in datatable.txt, use to create files and dirs for downstream.
-    Also checks some assumptions of datatable.txt.
+def get_parafile(parentdir):
+    """Obtain file containing paralog SNPs to be removed from final SNPs."""
+    parafiles = [f for f in fs(parentdir) if f.endswith('_paralog_snps.txt')]
+    if len(parafiles) > 1:
+        parafile = choose_file(parafiles, pool, 'remove paralogs') 
+    elif len(parafiles) == 0:
+        parafile = None
+    elif len(parafiles) == 1:
+        parafile = parafiles[0]
+    return parafile
 
-    translate, repeats, and paralogs are boolean.
-    parentdir is a path.
-    """
+def check_ref_assumptions(samp, ref):
+    """Make sure pipeline assumptions about ref.fasta are met."""
+    if not op.exists(ref):
+        text = 'FAIL: ref for %s does not exist in path: %s' % (samp, ref)
+        print(Bcolors.FAIL + text + Bcolors.ENDC)
+        print('exiting 00_start-pipeline.py')
+        exit()
+    needed = []
+    for suffix in ['.dict', '.amb', '.ann', '.bwt', '.fai', '.pac', '.sa']:
+        refext = ref + suffix if suffix != '.dict' else ref.split('.fa')[0] + suffix
+        if not op.exists(refext):
+            needed.append(refext)
+    if len(needed) > 0:
+        print(Bcolors.FAIL +
+              'FAIL: the following extensions of the reference are needed to continue, \
+please create these files' +
+              Bcolors.ENDC)
+        for n in needed:
+            print(Bcolors.FAIL + n + Bcolors.ENDC)
+        print('exiting')
+        exit()
+    return ref
+
+
+def handle_repeats(repeats, pool2repeatsfile, ref, data, pool):
+    """If --rm_repeats flag was used, determine which repeats file to use."""
+    repeatsfile = None
+    if repeats is True:
+        if pool not in pool2repeatsfile:
+            # if more than one pool ask user
+            repeatfile = ref.split(".fa")[0] + '_repeats.txt'
+            if luni(data.loc[data['ref']==ref, 'pool_name']) > 1:
+                # if there is more than one pool with the same ref, confirm repeats is for this pool
+                inp = askforinput(tab='\t',
+                                  msg='Would you like to use this file to remove repeats from the %s pool?: \n\t\t%s'
+                                  % (pool, repeatfile),
+                                  newline='')
+            else:
+                # otherwise there is only one pool with this ref - use the repeats
+                inp = 'yes'
+            if inp == 'yes':
+                if not op.exists(repeatfile):
+                    text = 'FAIL: You have indicated that you would like repeat regions removed. \n'
+                    text = text + 'FAIL: But the file expected by the pipeline (the one you chose above) \n'
+                    text = text + 'FAIL: does not exist: %s' % repeatfile
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    exit()
+                repeatsfile = repeatfile
+    return repeatsfile
+
+
+def handle_translate(translate, pool2translate, ref, data, pool):
+    """If --translate flag was used, determine which file to use for tranlsation."""
+    transfile = None
+    if translate is True:
+        if pool not in pool2translate:
+            orderfile = ref.split(".fa")[0] + '.order'
+            if luni(data.loc[data['ref']==ref, 'pool_name']) > 1:
+                # if there is more than one pool with the same ref, confirm repeats is for this pool
+                inp = askforinput(tab='\t',
+                                  msg='Would you like to use this file to translate stitched positions for the %s pool?:\
+\n\t\t%s' % (pool, orderfile),
+                                  newline='')
+            else:
+                # otherwise there is only one pool with this ref - use the repeats
+                inp = 'yes'
+            if inp == 'yes':
+                if not op.exists(orderfile):
+                    text = 'FAIL: You have indicated that you would like stitched regions translated. \n'
+                    text = text + 'FAIL: But the file expected by the pipeline (the one you chose above) \n'
+                    text = text + 'FAIL: does not exist: %s' % orderfile
+                    text = text + '\nexiting 00_start-pipeline.py'
+                    print(Bcolors.FAIL + text + Bcolors.ENDC)
+                    exit()
+                # if the user says they want this pool translated, store orderfile
+                transfile = orderfile
+    return transfile
+
+
+def handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir):
+    """If --rm_paralogs was used, determine which file to use."""
+    parafile = None
+    if paralogs is True:
+        if pool not in pool2paralogfile:
+            if luni(data['pool_name']) > 1:
+                # if more than one pool, see if --rm_paralogs applies to this pool
+                inp = askforinput(tab='\t',
+                                  msg='Would you like to remove paralogs from the pool: %s?' % pool,
+                                  newline='')
+                if inp == 'yes':
+                    parafile = get_parafile(parentdir)
+            else:
+                # try to assign paralog file manually, ask if necessary
+                parafile = get_parafile(parentdir)
+    return parafile
+
+
+def read_datatable(parentdir):
+    """Read in datatable.txt."""
+    # look for datatable.txt in parentdir
     datatable = op.join(parentdir, 'datatable.txt')
     if not op.exists(datatable):
         print(Bcolors.FAIL + '''FAIL: the datatable is not in the necessary path: %s
 FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
         sys.exit(3)
-    print(Bcolors.BOLD + 'reading datatable, getting fastq info' + Bcolors.ENDC)
     data = pd.read_csv(datatable, sep='\t')
-    rginfo = {}     # key=samp vals=rginfo
+    return data
+
+
+def parse_datatable(data, parentdir, translate, repeats, paralogs):
+    """
+    Checks some assumptions of datatable.txt, create files and dirs for downstream.
+
+    translate, repeats, and paralogs are boolean.
+    parentdir is a path.
+    """
+    print(Bcolors.BOLD + '\nReading datatable, getting fastq info' + Bcolors.ENDC)
+    
+    # inititate dictionaries for downstream pipeline
+    rginfo = {}  # key=samp vals=rginfo
     samp2pool = {}  # key=samp val=pool
-    poolref = {}    # key=pool val=ref.fa
-    ploidy = {}     # key=pool val=dict(key=sample: val=sample_ploidy)
+    poolref = {}  # key=pool val=ref.fa
+    ploidy = {}  # key=pool val=dict(key=sample: val=sample_ploidy)
     poolsamps = {}  # key=pool val=sampnames
-    f2samp = {}     # key=f val=samp
-    f2pool = {}     # key=f val=pool
+    f2samp = {}  # key=f val=samp
+    f2pool = {}  # key=f val=pool
     adaptors = OrderedDict()  # key=samp val={'r1','r2'} val=adaptor
-    warning = [] # whether to print out warning about optional RG info
-    failing = [] # whether to print out failing about required RG info
+    warning = []  # whether to print out warning about optional RG info
+    failing = []  # whether to print out failing about required RG info
+    pool2paralogfile = {}  # if --rm_paralogs flagged, store file based on pool
+    pool2repeatsfile = {}  # if --rm_repeats flagged, store file based on pool
+    pool2translate = {}  # if --translate flagged, store file based on pool
+    
+    # iterate through datatable
     for row in data.index:
+        # get variables
         samp = data.loc[row, 'sample_name']
         adaptors[samp] = {'r1': data.loc[row, 'adaptor_1'],
                           'r2': data.loc[row, 'adaptor_2']}
@@ -174,6 +330,8 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 print('exiting')
                 exit()
         samp2pool[samp] = pool
+
+        # get ploidy info
         if pool not in ploidy:
             ploidy[pool] = {}
         if samp in ploidy[pool].keys():
@@ -182,73 +340,21 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
                 print(Bcolors.FAIL + text + Bcolors.ENDC)
                 exit()
         ploidy[pool][samp] = int(data.loc[row, 'ploidy'])
+
+        # get ref.fasta info
+        ref = data.loc[row, 'ref']
         if pool in poolref:
-            if not poolref[pool] == data.loc[row, 'ref']:
-                print("ref genome for samples in %s pool seems to have different paths in datatable.txt" % pool)
-                sys.exit(1)
-        else:
-            ref = data.loc[row, 'ref']
-            if not op.exists(ref):
-                text = 'FAIL: ref for %s does not exist in path: %s' % (samp, ref)
+            # make sure each row for a pool specifies the same reference.fa
+            if poolref[pool] != ref:
+                text = "FAIL: Ref genome for samples in %s pool seem to have different paths in datatable" % pool
                 print(Bcolors.FAIL + text + Bcolors.ENDC)
                 print('exiting 00_start-pipeline.py')
                 exit()
-            if translate is True:
-                orderfile = ref.split(".fa")[0] + '.order'
-                if not op.exists(orderfile):
-                    text = 'FAIL: You have indicated that you would like stitched regions translated.'
-                    text = text + 'But the pipeline cannot find the .order file: %s' % orderfile
-                    text = text + '\nexiting 00_start-pipeline.py'
-                    print(Bcolors.FAIL + text + Bcolors.ENDC)
-                    exit()
-                else:
-                    pkldump(orderfile, op.join(parentdir, 'orderfile.pkl'))
-            if repeats is True:
-                repeatfile = ref.split(".fa")[0] + '_repeats.txt'
-                if not op.exists(repeatfile):
-                    text = 'FAIL: You have indicated that you would like repeat regions removed. '
-                    text = text + 'But the pipeline cannot find the file for repeat regions: %s' % repeatfile
-                    print(Bcolors.FAIL + text + Bcolors.ENDC)
-                    exit()
-                else:
-                    pkldump(repeatfile, op.join(parentdir, 'repeat_regions.pkl'))
-            if paralogs is True:
-                parafiles = [f for f in fs(parentdir) if f.endswith('_paralog_snps.txt')]
-                if len(parafiles) > 1:
-                    text = f'FAIL: There are multiple files in {parentdir} with "_paralog_snps.txt" in the name.\n'
-                    text = text + 'FAIL: Please remove all but one of these files.'
-                    print(Bcolors.FAIL + text + Bcolors.ENDC)
-                    print('exiting 00_start.py')
-                    exit()
-                elif len(parafiles) == 0:
-                    parafile = ''
-                elif len(parafiles) == 1:
-                    parafile = parafiles[0]
-                if not op.exists(parafile):
-                    text = 'FAIL: You have indicated that you would like paralog sites removed '
-                    text = text + 'from final SNPs. But the pipeline cannot find the file for repeat '
-                    text = text + 'regions. This file must end with "_paralog_snps.txt".'
-                    print(Bcolors.FAIL + text + Bcolors.ENDC)
-                    exit()
-                else:
-                    pkldump(parafile, op.join(parentdir, 'paralog_snps.pkl'))
-            needed = []
-            for suffix in ['.dict', '.amb', '.ann', '.bwt', '.fai', '.pac', '.sa']:
-                refext = ref + suffix if suffix != '.dict' else ref.split('.fa')[0] + suffix
-                if not op.exists(refext):
-                    needed.append(refext)
-            if len(needed) > 0:
-                print(Bcolors.FAIL +
-                      'FAIL: the following extensions of the reference are needed to continue, \
-please create these files' +
-                      Bcolors.ENDC)
-                for n in needed:
-                    print(Bcolors.FAIL + n + Bcolors.ENDC)
-                print('exiting')
-                exit()
-            poolref[pool] = ref
+        else:
+            # check assumptions about ref
+            poolref[pool] = check_ref_assumptions(samp, ref)
 
-        # get RG info
+        # hangle RG info
         rginfo[samp] = {}
         # required RG info
         for col in ['rglb', 'rgpl', 'rgsm']:  # rg info columns
@@ -264,9 +370,53 @@ please create these files' +
                     warning.append(samp)
             else:
                 rginfo[samp][col] = data.loc[row, col]
+
+        # map between file and pool/samp
         for f in [data.loc[row, 'file_name_r1'], data.loc[row, 'file_name_r2']]:
             f2pool[f] = pool
             f2samp[op.join(pooldir, f)] = samp
+
+    # handle --rm_paralogs, --translate, --rm_repeats
+    for pool in uni(data['pool_name']):
+        # handle translating stitched genome to unstitched positions
+        pool2translate[pool] = handle_translate(translate, pool2translate, poolref[pool], data, pool)
+
+        # handle removing SNPs from repeat regions
+        pool2repeatsfile[pool] = handle_repeats(repeats, pool2repeatsfile, poolref[pool], data, pool)
+
+        # handle removing paralogs
+        pool2paralogfile[pool] = handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir)
+
+    # handle fails for rm_repeats/translate/rm_paralogs
+    flagexit = False
+    for dic,flag,word in zip([pool2repeatsfile, pool2translate, pool2paralogfile],
+                             [repeats, translate, paralogs],
+                             ['remove repeats', 'translate stitched positions', 'remove paralogs']):
+        # if a flag was specified but none of the pools were selected:
+        if flag is True and sum([1 for v in dic.values() if v is not None])==0:
+            flagexit = True
+            text = 'FAIL: You have indicated that you would like to %s from final SNPs.\n' % word
+            text = text + 'FAIL: But the user has not specified at least one pool to %s. \n' % word
+            text = text + 'FAIL: You need to respond "yes" to at least one of the prompts above \n'
+            text = text + 'FAIL: for assigning a file to a pool - i.e., to use the \n'
+            text = text + 'FAIL: %s flag, you must apply it to at least one pool. \n' % word
+            if 'repeats' in word:
+                text = text + 'FAIL: The file containing repeat regions should be one of the following:\n'
+                for ref in uni(data['ref']):
+                    repeatfile = ref.split(".fa")[0] + '_repeats.txt'
+                    text = text + "\t %s \n" % repeatfile
+            elif 'stitched' in word:
+                text = text + 'FAIL: The file to translate stitched to unstitched positions should \n'
+                text = text + 'FAIL: be one of the following:\n'
+                for ref in uni(data['ref']):
+                    orderfile = ref.split(".fa")[0] + '.order'
+                    text = text + "\t %s \n" % orderfile
+            elif 'paralogs' in word:
+                text = text + 'FAIL: The file(s) to remove paralogs must be in %s \n' % parentdir
+                text = text + 'FAIL: and end with "_paralog_snps.txt".'
+            print(Bcolors.FAIL + text + Bcolors.ENDC)
+    if flagexit is True:
+        exit()
 
     # RG info failing/warnings
     if len(failing) > 0:
@@ -281,17 +431,18 @@ please create these files' +
             samp = data.loc[row, 'sample_name']
             if samp in warning:
                 r1 = op.join(parentdir, data.loc[row, 'file_name_r1'])
-                outputs.append("%s\t%s" % (samp, get_rgid(r1)))
-        print(Bcolors.WARNING + 'WARN: at least one of the samples has a blank RGID.\n' +
-              'WARN: The pipeline will automatically assign the following RGIDs.\n' +
+                outputs.append("\t\t%s\t%s" % (samp, get_rgid(r1)))
+        print(Bcolors.WARNING + '\n\n\tWARN: at least one of the samples has a blank RGID in the datatable.\n' +
+              '\tWARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB\n' +
+              '\tWARN: The pipeline will automatically assign the following RGIDs.\n' +
               Bcolors.ENDC)
         for output in outputs:
             print(Bcolors.WARNING + output + Bcolors.ENDC)
-        print('\n', Bcolors.WARNING + 'WARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB' +
-              Bcolors.ENDC)
-        askforinput()
-                            
-                               
+        askforinput(tab='\t', newline='')
+
+    pkldump(pool2repeatsfile, op.join(parentdir, 'repeat_regions.pkl'))
+    pkldump(pool2paralogfile, op.join(parentdir, 'paralog_snps.pkl'))
+    pkldump(pool2translate, op.join(parentdir, 'translate_snps.pkl'))
     pkldump(rginfo, op.join(parentdir, 'rginfo.pkl'))
     pkldump(ploidy, op.join(parentdir, 'ploidy.pkl'))
     pkldump(f2samp, op.join(parentdir, 'f2samp.pkl'))
@@ -299,7 +450,7 @@ please create these files' +
     pkldump(poolref, op.join(parentdir, 'poolref.pkl'))
     pkldump(adaptors, op.join(parentdir, 'adaptors.pkl'))
     pkldump(samp2pool, op.join(parentdir, 'samp2pool.pkl'))
-    return data, f2pool, poolref
+    return f2pool, poolref
 
 
 def check_reqs(parentdir):
@@ -493,16 +644,20 @@ def main():
     balance_queue.get_avail_accounts(args.parentdir, save=True)
 
     # read in the datatable
-    data, f2pool, poolref = read_datatable(args.parentdir,
-                                           args.translate,
-                                           args.repeats,
-                                           args.paralogs)
-
-    # create bedfiles to parallelize varscan later on
-    create_all_bedfiles(poolref)
-
+    data = read_datatable(args.parentdir)
+    
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
+    
+    # parse the datatable
+    f2pool, poolref = parse_datatable(data,
+                                      args.parentdir,
+                                      args.translate,
+                                      args.repeats,
+                                      args.paralogs)
+
+    # create bedfiles to parallelize varscan later on
+    create_all_bedfiles(poolref, len(pooldirs))
 
     # assign fq files to pooldirs for visualization (good to double check)
     get_datafiles(args.parentdir, f2pool, data)
