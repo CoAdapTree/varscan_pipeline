@@ -1,14 +1,20 @@
-"""Create rsync commands to copy completed files from current dir to remote server\
+"""Create rsync commands to rsync completed files from current dir to remote server \
 (from perspective of remote server).
 
-# usage
+# usage of this script
 # python 98_bundle_files_for_transfer.py parentdir remote_parentdir <bool>
 #
 
+# usage of rsync_cmds.txt file output from this script
+# [remote_server]$ cat rsync_cmds.txt | parallel -j 56 --progress
+
 # assumes
 # that transfer is done in parallel on remote server
-# that compute canada servers are abbreviated in your remote:$HOME/.ssh/config (eg cedar, beluga, graham)
-# that any md5 files are for the current files in the directory that also haven't been modified since md5 creation
+# that compute canada servers are abbreviated in your remote:$HOME/.ssh/config
+#    (eg cedar, beluga, graham)
+# that any md5 files are for the current files in the directory that also haven't
+#    been modified since md5 creation
+
 """
 
 import os, sys, subprocess, shutil
@@ -29,7 +35,8 @@ print('\t', 'generate_md5 = ', generate_md5)
 
 
 def check_md5(src, md5files):
-    """See if an .md5 file exists, if not create .md5 file.
+    """
+    See if an .md5 file exists, if not create .md5 file.
     Only used for non-sh/out files.
     """
     os.chdir(op.dirname(src))
@@ -44,6 +51,10 @@ def check_md5(src, md5files):
 
 
 def get_cmds(srcfiles, md5files, remotedir, createmd5):
+    """
+    Create rsync command between src_server and remote_server.
+    Create .md5 if necessary.
+    """
     subcmds = []
     for src in srcfiles:
         if createmd5 is True:
@@ -70,6 +81,7 @@ for p in pooldirs:
 
 
 # get pkl files
+print(Bcolors.BOLD + '\nBundling .pkl files ...' + Bcolors.ENDC)
 pkls = [f for f in fs(parentdir) if f.endswith('.pkl')]
 for p in pooldirs:
     for pkl in pkls:
@@ -82,6 +94,7 @@ for p in pooldirs:
 
 
 # get shfiles
+print(Bcolors.BOLD + '\nBundling .sh and .out files ...' + Bcolors.ENDC)
 for p in pooldirs:
     shdir = op.join(p, 'shfiles')
     remotesh = op.join(remote, f'{op.basename(p)}/sh_and_outfiles')
@@ -96,6 +109,7 @@ for p in pooldirs:
 
 
 # get bedtools coords and samtools flagstat
+print(Bcolors.BOLD + '\nBundling bedtools coords and samtools flagstats ...' + Bcolors.ENDC)
 for p in pooldirs:
     bwadir = op.join(p, '02c_sorted_bamfiles')
     remotebwadir = op.join(remote, f'{op.basename(p)}/bedcoords_samflagstats')
@@ -107,6 +121,7 @@ for p in pooldirs:
 
 
 # get realigned bamfiles
+print(Bcolors.BOLD + '\nBundling realigned bamfiles ...' + Bcolors.ENDC)
 for p in pooldirs:
     bamdir = op.join(p, '04_realign')
     remotebamdir = op.join(remote, f'{op.basename(p)}/realigned_bamfiles')
@@ -117,12 +132,13 @@ for p in pooldirs:
 
 
 # get read info
+print(Bcolors.BOLD + '\nBundling readinfo.txt ...' + Bcolors.ENDC)
 readinfo = op.join(parentdir, 'readinfo.txt')
 datatable = op.join(parentdir, 'datatable.txt')
 if not op.exists(readinfo):
-    warning = "WARN: readinfo.txt does not exist. (you can run 99_get_read_stats.py and transfer later)"
+    warning = "\tWARN: readinfo.txt does not exist. (you can run 99_get_read_stats.py and transfer later)"
     print(Bcolors.WARNING + warning + Bcolors.ENDC)
-    askforinput()
+    askforinput(tab='\t', newline='')
 else:
     for p in pooldirs:
         remotep = op.join(remote, op.basename(p))
@@ -133,12 +149,17 @@ else:
 
 
 # get varscan output
+print(Bcolors.BOLD + '\nBundling varscan output ...' + Bcolors.ENDC)
+paralogs = pklload(op.join(parentdir, 'paralog_snps.pkl'))  # used to determine if PARALOGS file is expected
+repeats = pklload(op.join(parentdir, 'repeat_regions.pkl'))  # used to determine if REPEATS file is expected
+poolseqcmd = vars(pklload(op.join(parentdir, 'pipeline_start_command.pkl')))
 for p in pooldirs:
+    pool = op.basename(p)
     varscan = op.join(p, 'varscan')
     if not op.exists(varscan):
-        warning = f"\nWARN: varscan dir does not exist for pool: {op.basename(p)}"
+        warning = f"\n\tWARN: varscan dir does not exist for pool: {op.basename(p)}"
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
-        askforinput()
+        askforinput(tab='\t', newline='')
         continue
     remotevarscan = op.join(remote, f'{op.basename(p)}/snpsANDindels')
     newdirs.append(remotevarscan)
@@ -152,23 +173,23 @@ for p in pooldirs:
     srcfiles = [f for f in fs(varscan) if f.endswith('.txt') and '_all_' in f]
     # determine the number of srcfiles that should be expected
     expected = ['SNP','INDEL']
-    poolseqcmd = vars(pklload(op.join(parentdir, 'pipeline_start_command.pkl')))
-    if poolseqcmd['repeats'] is True:
+    if poolseqcmd['repeats'] is True and repeats[pool] is not None:
         expected.append('REPEATS')
-    if poolseqcmd['paralogs'] is True:
+    if poolseqcmd['paralogs'] is True and paralogs[pool] is not None:
         expected.append('PARALOGS')
     if not len(srcfiles) == len(expected):        
-        warning = f"\nWARN: There are not {len(expected)} all-files ({' + '.join(expected)}) which are expected output for pool: {op.basename(p)}"
-        warning = warning + f"\nWARN: Here are the {len(srcfiles)} files I found:\n"
+        warning = f"\n\tWARN: There are not {len(expected)} all-files ({' + '.join(expected)}) which are expected output for pool: {op.basename(p)}"
+        warning = warning + f"\n\tWARN: Here are the {len(srcfiles)} files I found:\n"
         warning = warning + "\t" + "\n\t".join(srcfiles)
         print(Bcolors.BOLD + Bcolors.WARNING + warning + Bcolors.ENDC)
-        askforinput()
+        askforinput(tab='\t', newline='')
     remote_filtered = op.join(remotevarscan, '02_baseline_filtered')
     newdirs.append(remote_filtered)
     cmds.extend(get_cmds(srcfiles, md5files, remote_filtered, generate_md5))
 
 
 # write commands to file
+print(Bcolors.BOLD + '\nWriting commands to rsync_cmds.txt file ...' + Bcolors.ENDC)
 rsyncfile = op.join(parentdir, 'rsync_cmds.txt')
 print(Bcolors.BOLD + f'\nwriting {len(cmds)} commands to: ' + Bcolors.ENDC + f'{rsyncfile}')
 with open(rsyncfile, 'w') as o:
