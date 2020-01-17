@@ -529,9 +529,9 @@ FAIL: exiting 00_start-pipeline.py
 
 def get_pars():
     choices = ['all', 'fail', 'begin', 'end', 'pipeline-finish']
-    parser = argparse.ArgumentParser(description=print(mytext),
+    parser = argparse.ArgumentParser(description=mytext,
                                      add_help=False,
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=argparse.RawTextHelpFormatter)
     requiredNAMED = parser.add_argument_group('required arguments')
     requiredNAMED.add_argument("-p",
                                required=True,
@@ -542,35 +542,82 @@ def get_pars():
     parser.add_argument("-e",
                         required=False,
                         dest="email",
-                        help="the email address you would like to have notifications sent to")
+                        help='''the email address you would like to have notifications
+sent to''')
     parser.add_argument("-n",
                         default=None,
                         nargs='+',
                         required=False,
                         dest="email_options",
-                        help='''the type(s) of email notifications you would like to receive from the pipeline.\
-                        Requires --email-address. These options are used to fill out the #SBATCH flags.
-must be one (or multiple) of %s''' % [x for x in choices])
+                        help='''the type(s) of email notifications you would like to
+receive from the pipeline. Requires --email-address.
+These options are used to fill out the #SBATCH flags.
+Must be one (or multiple) of 
+%s
+(default: None)''' % [x for x in choices])
     parser.add_argument("-maf",
                         required=False,
                         dest="maf",
-                        help='''At the end of the pipeline, VCF files will be filtered for MAF. If the pipeline is run on a single population/pool, the user can set MAF to 0.0 so as to filter variants based on global allele frequency across populations/pools at a later time. (if the number of sample_names in a pool == 1 then default maf=0; Otherwise maf = 1/sum(ploidy column)''')
+                        help='''At the end of the pipeline, VCF files will be filtered
+for MAF. If the pipeline is run on a single
+population/pool, the user can set MAF to 0.0 so as to
+filter variants based on global allele frequency 
+across populations/pools at a later time. (if the
+number of sample_names in a pool == 1 then default
+maf=0; Otherwise default maf = 1/sum(ploidy column)''')
     parser.add_argument('--translate',
                         required=False,
                         action='store_true',
                         dest="translate",
-                        help='''Boolean: true if used, false otherwise. If a stitched genome is used for mapping, this option will look for a ref.order file in the same directory as the ref.fasta - where ref is the basename of the ref.fasta (without the .fasta). The pipeline will use this .order file to translate mapped positions to unstitched positions at the end of the pipeline while filtering. Positions in .order file are assumed to be 1-based indexing. Assumes .order file has no header, and is of the format (contig name from unstitched genome, start/stop are positions in the stitched genome):
-ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length''')
+                        help='''Boolean: true if used, false otherwise. If a stitched
+genome is used for mapping, this option will look for
+a ref.order file in the same directory as the
+ref.fasta - where ref is the basename of the ref.fasta
+(without the .fasta). The pipeline will use this
+.order file to translate mapped positions to
+unstitched positions at the end of the pipeline while
+filtering. Positions in .order file are assumed to be
+1-based indexing. Assumes .order file has no header,
+and is of the format (contig name from unstitched
+genome, start/stop are positions in the stitched genome):
+ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length
+(default: False)''')
     parser.add_argument('--rm_repeats',
                         required=False,
                         action='store_true',
                         dest='repeats',
-                        help="Boolean: true if used, false otherwise. If repeat regions are available, remove SNPs that fall within these regions. This option will look for a .txt file in the same directory as the ref.fasta. Assumes the filename is of the form: ref_repeats.txt - where ref is the basename of the ref.fasta (without the .fasta). This file should have 1-based indexing and should be located in the same directory as the reference. The file should have a header ('CHROM', 'start', 'stop'). The CHROM column can be names in the reference (if using unstitched reference), or names of contigs that were stitched to form the reference. If using a stitched genome, --translate is required.")
+                        help='''Boolean: true if used, false otherwise. If repeat
+regions are available, remove SNPs that fall within
+these regions from final SNP table and write to 
+a REPEATS table. This option will look for a .txt file
+in the same directory as the ref.fasta. Assumes the
+filename is of the form: ref_repeats.txt - where ref
+is the basename of the ref.fasta (without the .fasta).
+This file should have 1-based indexing and should be
+located in the same directory as the reference. The
+file should have a header ('CHROM', 'start', 'stop').
+The CHROM column can be names in the reference (if
+using unstitched reference), or names of contigs that
+were stitched to form the reference. If using a
+stitched genome, --translate is required. (default:
+False)''')
     parser.add_argument('--rm_paralogs',
                         required=False,
                         action='store_true',
                         dest='paralogs',
-                        help="Boolean: true if used, false otherwise. If candidate sites have been isolated within the reference where distinct gene copies (paralogs) map to the same position (and thus create erroneous SNPs), remove any SNPs that fall on these exact sites. The pipeline assumes this file is located in the parentdir, and ends with '_paralog_snps.txt'. This file is tab-delimited, and must have a column called 'locus' that contains hyphen-separated CHROM-POS sites for paralogs. These sites should be found in the current ref.fa being used to call SNPs (otherwise SNPs cannot be filtered by these sites).")
+                        help='''Boolean: true if used, false otherwise. If candidate
+sites have been isolated within the reference where
+distinct gene copies (paralogs) map to the same
+position (and thus create erroneous SNPs), remove any
+SNPs that fall on these exact sites and write to a
+PARALOGS file. The pipeline assumes this file is
+located in the parentdir, andends with 
+'_paralog_snps.txt'. This file is tab-delimited, and
+must have a column called 'locus' thatcontains
+hyphen-separated CHROM-POS sites for paralogs. These
+sites should be found in the current ref.fa being
+used to call SNPs (otherwise SNPs cannot be filtered
+by these sites). (default: False)''')
     parser.add_argument('-h', '--help',
                         action='help',
                         default=argparse.SUPPRESS,
@@ -684,5 +731,4 @@ if __name__ == '__main__':
 
 
 ''' + Bcolors.ENDC
-
     main()
