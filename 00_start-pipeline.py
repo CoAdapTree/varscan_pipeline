@@ -17,7 +17,7 @@ start the pipeline.
 ###
 
 ### TODO
-# use @functools.wraps(function) for handling --rm_repeats/paralogs, --translate to simplify code
+# use @functools.wraps(function) for handling [--rm_repeats/paralogs, --translate] to simplify code
 """
 
 import os, sys, distutils.spawn, subprocess, shutil, argparse, pandas as pd
@@ -147,13 +147,13 @@ def create_all_bedfiles(poolref, numpools):
 
 def choose_file(files, pool, purpose, keep=None):
     """Choose which repeat/paralog file to use if multiple exist."""
-    print(Bcolors.BOLD + '\n\n\tWhich file would you like to use for pool (%s) to %s?' % (pool,purpose) + Bcolors.ENDC)
+    print(Bcolors.BOLD + '\t\tWhich file would you like to use for pool (%s) to %s?' % (pool,purpose) + Bcolors.ENDC)
     nums = []
     for i,f in enumerate(files):
-        print('\t\t%s %s' % (i,op.basename(f)))
+        print('\t\t\t%s %s' % (i,op.basename(f)))
         nums.append(i)
     while True:
-        inp = input(Bcolors.WARNING + "\tINPUT NEEDED: Choose file by number: " + Bcolors.ENDC).lower()
+        inp = int(input(Bcolors.WARNING + "\t\tINPUT NEEDED: Choose file by number: " + Bcolors.ENDC).lower())
         if inp in nums:
             keep = files[inp]
             break
@@ -166,7 +166,7 @@ def choose_file(files, pool, purpose, keep=None):
     return keep
 
 
-def get_parafile(parentdir):
+def get_parafile(parentdir, pool):
     """Obtain file containing paralog SNPs to be removed from final SNPs."""
     parafiles = [f for f in fs(parentdir) if f.endswith('_paralog_snps.txt')]
     if len(parafiles) > 1:
@@ -267,10 +267,10 @@ def handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir):
                                   msg='Would you like to remove paralogs from the pool: %s?' % pool,
                                   newline='')
                 if inp == 'yes':
-                    parafile = get_parafile(parentdir)
+                    parafile = get_parafile(parentdir, pool)
             else:
                 # try to assign paralog file manually, ask if necessary
-                parafile = get_parafile(parentdir)
+                parafile = get_parafile(parentdir, pool)
     return parafile
 
 
@@ -309,6 +309,19 @@ def parse_datatable(data, parentdir, translate, repeats, paralogs):
     pool2paralogfile = {}  # if --rm_paralogs flagged, store file based on pool
     pool2repeatsfile = {}  # if --rm_repeats flagged, store file based on pool
     pool2translate = {}  # if --translate flagged, store file based on pool
+
+    # make sure there are no blanks where there shouldn't be
+    badcols = []
+    for column in data.columns:
+        if column not in ['rgid', 'rgpu', 'adaptor_1', 'adaptor_2']:
+            if data[column].isnull().sum() > 0:
+                badcols.append(column)
+    if len(badcols) > 0:
+        print(Bcolors.FAIL + "\tFAIL: Some rows in datable.txt have blank entries in the following columns: " + Bcolors.ENDC)
+        for col in badcols:
+            print(Bcolors.FAIL + "\tFAIL: %s" % col + Bcolors.ENDC)
+        print('exiting 00_start-pipeline.py')
+        exit()
     
     # iterate through datatable
     for row in data.index:
@@ -435,6 +448,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         print(Bcolors.WARNING + '\n\n\tWARN: at least one of the samples has a blank RGID in the datatable.\n' +
               '\tWARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB\n' +
               '\tWARN: The pipeline will automatically assign the following RGIDs.\n' +
+              '\n\t\tsample_name\tassigned_RGID' +
               Bcolors.ENDC)
         for output in outputs:
             print(Bcolors.WARNING + output + Bcolors.ENDC)
