@@ -15,6 +15,7 @@
 # put bedfiles in parentdir instead of ref dir, so that all beds are the ones that are wanted
 # make sure befile name str().zfill() matches digits of number used to define thresh
     # reduce duplicate text for calling thresh
+# use cluster name to determine threshold for the number of bedfiles created
 ###
 """
 
@@ -90,10 +91,10 @@ def make_beds_from_orderfile():
     """
     orderfile = ref.replace(".fa", "") + '.order'
     print('\n\tCreating bedfiles from %s. Please confirm:\n\tAssuming .order file is of format:\n\t\tref_scaff<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length' % orderfile)
-    askforinput()
+    askforinput(tab='\t', newline='')
     with open(orderfile, 'r') as o:
         text = o.read().split("\n")
-    thresh = math.ceil(len(text) / 950)
+    thresh = math.ceil(len(text) / globals()['jobs_per_pool'])
     lines = []
     fcount = 0
     for count, line in enumerate(text):
@@ -162,29 +163,13 @@ def make_bedfile(lines, fcount, from_orderfile=False):
         o.write("\n".join(text))
 
 
-# def make_bedfiles():
-#     """Use ref.fa.length file to create bedfiles."""
-#     text = openlenfile("%s.length" % ref)
-#     thresh = math.ceil(len(text) / 950)
-#     lines = []
-#     fcount = 0
-#     for count, line in enumerate(text):
-#         if not line == '':
-#             lines.append(line.split("\t"))
-#         if len(lines) == thresh or (count + 1 == len(text)):
-#             make_bedfile(lines, fcount)
-#             lines = []
-#             fcount += 1
-#     return fcount
-
-
 def make_bedfiles():
     """Use ref.fa.length file to create bedfiles.
     
     Evenly distributes base-pairs across X number of files specified to calculate thresh.
     """
     df = pd.read_csv("%s.length" % ref, sep='\t', header=None)
-    thresh = math.ceil(sum(df[1]) / 950)
+    thresh = math.ceil(sum(df[1]) / globals()['jobs_per_pool'])
     lines = []
     fcount = 0
     fsum = 0
@@ -207,14 +192,31 @@ def check_beddir():
     if len(files) > 0:
         text = '\tThere are already existing bedfiles in %s. These will be deleted.' % beddir
         print(Bcolors.WARNING + text + Bcolors.ENDC)
-        askforinput()
+        askforinput(tab='\t', newline='')
         for f in files:
             os.remove(f)
         print('\t\tRemoved %s bedfiles.' % len(files))
 
 
-def main(ref):
-    globals().update({'ref': ref})
+def determine_jobs_per_pool(numpools, totaljobs):
+    """Use cluster ID and numpools to determine how many bedfiles to create.
+    
+    cluster ID can be: 'cedar', 'graham', 'beluga'
+    If graham/beluga, job limit is 1000 jobs. If cedar, unlimited job number.
+    """
+    cluster = os.environ['CC_CLUSTER']
+    if cluster in ['graham', 'beluga']:
+        jobs_per_pool = math.floor(totaljobs / numpools)
+    else:
+        jobs_per_pool = totaljobs
+    return jobs_per_pool
+
+        
+def main(ref, numpools=1, totaljobs=10):
+    # determine how many bedfiles to create
+    jobs_per_pool = determine_jobs_per_pool(numpools, totaljobs)
+    
+    globals().update({'ref': ref, 'jobs_per_pool': jobs_per_pool})
 
     # warn about overwriting
     check_beddir()
