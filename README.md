@@ -19,10 +19,19 @@ Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, m
 
 ---
 ## Pipeline workflow
-<div style="text-align:center"><img src="https://brandonlind.github.io/images/workflow.png" /></div>
+<div style="text-align:center"><img src="https://brandonlind.github.io/images/workflow.pdf" /></div>
 
+Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
+- scroll each .py file to see bash text/replacements
 - see example folder for example command.sh files output from the pipeline.
+- 01_trim-fastq.py
+    - Trim fastq files with fastp by iterating across windows of size 5 and asserting mean quality of 30; discard any reads that do not retain 75bp or have more than 20 N's. Attempt to remove adaptors if provided in datatable.txt
+- 02_bwa-map_view-sort_index_flagstat.py
+    - Add read groups, map with bwa-mem, filter reads that have mapping quality < 20 or are not proper pairs; discard query unmapped
+- 03_mark_build.py
+    - mark and remove duplicates with picardtools
+
 
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
