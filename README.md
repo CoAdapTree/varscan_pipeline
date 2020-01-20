@@ -26,15 +26,15 @@ one
 
 two
 
-<img src="https://brandonlind.github.io/images/workflow.pdf" alt=""  width="4200" height="4200">
+<img src="./workflow.pdf" alt=""  width="4200" height="4200">
 
 three
 
-[![https://brandonlind.github.io/images/workflow.pdf]]()
+![](./workflow.pdf)
 
 four
 
-![https://brandonlind.github.io/images/workflow.pdf]()
+![](https://brandonlind.github.io/images/workflow.pdf)
 
 five 
 
