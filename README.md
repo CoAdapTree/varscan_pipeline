@@ -46,7 +46,7 @@ six
 
 seven
 
-[embed]brandonlind.github.io/images/workflow.pdf[/embed]
+<a href="https://brandonlind.github.io/images/workflow.pdf"><img src="workflow.png" width="375" height="315"></a>
 
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
