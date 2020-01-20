@@ -75,6 +75,7 @@ Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, m
 - Once the pipeline has finished you will get an email (assuming you choose the 'pipeline-finish' email notification) for each unique pool in the `pool_name` column of `datatable.txt`. Once all pools have finished, the next step is to run `98_get_read_stats.py` (see docstring at top of file for usage) to get summaries of read counts from pre-pipeline, through trimming, mapping, and realignment. Next, run `99_bundle_files_for_transfer.py` (see docstring at top of file for usage) to bundle all necessary files to transfer to a local server. This script will creat a .txt file with rsync commands that the user can execute from the remote server, and can also create md5 files for .bam and varscan output.
 
 <div style="text-align:center"><img src="https://brandonlind.github.io/research/images/pipeline.png" /></div>
+
 `(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
                             [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
                             [--translate] [--rm_repeats] [--rm_paralogs] [-h]`
