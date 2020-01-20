@@ -18,6 +18,9 @@
 Call SNPs and INDELs across pooled populations using VarScan.
 
 ---
+## Pipeline workflow
+![](https://brandonlind.github.io/images/workflow.png)
+
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
 1. Ability to load the following modules via:
@@ -43,11 +46,13 @@ Call SNPs and INDELs across pooled populations using VarScan.
         1. The total character length of the account name is less than 15 - the full slurm account name will need to appear in the ACCOUNT column output from `squeue -u $USER` (using exported `SQUEUE_FORMAT` above); if not, increase the digits in `SQUEUE_FORMAT` from `%0.15a` to eg `%0.20a`.
         1. The characters in the account name that come before an underscore are sufficient to distinguish unique accounts - if the account name does not have an underscore then this is fine.
         1. The accounts that the user would like to use end in `_cpu` (as opposed to eg `_gpu`). The pipeline will skip over non-`_cpu` accounts.
-1. Ability to install virtual environment with python 3.7 (e.g., virtualenv --no-download ~/py3`)
+1. Ability to install virtual environment with python 3.7 (e.g., `virtualenv --no-download ~/py3`)
+    1. See example instructions here: https://docs.computecanada.ca/wiki/Python
     1. Add the appropriate activation command to the `bash_variables` file (eg `source ~/py3/bin/activate` for virutalenv)
 1. The reference fasta file should be uncompressed (eg. ref.fa not ref.fa.gz), and the following commands should be executed before starting pipeline:
     1. `bwa index ref.fa`
     1. `samtools faidx ref.fa`
+    1. `picard.jar CreateSequenceDictionary R=ref.fa O=ref.dict`
 1. clone the pipeline repo's master branch to the server and create a symlink in `$HOME` so that it can be accessed via `$HOME/pipeline`
 
 
@@ -64,28 +69,33 @@ Call SNPs and INDELs across pooled populations using VarScan.
 
 - To kick off the pipeline, source your bash_variables file in parentdir (source bash_variables) to activate the python env, export the pythonpath to the pipeline and other slurm variables. Then run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs up through SNP calling and filtering. If the user has chosed `pipeline-finish` as an email option, the pipeline will email the user once the pipeline is complete. If `fail` is chosen as an email option, the user will be emailed if any jobs die.
 
+- Once the pipeline has finished you will get an email (assuming you choose the 'pipeline-finish' email notification). The next step is to run `98_get_read_stats.py` (see docstring at top of file for usage) to get summaries of read counts from pre-pipeline, through trimming, mapping, and realignment. Next, run `99_bundle_files_for_transfer.py` (see docstring at top of file for usage) to bundle all necessary files to transfer to a local server. This script will creat a .txt file with rsync commands that the user can execute from the remote server, and can also create md5 files for .bam and varscan output.
+
 `(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
                             [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
                             [--translate] [--rm_repeats] [--rm_paralogs] [-h]`
+![](https://brandonlind.github.io/research/images/pipeline.png)
 ```
 required arguments:
   -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
 
 optional arguments:
   -e EMAIL              the email address you would like to have notifications
-                        sent to (default: None)
+                        sent to
   -n EMAIL_OPTIONS [EMAIL_OPTIONS ...]
                         the type(s) of email notifications you would like to
                         receive from the pipeline. Requires --email-address.
                         These options are used to fill out the #SBATCH flags.
-                        must be one (or multiple) of ['all', 'fail', 'begin',
-                        'end', 'pipeline-finish'] (default: None)
+                        Must be one (or multiple) of
+                        ['all', 'fail', 'begin', 'end', 'pipeline-finish']
+                        (default: None)
   -maf MAF              At the end of the pipeline, VCF files will be filtered
                         for MAF. If the pipeline is run on a single
                         population/pool, the user can set MAF to 0.0 so as to
                         filter variants based on global allele frequency
-                        across populations/pools at a later time. (default:
-                        1/(ploidy-per-pop * npops)
+                        across populations/pools at a later time. (if the
+                        number of sample_names in a pool == 1 then default
+                        maf=0; Otherwise maf = 1/sum(ploidy column)
   --translate           Boolean: true if used, false otherwise. If a stitched
                         genome is used for mapping, this option will look for
                         a ref.order file in the same directory as the
@@ -96,12 +106,13 @@ optional arguments:
                         filtering. Positions in .order file are assumed to be
                         1-based indexing. Assumes .order file has no header,
                         and is of the format (contig name from unstitched
-                        genome, start/stop are positions in the stitched
-                        genome): ref_scaffold<tab>contig_name<tab>start_pos<ta
-                        b>stop_pos<tab>contig_length (default: False)
+                        genome, start/stop are positions in the stitched genome):
+                        ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length
+                        (default: False)
   --rm_repeats          Boolean: true if used, false otherwise. If repeat
                         regions are available, remove SNPs that fall within
-                        these regions. This option will look for a .txt file
+                        these regions from final SNP table and write to
+                        a REPEATS table. This option will look for a .txt file
                         in the same directory as the ref.fasta. Assumes the
                         filename is of the form: ref_repeats.txt - where ref
                         is the basename of the ref.fasta (without the .fasta).
@@ -117,13 +128,15 @@ optional arguments:
                         sites have been isolated within the reference where
                         distinct gene copies (paralogs) map to the same
                         position (and thus create erroneous SNPs), remove any
-                        SNPs that fall on these exact sites. The pipeline
-                        assumes this file is located in the same directory as
-                        ref.fasta, and is called ref_paralog_snps.txt - where
-                        ref is the basename of the ref.fasta (without the
-                        .fasta). The content format of this file is that
-                        described by the --exclude-positions flag of
-                        vcftools/0.1.14 manual. (default: False)
+                        SNPs that fall on these exact sites and write to a
+                        PARALOGS file. The pipeline assumes this file is
+                        located in the parentdir, andends with
+                        '_paralog_snps.txt'. This file is tab-delimited, and
+                        must have a column called 'locus' thatcontains
+                        hyphen-separated CHROM-POS sites for paralogs.
+                        These sites should be found in the current ref.fa
+                        being used to call SNPs (otherwise SNPs cannot be
+                        filtered by these sites). (default: False)
   -h, --help            Show this help message and exit.
 
 ```
