@@ -15,11 +15,14 @@
 
 # VarScan poolseq pipeline
 
-Call SNPs and INDELs across pooled populations using VarScan.
+Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, missing data) and redirect SNPs from repeat regions or potential paralogous sites into distinct files.
 
 ---
 ## Pipeline workflow
-![](https://brandonlind.github.io/images/workflow.png)
+<div style="text-align:center"><img src="https://brandonlind.github.io/images/workflow.png" /></div>
+
+- see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
+- see example folder for example command.sh files output from the pipeline.
 
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
@@ -69,12 +72,12 @@ Call SNPs and INDELs across pooled populations using VarScan.
 
 - To kick off the pipeline, source your bash_variables file in parentdir (source bash_variables) to activate the python env, export the pythonpath to the pipeline and other slurm variables. Then run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs up through SNP calling and filtering. If the user has chosed `pipeline-finish` as an email option, the pipeline will email the user once the pipeline is complete. If `fail` is chosen as an email option, the user will be emailed if any jobs die.
 
-- Once the pipeline has finished you will get an email (assuming you choose the 'pipeline-finish' email notification). The next step is to run `98_get_read_stats.py` (see docstring at top of file for usage) to get summaries of read counts from pre-pipeline, through trimming, mapping, and realignment. Next, run `99_bundle_files_for_transfer.py` (see docstring at top of file for usage) to bundle all necessary files to transfer to a local server. This script will creat a .txt file with rsync commands that the user can execute from the remote server, and can also create md5 files for .bam and varscan output.
+- Once the pipeline has finished you will get an email (assuming you choose the 'pipeline-finish' email notification) for each unique pool in the `pool_name` column of `datatable.txt`. Once all pools have finished, the next step is to run `98_get_read_stats.py` (see docstring at top of file for usage) to get summaries of read counts from pre-pipeline, through trimming, mapping, and realignment. Next, run `99_bundle_files_for_transfer.py` (see docstring at top of file for usage) to bundle all necessary files to transfer to a local server. This script will creat a .txt file with rsync commands that the user can execute from the remote server, and can also create md5 files for .bam and varscan output.
 
+<div style="text-align:center"><img src="https://brandonlind.github.io/research/images/pipeline.png" /></div>
 `(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
                             [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
                             [--translate] [--rm_repeats] [--rm_paralogs] [-h]`
-![](https://brandonlind.github.io/research/images/pipeline.png)
 ```
 required arguments:
   -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
