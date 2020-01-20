@@ -32,6 +32,8 @@ Command Specifics
     - Add read groups, map with bwa-mem, filter reads that have mapping quality < 20 or are not proper pairs; discard query unmapped
 - 03_mark_build.py
     - mark and remove duplicates with picardtools
+- start_varscan.py
+    - call `mpileup2cns` with default flags except: `--min-avg-qual 20` (minimum base quality set to 20), `--p-value 0.05` (max p-value set to 0.05).
 
 
 ## Assumed environment
