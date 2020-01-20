@@ -15,7 +15,7 @@
 
 # VarScan poolseq pipeline
 
-Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, missing data) and redirect SNPs from repeat regions or potential paralogous sites into distinct files.
+Call SNPs and INDELs across pooled populations using VarScan. Filter (mapping quality, proper pairs, MAF, GQ, missing data) and redirect SNPs from repeat regions or potential paralogous sites into distinct files.
 
 ---
 ## Pipeline workflow
