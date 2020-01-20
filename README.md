@@ -42,7 +42,7 @@ five
 
 six 
 
-![](https://brandonlind.github.io/images/workflow.pdf)
+[](https://brandonlind.github.io/images/workflow.pdf)
 
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
