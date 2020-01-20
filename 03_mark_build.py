@@ -14,7 +14,10 @@ from os import path as op
 from coadaptree import makedir, get_email_info, pklload
 
 thisfile, pooldir, samp = sys.argv
+parentdir = op.dirname(pooldir)
+bash_variables = op.join(parentdir, 'bash_variables')
 sortfiles = pklload(op.join(pooldir, '%s_sortfiles.pkl' % samp))
+joined = " I=".join(sortfiles)
 
 # MarkDuplicates
 dupdir = op.join(pooldir, '03_dedup_rg_filtered_indexed_sorted_bamfiles')
@@ -34,11 +37,11 @@ text = f'''#!/bin/bash
 {email_text}
 
 # remove dups
-module load picard/2.18.9
 module load java
+module load picard/2.18.9
 export _JAVA_OPTIONS="-Xms256m -Xmx27g"
 java -Djava.io.tmpdir=$SLURM_TMPDIR -jar $EBROOTPICARD/picard.jar MarkDuplicates \
-I={" I=".join(sortfiles)} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
+I={joined} O={dupfile} MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 \
 M={dupstat} REMOVE_DUPLICATES=true
 
 # Build bam index for GATK
@@ -51,9 +54,7 @@ samtools flagstat {dupfile} > {dupflag}
 module unload samtools
 
 # call next step
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+source {bash_variables}
 
 python $HOME/pipeline/04_realignTargetCreator.py {pooldir} {samp} {dupfile}
 
@@ -73,5 +74,6 @@ print('shdir = ', shdir)
 subprocess.call([shutil.which('sbatch'), file])
 
 # balance queue
-balance_queue.main('balance_queue.py', 'mark')
-balance_queue.main('balance_queue.py', 'bwa')
+balance_queue = op.join(os.environ['HOME'], 'pipeline/balance_queue.py')
+subprocess.call([sys.executable, balance_queue, 'mark', parentdir])
+subprocess.call([sys.executable, balance_queue, 'bwa', parentdir])

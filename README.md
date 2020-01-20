@@ -9,37 +9,65 @@
 [![](https://img.shields.io/badge/Developed%20With-PyCharm-yellow.svg?style=popout&logo=data:image/png;base64,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)](https://www.jetbrains.com/pycharm/)
 
 [![](https://img.shields.io/badge/VarScan-2.4.3-9cf.svg)](http://dkoboldt.github.io/varscan/using-varscan.html)
-[![](https://img.shields.io/badge/CRISP-commit%2060966e7-ff69b4.svg)](http://csb5.github.io/lofreq/)
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/559e9dd133a04f838a87582e79f0587b)](https://www.codacy.com/app/brandonlind/poolseq_pipline?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CoAdaptree/poolseq_pipline&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/CoAdaptree/poolseq_pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/CoAdaptree/poolseq_pipeline)
 
-# VarScan and CRISP poolseq pipeline
+# VarScan poolseq pipeline
 
-Call SNPs and INDELs across pooled populations using CRISP and VarScan.
+Call SNPs and INDELs across pooled populations using VarScan. Filter (mapping quality, proper pairs, MAF, GQ, missing data) and redirect SNPs from repeat regions or potential paralogous sites into distinct files.
 
 ---
+## Pipeline workflow
+
+<center><a href="https://brandonlind.github.io/images/workflow.pdf"><img src="https://brandonlind.github.io/images/workflow.png"></a></center>
+
+Command Specifics
+- see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
+- scroll each .py file to see bash text/replacements
+- see example folder for example command.sh files output from the pipeline.
+- 01_trim-fastq.py
+    - Trim fastq files with fastp by iterating across windows of size 5 and asserting mean quality of 30; discard any reads that do not retain 75bp or have more than 20 N's. Attempt to remove adaptors if provided in datatable.txt
+- 02_bwa-map_view-sort_index_flagstat.py
+    - Add read groups, map with bwa-mem, filter reads that have mapping quality < 20 or are not proper pairs; discard query unmapped
+- 03_mark_build.py
+    - mark and remove duplicates with picardtools
+- start_varscan.py
+    - call `mpileup2cns` with default flags except: `--min-avg-qual 20` (minimum base quality set to 20), `--p-value 0.05` (max p-value set to 0.05).
+
+
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
-1. Ability to install a virtual environment with python 3.7 (eg: `virtualenv --no-download ~/py3`)
-    1. source env within `$HOME/.bashrc` on the last line of the file (eg `source ~/py3/bin/activate` for virutalenv)
 1. Ability to load the following modules via:
     1. `module load bwa/0.7.17`
+    1. `module load fastp/0.19.5`
+    1. `module load java`
     1. `module load samtools/1.9`
     1. `module load picard/2.18.9`
     1. `module load gatk/3.8` and `module load gatk/4.1.0.0`
     1. `module load bcftools/1.9`
-1. Download and install CRISP (commit `60966e7`): https://sites.google.com/site/vibansal/software/crisp
-    1. In `$HOME/.bashrc` export the path to the CRISP folder.
-        ```export CRISP_DIR=/path/to/crisp/folder```
-1. Download and install VarScan (`VarScan.v2.4.3.jar`): https://github.com/dkoboldt/varscan
-    1. In `$HOME/.bashrc` export path to the VarScan folder. eg: `export VARSCAN_DIR=/path/to/varscan/folder`
-1. copy the following into your `$HOME/.bashrc` file so that the `def-someuser` reflects your non-RAC compute canada account
+1. Download and install VarScan (`VarScan.v2.4.3.jar`). The path to the jar executable will be exported in `bash_variables` below. Download VarScan from here: https://github.com/dkoboldt/varscan
+1. In the `parentdir` folder that contains the fastq files, copy the following into a file called `bash_variables`. The `def-someuser` reflects your compute canada account that you would like to use to submit jobs. If you have multiple accounts available, the pipeline will balance load among them (you choose these accounts during 00_start execution). The following is needed to submit jobs before the pipeline balances load. See example file in GitHub repository.
     ```
     export SLURM_ACCOUNT=def-someuser
     export SBATCH_ACCOUNT=$SLURM_ACCOUNT
     export SALLOC_ACCOUNT=$SLURM_ACCOUNT
+    export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"
+    export SQUEUE_FORMAT="%.8i %.8u %.15a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+    export VARSCAN_DIR=/project/def-yeaman/CoAdepTree/apps
+    # placeholder for python environment activation (see below)
     ```
+    1. The following is assumed regarding the name of slurm accounts found by `sshare -U --user $USER --format=Account`:
+        1. The total character length of the account name is less than 15 - the full slurm account name will need to appear in the ACCOUNT column output from `squeue -u $USER` (using exported `SQUEUE_FORMAT` above); if not, increase the digits in `SQUEUE_FORMAT` from `%0.15a` to eg `%0.20a`.
+        1. The characters in the account name that come before an underscore are sufficient to distinguish unique accounts - if the account name does not have an underscore then this is fine.
+        1. The accounts that the user would like to use end in `_cpu` (as opposed to eg `_gpu`). The pipeline will skip over non-`_cpu` accounts.
+1. Ability to install virtual environment with python 3.7 (e.g., `virtualenv --no-download ~/py3`)
+    1. See example instructions here: https://docs.computecanada.ca/wiki/Python
+    1. Add the appropriate activation command to the `bash_variables` file (eg `source ~/py3/bin/activate` for virutalenv)
+1. The reference fasta file should be uncompressed (eg. ref.fa not ref.fa.gz), and the following commands should be executed before starting pipeline:
+    1. `bwa index ref.fa`
+    1. `samtools faidx ref.fa`
+    1. `picard.jar CreateSequenceDictionary R=ref.fa O=ref.dict`
 1. clone the pipeline repo's master branch to the server and create a symlink in `$HOME` so that it can be accessed via `$HOME/pipeline`
 
 
@@ -54,23 +82,79 @@ Call SNPs and INDELs across pooled populations using CRISP and VarScan.
 	- RG info, file paths, etc should of course be different between sequenced files of single samps
 - Once the environment is set up, put `datatable.txt` and the fastq files (symlinks work too) into a folder. This is the folder I call `PARENTDIR`.
 
-- To kick off the pipeline, source your bashrc (`source ~/.bashrc`) to activate the python env, export pipeline to pythonpath `export PYTHONPATH="${PYTHONPATH}:$HOME/pipeline"`, and run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs (through `06_varscan.py`).
+- To kick off the pipeline, source your bash_variables file in parentdir (source bash_variables) to activate the python env, export the pythonpath to the pipeline and other slurm variables. Then run `00_start-pipeline.py` from the login node, and it will run the rest of the preprocessing pipeline automatically by serially sbatching jobs up through SNP calling and filtering. If the user has chosed `pipeline-finish` as an email option, the pipeline will email the user once the pipeline is complete. If `fail` is chosen as an email option, the user will be emailed if any jobs die.
 
-`(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL [-n EMAIL_OPTIONS]] [-h]`
+- Once the pipeline has finished you will get an email (assuming you choose the 'pipeline-finish' email notification) for each unique pool in the `pool_name` column of `datatable.txt`. Once all pools have finished, the next step is to run `98_get_read_stats.py` (see docstring at top of file for usage) to get summaries of read counts from pre-pipeline, through trimming, mapping, and realignment. Next, run `99_bundle_files_for_transfer.py` (see docstring at top of file for usage) to bundle all necessary files to transfer to a local server. This script will creat a .txt file with rsync commands that the user can execute from the remote server, and can also create md5 files for .bam and varscan output.
+
+<div style="text-align:center"><img src="https://brandonlind.github.io/research/images/pipeline.png" /></div>
+
+`(py3) [user@host ~]$ python $HOME/pipeline/00_start-pipeline.py -p PARENTDIR [-e EMAIL]
+                            [-n EMAIL_OPTIONS [EMAIL_OPTIONS ...]] [-maf MAF]
+                            [--translate] [--rm_repeats] [--rm_paralogs] [-h]`
 ```
+required arguments:
+  -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
+
 optional arguments:
   -e EMAIL              the email address you would like to have notifications
-                        sent to (default: None)
+                        sent to
   -n EMAIL_OPTIONS [EMAIL_OPTIONS ...]
                         the type(s) of email notifications you would like to
                         receive from the pipeline. Requires --email-address.
                         These options are used to fill out the #SBATCH flags.
-                        must be one (or multiple) of ['all', 'none', 'fail',
-                        'begin', 'end', 'pipeline-finish']
+                        Must be one (or multiple) of
+                        ['all', 'fail', 'begin', 'end', 'pipeline-finish']
+                        (default: None)
+  -maf MAF              At the end of the pipeline, VCF files will be filtered
+                        for MAF. If the pipeline is run on a single
+                        population/pool, the user can set MAF to 0.0 so as to
+                        filter variants based on global allele frequency
+                        across populations/pools at a later time. (if the
+                        number of sample_names in a pool == 1 then default
+                        maf=0; Otherwise maf = 1/sum(ploidy column)
+  --translate           Boolean: true if used, false otherwise. If a stitched
+                        genome is used for mapping, this option will look for
+                        a ref.order file in the same directory as the
+                        ref.fasta - where ref is the basename of the ref.fasta
+                        (without the .fasta). The pipeline will use this
+                        .order file to translate mapped positions to
+                        unstitched positions at the end of the pipeline while
+                        filtering. Positions in .order file are assumed to be
+                        1-based indexing. Assumes .order file has no header,
+                        and is of the format (contig name from unstitched
+                        genome, start/stop are positions in the stitched genome):
+                        ref_scaffold<tab>contig_name<tab>start_pos<tab>stop_pos<tab>contig_length
+                        (default: False)
+  --rm_repeats          Boolean: true if used, false otherwise. If repeat
+                        regions are available, remove SNPs that fall within
+                        these regions from final SNP table and write to
+                        a REPEATS table. This option will look for a .txt file
+                        in the same directory as the ref.fasta. Assumes the
+                        filename is of the form: ref_repeats.txt - where ref
+                        is the basename of the ref.fasta (without the .fasta).
+                        This file should have 1-based indexing and should be
+                        located in the same directory as the reference. The
+                        file should have a header ('CHROM', 'start', 'stop').
+                        The CHROM column can be names in the reference (if
+                        using unstitched reference), or names of contigs that
+                        were stitched to form the reference. If using a
+                        stitched genome, --translate is required. (default:
+                        False)
+  --rm_paralogs         Boolean: true if used, false otherwise. If candidate
+                        sites have been isolated within the reference where
+                        distinct gene copies (paralogs) map to the same
+                        position (and thus create erroneous SNPs), remove any
+                        SNPs that fall on these exact sites and write to a
+                        PARALOGS file. The pipeline assumes this file is
+                        located in the parentdir, andends with
+                        '_paralog_snps.txt'. This file is tab-delimited, and
+                        must have a column called 'locus' thatcontains
+                        hyphen-separated CHROM-POS sites for paralogs.
+                        These sites should be found in the current ref.fa
+                        being used to call SNPs (otherwise SNPs cannot be
+                        filtered by these sites). (default: False)
   -h, --help            Show this help message and exit.
 
-required arguments:
-  -p PARENTDIR          /path/to/directory/with/fastq.gz-files/
 ```
 
 

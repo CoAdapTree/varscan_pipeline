@@ -7,6 +7,7 @@
 
 import os
 import pickle
+import sys
 from os import path as op
 
 
@@ -80,15 +81,17 @@ class Bcolors:
     UNDERLINE = '\033[4m'
 
 
-def askforinput():
-    "Ask for input; if no, exit."
-    print('\n')
+def askforinput(msg='Do you want to proceed?', tab='', newline='\n'):
+    "Ask for input; if msg is default and input is no, exit."
+    print(newline)
     while True:
-        inp = input(Bcolors.WARNING + "INPUT NEEDED: Do you want to proceed? (yes | no): " + Bcolors.ENDC).lower()
+        inp = input(Bcolors.WARNING + "\n%sINPUT NEEDED: %s \n%s(yes | no): "
+                    % (tab,msg,tab) + Bcolors.ENDC).lower()
         if inp in ['yes', 'no']:
-            if inp == 'no':
+            if inp == 'no' and msg=='Do you want to proceed?':
                 print('exiting %s' % sys.argv[0])
                 exit()
             break
         else:
             print(Bcolors.FAIL + "Please respond with 'yes' or 'no'" + Bcolors.ENDC)
+    return inp

@@ -15,7 +15,7 @@
 ###
 """
 
-import sys, os, balance_queue, subprocess, shutil
+import sys, os, subprocess, shutil
 from os import path as op
 from coadaptree import pklload, pkldump, get_email_info, makedir
 
@@ -26,6 +26,7 @@ pooldir = op.join(parentdir, pool)
 shdir = op.join(pooldir, 'shfiles')
 ref = pklload(op.join(parentdir, 'poolref.pkl'))[pool]
 r1r2outs = pklload(op.join(pooldir, 'samp2_r1r2out.pkl'))[samp]
+bash_variables = op.join(parentdir, 'bash_variables')
 
 # create dirs
 bwashdir = op.join(shdir, '02_bwa_shfiles')
@@ -42,6 +43,8 @@ print("RG = ", rginfo[samp])
 rglb = rginfo[samp]['rglb']
 rgpl = rginfo[samp]['rgpl']
 rgsm = rginfo[samp]['rgsm']
+rgid = rginfo[samp]['rgid']
+rgpu = rginfo[samp]['rgpu']
 
 
 def getbwatext(r1out, r2out):
@@ -56,10 +59,19 @@ def getbwatext(r1out, r2out):
     sortfile = op.join(sortdir, sort)
     flagfile = sortfile.replace('.bam', '.bam.flagstats')
     coordfile = sortfile.replace('.bam', 'bam.coord')
+    
+    if rgid is None:
+        rgidcmd = f'''RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)'''
+    else:
+        rgidcmd = f'''RGID={rgid}'''
+    if rgpu is None:
+        rgpucmd = f'''RGPU=$RGID.{rglb}'''
+    else:
+        rgpucmd = f'''RGPU={rgid}'''
 
     return (sortfile, f'''# get RGID and RGPU
-RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)
-RGPU=$RGID.{rglb}
+{rgidcmd}
+{rgpucmd}
 
 # map, sam to bam, sort by coordinate, index
 module load bwa/0.7.17
@@ -99,15 +111,13 @@ text = f'''#!/bin/bash
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name={pool}-{samp}-bwa
-#SBATCH --output={pool}-{samp}-bwa_%j.out 
+#SBATCH --output={pool}-{samp}-bwa_%j.out
 {email_text}
 
 {bwatext}
 
 # mark and build
-source $HOME/.bashrc
-export PYTHONPATH="${{PYTHONPATH}}:$HOME/pipeline"
-export SQUEUE_FORMAT="%.8i %.8u %.12a %.68j %.3t %16S %.10L %.5D %.4C %.6b %.7m %N (%r)"
+source {bash_variables}
 python $HOME/pipeline/03_mark_build.py {pooldir} {samp}
 '''
 
@@ -121,5 +131,6 @@ os.chdir(bwashdir)
 print('shdir = ', shdir)
 subprocess.call([shutil.which('sbatch'), qsubfile])
 
-balance_queue.main('balance_queue.py', 'bwa')
-balance_queue.main('balance_queue.py', 'trim')
+balance_queue = op.join(os.environ['HOME'], 'pipeline/balance_queue.py')
+subprocess.call([sys.executable, balance_queue, 'bwa', parentdir])
+subprocess.call([sys.executable, balance_queue, 'trim', parentdir])
