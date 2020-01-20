@@ -20,13 +20,27 @@ Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, m
 ---
 ## Pipeline workflow
 
-<div style="text-align:center"><img src="workflow.pdf" /></div>
-<img src="workflow.pdf" alt=""  width="4200" height="4200">
+one
 
+<div style="text-align:center"><img src="https://brandonlind.github.io/images/workflow.pdf" /></div>
+
+two
+
+<img src="https://brandonlind.github.io/images/workflow.pdf" alt=""  width="4200" height="4200">
+
+three
 
 [![https://brandonlind.github.io/images/workflow.pdf]]()
 
+four
+
 ![https://brandonlind.github.io/images/workflow.pdf]()
+
+five 
+
+![workflow.pdf]()
+
+six 
 
 ![](https://brandonlind.github.io/images/workflow.pdf)
 
