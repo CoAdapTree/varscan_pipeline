@@ -42,11 +42,11 @@ five
 
 six 
 
-[text](https://brandonlind.github.io/images/workflow.pdf)
+[text](brandonlind.github.io/images/workflow.pdf)
 
 seven
 
-[embed]http://brandonlind.github.io/images/workflow.pdf[/embed]
+[embed]brandonlind.github.io/images/workflow.pdf[/embed]
 
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
