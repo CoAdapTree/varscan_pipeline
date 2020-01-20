@@ -322,6 +322,20 @@ def parse_datatable(data, parentdir, translate, repeats, paralogs):
             print(Bcolors.FAIL + "\tFAIL: %s" % col + Bcolors.ENDC)
         print('exiting 00_start-pipeline.py')
         exit()
+
+    # make sure specific words are not in a pool name
+    badnames = []
+    for pool in uni(data['pool_name']):
+        for keyword in ['SNP', 'REPEAT', 'PARALOG']:
+            if keyword in pool:
+                badnames.append((pool, keyword))
+    if len(badnames) > 0:
+        print(Bcolors.FAIL + "\tFAIL: Some pool names have characters that could cause errors downstream." + Bcolors.ENDC)
+        print(Bcolors.FAIL + "\tFAIL: Remove the bad characters from pool_names to continue." + Bcolors.ENDC)
+        for pool,keyword in badnames:
+            print(Bcolors.FAIL + "\tFAIL: Remove '%s' from pool_name '%s'." % (keyword, pool))
+        print('exiting 00_start-pipeline.py')
+        exit()
     
     # iterate through datatable
     for row in data.index:
