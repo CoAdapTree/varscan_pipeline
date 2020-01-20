@@ -24,17 +24,12 @@ one
 
 <div style="text-align:center"><img src="https://brandonlind.github.io/images/workflow.pdf" /></div>
 
-two
-
-<img src="./workflow.pdf" alt=""  width="4200" height="4200">
-
-three
 
 ![text](./workflow.pdf)
 
 four
 
-![text](https://brandonlind.github.io/images/workflow.pdf)
+![workflow.png](https://brandonlind.github.io/images/workflow.pdf)
 
 five 
 
@@ -46,7 +41,7 @@ six
 
 seven
 
-<a href="https://brandonlind.github.io/images/workflow.pdf"><img src="workflow.png" width="375" height="315"></a>
+<a href="https://brandonlind.github.io/images/workflow.pdf"><img src="https://brandonlind.github.io/images/workflow.png" width="375" height="315"></a>
 
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
