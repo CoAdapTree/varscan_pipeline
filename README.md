@@ -30,11 +30,11 @@ two
 
 three
 
-![](./workflow.pdf)
+![text](./workflow.pdf)
 
 four
 
-![](https://brandonlind.github.io/images/workflow.pdf)
+![text](https://brandonlind.github.io/images/workflow.pdf)
 
 five 
 
@@ -42,7 +42,7 @@ five
 
 six 
 
-[](https://brandonlind.github.io/images/workflow.pdf)
+[text](https://brandonlind.github.io/images/workflow.pdf)
 
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
