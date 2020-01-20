@@ -28,6 +28,8 @@ Call SNPs and INDELs across pooled populations using VarScan. Filter (MAF, GQ, m
 
 ![https://brandonlind.github.io/images/workflow.pdf]()
 
+![](https://brandonlind.github.io/images/workflow.pdf)
+
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
 - scroll each .py file to see bash text/replacements
