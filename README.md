@@ -44,6 +44,10 @@ six
 
 [text](https://brandonlind.github.io/images/workflow.pdf)
 
+seven
+
+embed]https://brandonlind.github.io/images/workflow.pdf[/embed]
+
 Command Specifics
 - see docstrings at top of each .py file in repo for purpose, usage, assumptions, TODOs, etc.
 - scroll each .py file to see bash text/replacements
