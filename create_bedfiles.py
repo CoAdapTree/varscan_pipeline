@@ -215,7 +215,7 @@ def determine_jobs_per_pool(numpools, totaljobs):
 def main(ref, numpools=1, totaljobs=975):
     # determine how many bedfiles to create
     jobs_per_pool = determine_jobs_per_pool(numpools, totaljobs)
-    
+
     globals().update({'ref': ref, 'jobs_per_pool': jobs_per_pool})
 
     # warn about overwriting

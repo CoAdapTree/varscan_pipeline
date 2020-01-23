@@ -330,7 +330,7 @@ def main(thisfile, keyword, parentdir):
     print(Bcolors.BOLD + '\nStarting balance_queue.py' + Bcolors.ENDC)
     # get accounts available for billing
     user_accts = get_avail_accounts(parentdir)
-    
+
     # if only one account, skip balancing
     if len(user_accts) == 1:
         print('\tthere is only one account (%s), no more accounts to balance queue.' % user_accts[0])

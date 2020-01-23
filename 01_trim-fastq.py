@@ -92,7 +92,7 @@ source %(bash_variables)s
 module load fastp/0.19.5
 
 ''' % locals()
-    
+
     newtext = ''''''
     for r1, r2 in pairs:
         r1adaptor, r2adaptor = list(adaptors[samp].values())
