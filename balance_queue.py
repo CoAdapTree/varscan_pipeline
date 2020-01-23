@@ -322,7 +322,7 @@ def redistribute_jobs(accts, user_accts, balance):
                 moveable.remove(pid)
     for taker,count in taken.items():
         print('\t%s has taken %s jobs' % (taker, count))
-        
+
 
 def main(thisfile, keyword, parentdir):
     globals().update({'thisfile': thisfile, 'keyword': keyword})

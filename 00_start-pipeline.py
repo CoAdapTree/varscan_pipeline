@@ -286,7 +286,7 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
     return data
 
 
-def handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs):
+def handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data, parentdir):
     flagexit = False
     for dic,flag,word in zip([pool2repeatsfile, pool2translate, pool2paralogfile],
                              [repeats, translate, paralogs],
@@ -471,7 +471,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         pool2paralogfile[pool] = handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir)
 
     # handle fails for rm_repeats/translate/rm_paralogs
-    handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs)
+    handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data)
 
     # RG info failing/warnings
     handle_rg_fails(failing, warning, parentdir, data)
@@ -728,7 +728,7 @@ def main():
 
     # read in the datatable
     data = read_datatable(args.parentdir)
-    
+
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
 

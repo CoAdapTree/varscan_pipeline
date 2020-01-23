@@ -124,7 +124,7 @@ def main(snps, orderfile, outfile=None):
     # if called from another script, return the translated dataframe
     if outfile is None:
         return translated
-    
+
     # otherwise, write to table
     print('\twriting to outfile: %s' % outfile)
     translated.to_csv(outfile, sep='\t', index=False)

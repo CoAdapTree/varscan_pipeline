@@ -440,7 +440,7 @@ def remove_repeats(snps, parentdir, snpspath, pool):
 
 def translate_stitched_to_unstitched(df, parentdir, pool):
     """See if user asked regions to be translated from stitched genome to unstitched.
-    
+
     # assumes
     # that this is run BEFORE removing repeats
     """

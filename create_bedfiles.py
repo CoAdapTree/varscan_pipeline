@@ -211,7 +211,7 @@ def determine_jobs_per_pool(numpools, totaljobs):
         jobs_per_pool = totaljobs
     return jobs_per_pool
 
-        
+
 def main(ref, numpools=1, totaljobs=975):
     # determine how many bedfiles to create
     jobs_per_pool = determine_jobs_per_pool(numpools, totaljobs)
