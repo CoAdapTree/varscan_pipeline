@@ -59,6 +59,15 @@ def getbwatext(r1out, r2out):
     sortfile = op.join(sortdir, sort)
     flagfile = sortfile.replace('.bam', '.bam.flagstats')
     coordfile = sortfile.replace('.bam', 'bam.coord')
+    
+    if rgid is None:
+        rgidcmd = f'''RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)'''
+    else:
+        rgidcmd = f'''RGID={rgid}'''
+    if rgpu is None:
+        rgpucmd = f'''RGPU=$RGID.{rglb}'''
+    else:
+        rgpucmd = f'''RGPU={rgid}'''
 
     if rgid is None:
         rgidcmd = f'''RGID=$(zcat {r1out} | head -n1 | sed 's/:/_/g' | cut -d "_" -f1,2,3,4)'''

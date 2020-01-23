@@ -728,9 +728,19 @@ def main():
 
     # read in the datatable
     data = read_datatable(args.parentdir)
-
+    
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
+    
+    # parse the datatable
+    f2pool, poolref = parse_datatable(data,
+                                      args.parentdir,
+                                      args.translate,
+                                      args.repeats,
+                                      args.paralogs)
+
+    # create bedfiles to parallelize varscan later on
+    create_all_bedfiles(poolref, len(pooldirs))
 
     # parse the datatable
     f2pool, poolref = parse_datatable(data,
