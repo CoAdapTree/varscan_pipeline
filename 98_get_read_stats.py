@@ -72,7 +72,7 @@ for j in sorted(data):
             if what not in readinfo:
                 readinfo[what] = OrderedDict()
             readinfo[what][samp] = data[j]['summary'][when][which]
-    if not 'trim_command' in readinfo:
+    if 'trim_command' not in readinfo:
         readinfo['trim_command'] = OrderedDict()
     readinfo['trim_command'][samp] = data[j]['command']
     samps.append(samp)

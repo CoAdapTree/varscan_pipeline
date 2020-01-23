@@ -440,7 +440,7 @@ def remove_repeats(snps, parentdir, snpspath, pool):
 
 def translate_stitched_to_unstitched(df, parentdir, pool):
     """See if user asked regions to be translated from stitched genome to unstitched.
-    
+
     # assumes
     # that this is run BEFORE removing repeats
     """
@@ -488,7 +488,7 @@ def main(tablefile, tipe, parentdir=None, ret=False):
     if 'varscan' in tf and tipe == 'SNP':
         # if we allow to continue for INDEL, each line is treated as a locus (not true for INDEL)
         df = filter_qual(df, tf, tipe, tablefile)
-    
+
     # look for filtering options called at 00_start.py
     if parentdir is not None and tipe == 'SNP':
         # translate stitched (if called at 00_start)

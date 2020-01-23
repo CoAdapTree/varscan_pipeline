@@ -200,7 +200,7 @@ def check_beddir():
 
 def determine_jobs_per_pool(numpools, totaljobs):
     """Use cluster ID and numpools to determine how many bedfiles to create.
-    
+
     cluster ID can be: 'cedar', 'graham', 'beluga'
     If graham/beluga, job limit is 1000 jobs. If cedar, unlimited job number.
     """
@@ -211,11 +211,11 @@ def determine_jobs_per_pool(numpools, totaljobs):
         jobs_per_pool = totaljobs
     return jobs_per_pool
 
-        
+
 def main(ref, numpools=1, totaljobs=975):
     # determine how many bedfiles to create
     jobs_per_pool = determine_jobs_per_pool(numpools, totaljobs)
-    
+
     globals().update({'ref': ref, 'jobs_per_pool': jobs_per_pool})
 
     # warn about overwriting

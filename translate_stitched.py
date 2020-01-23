@@ -117,14 +117,14 @@ def main(snps, orderfile, outfile=None):
     # reduce order to chroms of interest
     order = order[order['stitched_scaff'].isin(snps['CHROM'].tolist())].copy()
     order.index = order['stitched_scaff'].tolist()
-    
+
     # translate snpstable
     translated = translate_snps(snps, order)
 
     # if called from another script, return the translated dataframe
     if outfile is None:
         return translated
-    
+
     # otherwise, write to table
     print('\twriting to outfile: %s' % outfile)
     translated.to_csv(outfile, sep='\t', index=False)

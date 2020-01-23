@@ -170,7 +170,7 @@ def get_parafile(parentdir, pool):
     """Obtain file containing paralog SNPs to be removed from final SNPs."""
     parafiles = [f for f in fs(parentdir) if f.endswith('_paralog_snps.txt')]
     if len(parafiles) > 1:
-        parafile = choose_file(parafiles, pool, 'remove paralogs') 
+        parafile = choose_file(parafiles, pool, 'remove paralogs')
     elif len(parafiles) == 0:
         parafile = None
     elif len(parafiles) == 1:
@@ -286,6 +286,62 @@ FAIL: exiting 00_start-pipeline.py''' % datatable + Bcolors.ENDC)
     return data
 
 
+def handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data, parentdir):
+    flagexit = False
+    for dic,flag,word in zip([pool2repeatsfile, pool2translate, pool2paralogfile],
+                             [repeats, translate, paralogs],
+                             ['remove repeats', 'translate stitched positions', 'remove paralogs']):
+        # if a flag was specified but none of the pools were selected:
+        if flag is True and sum([1 for v in dic.values() if v is not None])==0:
+            flagexit = True
+            text = 'FAIL: You have indicated that you would like to %s from final SNPs.\n' % word
+            text = text + 'FAIL: But the user has not specified at least one pool to %s. \n' % word
+            text = text + 'FAIL: You need to respond "yes" to at least one of the prompts above \n'
+            text = text + 'FAIL: for assigning a file to a pool - i.e., to use the \n'
+            text = text + 'FAIL: %s flag, you must apply it to at least one pool. \n' % word
+            if 'repeats' in word:
+                text = text + 'FAIL: The file containing repeat regions should be one of the following:\n'
+                for ref in uni(data['ref']):
+                    repeatfile = ref.split(".fa")[0] + '_repeats.txt'
+                    text = text + "\t %s \n" % repeatfile
+            elif 'stitched' in word:
+                text = text + 'FAIL: The file to translate stitched to unstitched positions should \n'
+                text = text + 'FAIL: be one of the following:\n'
+                for ref in uni(data['ref']):
+                    orderfile = ref.split(".fa")[0] + '.order'
+                    text = text + "\t %s \n" % orderfile
+            elif 'paralogs' in word:
+                text = text + 'FAIL: The file(s) to remove paralogs must be in %s \n' % parentdir
+                text = text + 'FAIL: and end with "_paralog_snps.txt".'
+            print(Bcolors.FAIL + text + Bcolors.ENDC)
+    if flagexit is True:
+        exit()
+
+
+def handle_rg_fails(failing, warning, parentdir, data):
+    if len(failing) > 0:
+        print(Bcolors.FAIL + 'FAIL: The following samples have blank RG info.' + Bcolors.ENDC)
+        for fail in failing:
+            print(Bcolors.FAIL + "FAIL: %s" % fail + Bcolors.ENDC)
+        print('exiting 00_start-pipeline.py')
+        exit()
+    if len(warning) > 0:
+        outputs = []
+        for row in data.index:
+            samp = data.loc[row, 'sample_name']
+            if samp in warning:
+                r1 = op.join(parentdir, data.loc[row, 'file_name_r1'])
+                outputs.append("\t\t%s\t%s" % (samp, get_rgid(r1)))
+        print(Bcolors.WARNING + '\n\n\tWARN: at least one of the samples has a blank RGID in the datatable.\n' +
+              '\tWARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB\n' +
+              '\tWARN: The pipeline will automatically assign the following RGIDs.\n' +
+              '\n\t\tsample_name\tassigned_RGID' +
+              Bcolors.ENDC)
+        for output in outputs:
+            print(Bcolors.WARNING + output + Bcolors.ENDC)
+        askforinput(tab='\t', newline='')
+
+
 def parse_datatable(data, parentdir, translate, repeats, paralogs):
     """
     Checks some assumptions of datatable.txt, create files and dirs for downstream.
@@ -336,7 +392,7 @@ def parse_datatable(data, parentdir, translate, repeats, paralogs):
             print(Bcolors.FAIL + "\tFAIL: Remove '%s' from pool_name '%s'." % (keyword, pool))
         print('exiting 00_start-pipeline.py')
         exit()
-    
+
     # iterate through datatable
     for row in data.index:
         # get variables
@@ -415,58 +471,10 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         pool2paralogfile[pool] = handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir)
 
     # handle fails for rm_repeats/translate/rm_paralogs
-    flagexit = False
-    for dic,flag,word in zip([pool2repeatsfile, pool2translate, pool2paralogfile],
-                             [repeats, translate, paralogs],
-                             ['remove repeats', 'translate stitched positions', 'remove paralogs']):
-        # if a flag was specified but none of the pools were selected:
-        if flag is True and sum([1 for v in dic.values() if v is not None])==0:
-            flagexit = True
-            text = 'FAIL: You have indicated that you would like to %s from final SNPs.\n' % word
-            text = text + 'FAIL: But the user has not specified at least one pool to %s. \n' % word
-            text = text + 'FAIL: You need to respond "yes" to at least one of the prompts above \n'
-            text = text + 'FAIL: for assigning a file to a pool - i.e., to use the \n'
-            text = text + 'FAIL: %s flag, you must apply it to at least one pool. \n' % word
-            if 'repeats' in word:
-                text = text + 'FAIL: The file containing repeat regions should be one of the following:\n'
-                for ref in uni(data['ref']):
-                    repeatfile = ref.split(".fa")[0] + '_repeats.txt'
-                    text = text + "\t %s \n" % repeatfile
-            elif 'stitched' in word:
-                text = text + 'FAIL: The file to translate stitched to unstitched positions should \n'
-                text = text + 'FAIL: be one of the following:\n'
-                for ref in uni(data['ref']):
-                    orderfile = ref.split(".fa")[0] + '.order'
-                    text = text + "\t %s \n" % orderfile
-            elif 'paralogs' in word:
-                text = text + 'FAIL: The file(s) to remove paralogs must be in %s \n' % parentdir
-                text = text + 'FAIL: and end with "_paralog_snps.txt".'
-            print(Bcolors.FAIL + text + Bcolors.ENDC)
-    if flagexit is True:
-        exit()
+    handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data, parentdir)
 
     # RG info failing/warnings
-    if len(failing) > 0:
-        print(Bcolors.FAIL + 'FAIL: The following samples have blank RG info.' + Bcolors.ENDC)
-        for fail in failing:
-            print(Bcolors.FAIL + "FAIL: %s" % fail + Bcolors.ENDC)
-        print('exiting 00_start-pipeline.py')
-        exit()
-    if len(warning) > 0:
-        outputs = []
-        for row in data.index:
-            samp = data.loc[row, 'sample_name']
-            if samp in warning:
-                r1 = op.join(parentdir, data.loc[row, 'file_name_r1'])
-                outputs.append("\t\t%s\t%s" % (samp, get_rgid(r1)))
-        print(Bcolors.WARNING + '\n\n\tWARN: at least one of the samples has a blank RGID in the datatable.\n' +
-              '\tWARN: If RGPU is also blank, the pipeline will assign RGPU as: $RGID.$RGLB\n' +
-              '\tWARN: The pipeline will automatically assign the following RGIDs.\n' +
-              '\n\t\tsample_name\tassigned_RGID' +
-              Bcolors.ENDC)
-        for output in outputs:
-            print(Bcolors.WARNING + output + Bcolors.ENDC)
-        askforinput(tab='\t', newline='')
+    handle_rg_fails(failing, warning, parentdir, data)
 
     pkldump(pool2repeatsfile, op.join(parentdir, 'repeat_regions.pkl'))
     pkldump(pool2paralogfile, op.join(parentdir, 'paralog_snps.pkl'))
@@ -530,7 +538,7 @@ so it can be used later in pipeline, then source this file before restarting pip
                   "FAIL: could not find the following program: %s" % program +
                   Bcolors.ENDC)
 
-# make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
+    # make sure an environment can be activated (activation assumed to be in $HOME/.bashrc)
     for exe in ['activate']:
         if distutils.spawn.find_executable(exe) is None:
             print('\tcould not find %s in $PATH\nexiting 00_start-pipeline.py' % exe)
@@ -724,6 +732,16 @@ def main():
     # create directories for each group of pools to be combined
     pooldirs = make_pooldirs(data, args.parentdir)
     
+    # parse the datatable
+    f2pool, poolref = parse_datatable(data,
+                                      args.parentdir,
+                                      args.translate,
+                                      args.repeats,
+                                      args.paralogs)
+
+    # create bedfiles to parallelize varscan later on
+    create_all_bedfiles(poolref, len(pooldirs))
+
     # parse the datatable
     f2pool, poolref = parse_datatable(data,
                                       args.parentdir,
