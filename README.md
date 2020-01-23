@@ -35,6 +35,9 @@ Command Specifics
 - start_varscan.py
     - call `mpileup2cns` with default flags except: `--min-avg-qual 20` (minimum base quality set to 20), `--p-value 0.05` (max p-value set to 0.05).
 
+Workflow features
+- To reduce total wait times before a scheduled job begins to run, at each stage of the pipeline outlined above the pipeline will evenly spread Priority jobs in queue across any number of slurm accounts available to user (see docstring of balance_queue.py)
+- This script can also be run manually from command line and can be used outside of pipeline purposes
 
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
