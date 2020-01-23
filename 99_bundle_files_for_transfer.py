@@ -177,7 +177,7 @@ for p in pooldirs:
         expected.append('REPEATS')
     if poolseqcmd['paralogs'] is True and paralogs[pool] is not None:
         expected.append('PARALOGS')
-    if not len(srcfiles) == len(expected):        
+    if not len(srcfiles) == len(expected):
         warning = f"\n\tWARN: There are not {len(expected)} all-files ({' + '.join(expected)}) which are expected output for pool: {op.basename(p)}"
         warning = warning + f"\n\tWARN: Here are the {len(srcfiles)} files I found:\n"
         warning = warning + "\t" + "\n\t".join(srcfiles)

@@ -300,7 +300,7 @@ def redistribute_jobs(accts, user_accts, balance):
             elif len(pids) == 1 and balance == 1 and len(accts.keys()) < len(user_accts):
                 # if numjobs and balance == 1 but not all accounts have low priority, give up the job
                 moveable.append(pids[0])
-                
+
     # shuffle list(takers) to avoid passing only to accounts that appear early in the list
     shuffle(takers)
     # redistribute jobs

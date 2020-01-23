@@ -392,7 +392,7 @@ def parse_datatable(data, parentdir, translate, repeats, paralogs):
             print(Bcolors.FAIL + "\tFAIL: Remove '%s' from pool_name '%s'." % (keyword, pool))
         print('exiting 00_start-pipeline.py')
         exit()
-    
+
     # iterate through datatable
     for row in data.index:
         # get variables
@@ -471,7 +471,7 @@ different pool assignments: %s' % samp + Bcolors.ENDC)
         pool2paralogfile[pool] = handle_paralogs(paralogs, pool2paralogfile, data, pool, parentdir)
 
     # handle fails for rm_repeats/translate/rm_paralogs
-    handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data)
+    handle_dict_fails(pool2repeatsfile, pool2translate, pool2paralogfile, repeats, translate, paralogs, data, parentdir)
 
     # RG info failing/warnings
     handle_rg_fails(failing, warning, parentdir, data)

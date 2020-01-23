@@ -200,7 +200,7 @@ def check_beddir():
 
 def determine_jobs_per_pool(numpools, totaljobs):
     """Use cluster ID and numpools to determine how many bedfiles to create.
-    
+
     cluster ID can be: 'cedar', 'graham', 'beluga'
     If graham/beluga, job limit is 1000 jobs. If cedar, unlimited job number.
     """
