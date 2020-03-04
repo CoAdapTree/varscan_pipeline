@@ -742,9 +742,6 @@ def main():
     # create bedfiles to parallelize varscan later on
     create_all_bedfiles(poolref, len(pooldirs))
 
-    # create bedfiles to parallelize varscan later on
-    create_all_bedfiles(poolref, len(pooldirs))
-
     # assign fq files to pooldirs for visualization (good to double check)
     get_datafiles(args.parentdir, f2pool, data)
 
