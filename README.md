@@ -38,6 +38,7 @@ Final file output by pipeline
 - The final file will be of the form f'{pool_name}-varscan_all_bedfiles_TYPE.txt', where TYPE is one of SNP +/- PARALOGS, or REPEATS, depending on input flags to 00_start-pipeline.
 - In these final files, if a SNP is filtered for a specific population, the entry for the SNP's pop.FREQ column will be NA (numpy.nan). This was most computationatlly efficient (instead of putting numpy.nan on the other pop columns for that SNP). So keep this in mind when using data downstream.
 
+
 ## Assumed environment
 1. Access to an HPC with a scheduler (e.g., slurm, SGE, PBS, TORQUE) - this pipeline assumes slurm with the Compute Canada servers in mind (not meant as a deployable 'program')
 1. Ability to load the following modules via:
