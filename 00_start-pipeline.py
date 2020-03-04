@@ -742,6 +742,16 @@ def main():
     # create bedfiles to parallelize varscan later on
     create_all_bedfiles(poolref, len(pooldirs))
 
+    # parse the datatable
+    f2pool, poolref = parse_datatable(data,
+                                      args.parentdir,
+                                      args.translate,
+                                      args.repeats,
+                                      args.paralogs)
+
+    # create bedfiles to parallelize varscan later on
+    create_all_bedfiles(poolref, len(pooldirs))
+
     # assign fq files to pooldirs for visualization (good to double check)
     get_datafiles(args.parentdir, f2pool, data)
 
