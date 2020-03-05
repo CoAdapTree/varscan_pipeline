@@ -739,13 +739,6 @@ def main():
                                       args.repeats,
                                       args.paralogs)
 
-    # parse the datatable
-    f2pool, poolref = parse_datatable(data,
-                                      args.parentdir,
-                                      args.translate,
-                                      args.repeats,
-                                      args.paralogs)
-
     # create bedfiles to parallelize varscan later on
     create_all_bedfiles(poolref, len(pooldirs))
 
