@@ -138,7 +138,7 @@ def filter_freq(df, tf, tipe, tablefile):
 
 def filter_missing_data(df, tf, tipe):
     """
-    Remove loci with < 25% missing data.
+    Keep loci with < 25% missing data.
     Count np.nan in .FREQ col to assess % missing data.
     
     Positional arguments:
@@ -152,8 +152,9 @@ def filter_missing_data(df, tf, tipe):
     freqcols = [col for col in df.columns if '.FREQ' in col]
     copy = get_copy(df, freqcols)
     keepers = []
-    # else statement for running single pop (megagamtophyte) through:
-    thresh = math.floor(0.25 * len(freqcols)) if len(freqcols) > 1 else 1
+    # else statement for running 1,2,or 3 pops through:
+#     thresh = math.floor(0.25 * len(freqcols)) if len(freqcols) > 1 else 1
+    thresh = math.floor(0.25 *len(freqcols)) if len(freqcols) > 3 else 1
     for locus in tqdm(copy.columns):
         # if there is less than 25% missing data:
         # the only time x != x is when x is nan (fastest way to count it)
@@ -372,6 +373,7 @@ def remove_paralogs(snps, parentdir, snpspath, pool):
 
             # write paralogs to a file
             parafile = snpspath.replace(".txt", "_PARALOGS.txt")
+            found_paralogs = mark_nas(found_paralogs, 'paralog SNPs')
             found_paralogs.to_csv(parafile, sep='\t', index=False)
             print(f'{op.basename(snpspath)} has {len(snps.index)} non-paralog SNPs')
     return snps
@@ -428,6 +430,7 @@ def remove_repeats(snps, parentdir, snpspath, pool):
             print(f'\tSaving {len(repeat_snps)} repeat regions')
             repeat_path = snpspath.replace(".txt", "_REPEATS.txt")
             myrepeats = snps[snps.index.isin(repeat_snps)].copy()
+            myrepeats = mark_nas(myrepeats, 'repeat SNPs')
             myrepeats.to_csv(repeat_path, sep='\t', index=False)
 
             # remove SNPs in repeat regions
@@ -454,6 +457,21 @@ def translate_stitched_to_unstitched(df, parentdir, pool):
     return df
 
 
+def mark_nas(df, stage):
+    """
+    If a FREQ was masked as NA because of GQ etc, mask other pop columns as NA too.
+    
+    I did not mask other pop columns when masking FREQ because it is faster to wait.
+    """
+    print(f'marking pop columns as NA if FREQ was filtered for {stage}...')
+    pops = [col.split(".FREQ")[0] for col in df.columns if '.FREQ' in col]
+    for pop in tqdm(pops):
+        popcols = [col for col in df.columns if f"{pop}." in col]
+        nas = df[f'{pop}.FREQ'] != df[f'{pop}.FREQ']
+        df.loc[nas, popcols] = np.nan
+    return df
+
+
 def main(tablefile, tipe, parentdir=None, ret=False):
     print('\nstarting filter_VariantsToTable.py for %s' % tablefile)
 
@@ -471,6 +489,7 @@ def main(tablefile, tipe, parentdir=None, ret=False):
     df = filter_type(df, tf, tipe)
 
     if len(df.index) == 0:
+        df = mark_nas(df, 'all SNPs')
         if ret is True:
             return df
         else:
@@ -506,6 +525,9 @@ def main(tablefile, tipe, parentdir=None, ret=False):
 
         # remove paralog SNPs (if called at 00_start)
         df = remove_paralogs(df.copy(), parentdir, tablefile, op.basename(pooldir))
+
+    # mark pop columns as NA if pop.FREQ is NA
+    df = mark_nas(df, 'all SNPs')
 
     if ret is True:
         return df
