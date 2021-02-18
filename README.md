@@ -8,6 +8,15 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/559e9dd133a04f838a87582e79f0587b)](https://www.codacy.com/app/brandonlind/poolseq_pipline?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CoAdaptree/poolseq_pipline&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/CoAdaptree/poolseq_pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/CoAdaptree/poolseq_pipeline)
 
+
+### Usage    
+
+If you use or are inspired by code from this repo, please site related manuscripts and data including, but not limited to:
+
+Lind et al. (2020) Haploid, diploid, and pooled exome capture recapitulate features of biology and paralogy in two non-model tree species. bioRxiv https://doi.org/10.1101/2020.10.07.329961
+
+---
+
 # VarScan poolseq pipeline
 
 Call SNPs and INDELs across pooled populations using VarScan. Filter (mapping quality, proper pairs, MAF, GQ, missing data) and redirect SNPs from repeat regions or potential paralogous sites into distinct files. Once started, the pipeline will carry on through SNP filtering, automatically sbatching jobs when appropriate. If applied on startup, user will receive an email when pipeline is finished. Various ways to customize available, see help and usage below.
