@@ -13,13 +13,20 @@
 
 ### Usage    
 
-If you use or are inspired by code from this repo, please site related manuscripts and data including, but not limited to:
+If you use or are inspired by code from this repo, please cite related manuscripts and data including, but not limited to:
 
-• This repo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5083302.svg)](https://doi.org/10.5281/zenodo.5083302)
+- This repo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5083302.svg)](https://doi.org/10.5281/zenodo.5083302)
 
-• Lind et al. (in press) Haploid, diploid, and pooled exome capture recapitulate features of biology and paralogy in two non-model tree species. Accepted to Molecular Ecology Resources. Available on bioRxiv https://doi.org/10.1101/2020.10.07.329961
+	```
+	Lind B (2021) GitHub.com/CoAdapTree/varscan_pipeline: Publication release (Version 1.0.0). Zenodo. http://doi.org/10.5281/zenodo.5083302
+	```
+
+- Lind et al. (in press) Haploid, diploid, and pooled exome capture recapitulate features of biology and paralogy in two non-model tree species. Accepted to Molecular Ecology Resources. Available on bioRxiv https://doi.org/10.1101/2020.10.07.329961
 
   - see https://github.com/CoAdapTree/testdata_validation [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5083292.svg)](https://doi.org/10.5281/zenodo.5083292)
+  ```
+  Lind BM. (2021c). GitHub.com/CoAdaptree/testdata_validation: Publication release (Version 1.0.0). Zenodo. http://doi.org/10.5281/zenodo.5083292 
+  ```
 ---
 
 # VarScan poolseq pipeline
